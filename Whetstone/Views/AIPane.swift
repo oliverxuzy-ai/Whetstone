@@ -6,6 +6,7 @@ struct AIPane: View {
 
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
+    @AppStorage("aiPaneWidth") private var aiPaneWidth: Double = 420
 
     @State private var conversation: Conversation?
     @State private var messages: [Message] = []
@@ -13,6 +14,12 @@ struct AIPane: View {
     @State private var isThinking: Bool = false
     @State private var error: String? = nil
     @State private var conceptsLoaded: Bool = false
+    /// Width at the moment the drag started — used to compute deltas without
+    /// jitter from re-reading @AppStorage mid-drag.
+    @State private var dragStartWidth: Double? = nil
+
+    private static let minWidth: Double = 320
+    private static let maxWidth: Double = 600
 
     private var profile: UserProfile {
         profiles.first ?? UserProfile(profession: "知识工作者")
@@ -25,13 +32,39 @@ struct AIPane: View {
             chatScroll
             inputBar
         }
-        .frame(width: 420)
+        .frame(width: CGFloat(aiPaneWidth))
         .background(Theme.bgSage)
         .overlay(alignment: .leading) {
             // 1px black separator between Reader (cream) and AI (sage) panes
             Rectangle().fill(Color.black).frame(width: 1)
         }
+        .overlay(alignment: .leading) { resizeHandle }
         .task { await initializeIfNeeded() }
+    }
+
+    /// 8pt invisible drag zone centered on the 1px separator. Hover swaps in
+    /// the system resize cursor; drag updates @AppStorage clamped 320...600.
+    private var resizeHandle: some View {
+        Color.clear
+            .frame(width: 8)
+            .contentShape(Rectangle())
+            .offset(x: -4)
+            .onHover { hovering in
+                if hovering { NSCursor.resizeLeftRight.push() }
+                else { NSCursor.pop() }
+            }
+            .gesture(
+                DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                    .onChanged { value in
+                        let start = dragStartWidth ?? aiPaneWidth
+                        if dragStartWidth == nil { dragStartWidth = start }
+                        // Dragging right (positive translation.width) shrinks the AI pane
+                        // because the pane is on the right side of the window.
+                        let proposed = start - Double(value.translation.width)
+                        aiPaneWidth = min(Self.maxWidth, max(Self.minWidth, proposed))
+                    }
+                    .onEnded { _ in dragStartWidth = nil }
+            )
     }
 
     private var header: some View {
