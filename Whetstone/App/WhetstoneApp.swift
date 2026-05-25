@@ -21,7 +21,9 @@ struct WhetstoneApp: App {
             RootView()
                 .modelContainer(modelContainer)
                 .frame(minWidth: 1100, minHeight: 700)
+                .preferredColorScheme(.light)   // brutalist editorial is light-only by design
         }
         .windowResizability(.contentSize)
+        .windowStyle(.hiddenTitleBar)            // traffic lights float on bgCream, no chrome strip
     }
 }

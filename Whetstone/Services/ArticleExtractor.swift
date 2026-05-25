@@ -119,10 +119,24 @@ private final class ExtractCoordinator: NSObject, WKNavigationDelegate {
             var docClone = document.cloneNode(true);
             var article = new Readability(docClone).parse();
             if (!article) return { error: "Readability returned null" };
+            // article.textContent flattens all <p> boundaries, producing things like
+            // "July 2023If you collected..." Re-extract from article.content (HTML)
+            // by walking block-level elements and joining with \\n\\n.
+            var staging = document.createElement("div");
+            staging.innerHTML = article.content || "";
+            var blocks = staging.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li, blockquote, pre");
+            var parts = [];
+            for (var i = 0; i < blocks.length; i++) {
+              var t = (blocks[i].innerText || blocks[i].textContent || "").trim();
+              if (t.length > 0) parts.push(t);
+            }
+            var betterText = parts.join("\\n\\n");
+            // Fallback to original textContent if HTML parse produced nothing.
+            if (betterText.length < 20) betterText = article.textContent || "";
             return {
               title: article.title || "",
               byline: article.byline || "",
-              textContent: article.textContent || "",
+              textContent: betterText,
               excerpt: article.excerpt || ""
             };
           } catch (e) {

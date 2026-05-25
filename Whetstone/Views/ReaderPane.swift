@@ -65,11 +65,15 @@ struct ReaderPane: View {
     private var articleBody: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
-                Circle().fill(Theme.textPrimary).frame(width: 32, height: 32)
+                if !article.author.isEmpty {
+                    Circle().fill(Theme.textPrimary).frame(width: 32, height: 32)
+                }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(article.author.isEmpty ? "Unknown" : article.author)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Theme.textPrimary)
+                    if !article.author.isEmpty {
+                        Text(article.author)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Theme.textPrimary)
+                    }
                     Text("\(article.readingTimeMinutes) min read")
                         .font(.metaText)
                         .foregroundStyle(Theme.textSecondary)

@@ -60,9 +60,21 @@ struct AIPane: View {
                     }
                 }
                 if let err = error {
-                    Text(err)
-                        .font(.metaText)
-                        .foregroundStyle(.red)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Heads up")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(Theme.textPrimary.opacity(0.5))
+                            .textCase(.uppercase)
+                            .tracking(0.5)
+                        Text(err)
+                            .font(.bodyChat)
+                            .foregroundStyle(Theme.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .background(Theme.bgCream)
+                    .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
                 }
             }
             .padding(32)

@@ -20,5 +20,10 @@ struct RootView: View {
             }
         }
         .background(Theme.bgCream)
+        // Reserve top strip for the floating traffic lights (hidden titlebar mode).
+        // Without this, real content collides with the close/min/max buttons.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            Color.clear.frame(height: 28)
+        }
     }
 }

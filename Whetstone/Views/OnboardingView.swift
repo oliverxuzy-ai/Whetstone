@@ -6,6 +6,7 @@ struct OnboardingView: View {
     @State private var selectedProfession: String = UserProfile.presetProfessions[0]
     @State private var customProfession: String = ""
     @State private var customContext: String = ""
+    @State private var menuOpen: Bool = false
 
     private var isCustom: Bool {
         selectedProfession == "Other (custom)"
@@ -20,9 +21,7 @@ struct OnboardingView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
-
+        ScrollView {
             VStack(alignment: .leading, spacing: 32) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Welcome to Whetstone")
@@ -41,13 +40,53 @@ struct OnboardingView: View {
                         .font(.h3)
                         .foregroundStyle(Theme.textPrimary)
 
-                    Picker("", selection: $selectedProfession) {
-                        ForEach(UserProfile.presetProfessions, id: \.self) { p in
-                            Text(p).tag(p)
+                    // Brutalist dropdown via Button + popover (Menu's chrome can't be fully suppressed)
+                    Button(action: { menuOpen.toggle() }) {
+                        HStack(spacing: 8) {
+                            Text(selectedProfession)
+                                .font(.bodyChat)
+                                .foregroundStyle(Theme.textPrimary)
+                            Spacer()
+                            Image(systemName: menuOpen ? "chevron.up" : "chevron.down")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(Theme.textPrimary)
                         }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                        .background(Theme.bgCream)
+                        .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
                     }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
+                    .buttonStyle(.plain)
+                    .popover(isPresented: $menuOpen, arrowEdge: .bottom) {
+                        VStack(spacing: 0) {
+                            ForEach(UserProfile.presetProfessions, id: \.self) { p in
+                                Button(action: {
+                                    selectedProfession = p
+                                    menuOpen = false
+                                }) {
+                                    HStack {
+                                        Text(p)
+                                            .font(.bodyChat)
+                                            .foregroundStyle(Theme.textPrimary)
+                                        Spacer()
+                                        if p == selectedProfession {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 12, weight: .medium))
+                                                .foregroundStyle(Theme.textPrimary)
+                                        }
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 10)
+                                    .frame(width: 320, alignment: .leading)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .background(Theme.bgCream)
+                    }
 
                     if isCustom {
                         TextField("e.g. Mechanical Engineer", text: $customProfession)
@@ -63,32 +102,35 @@ struct OnboardingView: View {
                         .foregroundStyle(Theme.textPrimary)
                     TextField("e.g. backend infra, distributed systems",
                               text: $customContext, axis: .vertical)
-                        .lineLimit(2...4)
+                        .lineLimit(1...3)
                         .textFieldStyle(.plain)
                         .padding(12)
                         .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
                 }
 
-                Button(action: {
-                    onComplete(resolvedProfession, customContext.trimmingCharacters(in: .whitespaces))
-                }) {
-                    Text("Continue")
-                        .font(.pillBtn)
-                        .foregroundStyle(canContinue ? Theme.bgCream : Theme.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(canContinue ? Theme.textPrimary : Color.clear)
-                        .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        onComplete(resolvedProfession, customContext.trimmingCharacters(in: .whitespaces))
+                    }) {
+                        Text("Continue")
+                            .font(.pillBtn)
+                            .foregroundStyle(canContinue ? Theme.bgCream : Theme.textSecondary)
+                            .frame(width: 200)
+                            .padding(.vertical, 12)
+                            .background(canContinue ? Theme.textPrimary : Color.clear)
+                            .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!canContinue)
                 }
-                .buttonStyle(.plain)
-                .disabled(!canContinue)
             }
-            .frame(maxWidth: 480)
-            .padding(48)
-
-            Spacer()
+            .frame(maxWidth: 520)
+            .padding(.horizontal, 48)
+            .padding(.top, 96)
+            .padding(.bottom, 48)
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.bgCream)
     }
 }
