@@ -11,10 +11,14 @@ struct MarkdownBody: View {
     let text: String
 
     private var blocks: [Block] {
-        // Split by blank lines into paragraphs/headings
-        text
-            .split(separator: "\n\n", omittingEmptySubsequences: true)
-            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+        // Normalize line endings (CRLF → LF) then split on any blank line
+        // (one or more newlines containing only whitespace between them).
+        // Earlier `split(separator: "\n\n")` only matched literal "\n\n" — if the
+        // AI emitted "\r\n\r\n" or "\n \n" the whole article rendered as one wall.
+        let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
+        return normalized
+            .splitOnBlankLines()
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
             .map(Block.parse)
     }
@@ -68,5 +72,24 @@ private enum Block {
             return .paragraph(attr)
         }
         return .paragraph(AttributedString(raw))
+    }
+}
+
+private extension String {
+    /// Splits on any blank line (one+ newlines where in-between is whitespace only).
+    /// Handles `\n\n`, `\n   \n`, `\n\t\n`, etc.
+    func splitOnBlankLines() -> [String] {
+        // swiftlint:disable:next force_try
+        let regex = try! NSRegularExpression(pattern: "\n[ \t]*\n")
+        let ns = self as NSString
+        let matches = regex.matches(in: self, range: NSRange(location: 0, length: ns.length))
+        var parts: [String] = []
+        var last = 0
+        for m in matches {
+            parts.append(ns.substring(with: NSRange(location: last, length: m.range.location - last)))
+            last = m.range.location + m.range.length
+        }
+        parts.append(ns.substring(from: last))
+        return parts
     }
 }
