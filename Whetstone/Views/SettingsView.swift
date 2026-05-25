@@ -29,11 +29,11 @@ struct SettingsView: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Anthropic API Key").font(.h3).foregroundStyle(Theme.textPrimary)
+                Text("OpenAI API Key").font(.h3).foregroundStyle(Theme.textPrimary)
                 Text("存到 macOS Keychain。不会出现在 SwiftData / UserDefaults。")
                     .font(.metaText)
                     .foregroundStyle(Theme.textSecondary)
-                SecureField("sk-ant-...", text: $apiKey)
+                SecureField("sk-...", text: $apiKey)
                     .textFieldStyle(.plain)
                     .padding(12)
                     .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
@@ -81,13 +81,13 @@ struct SettingsView: View {
     }
 
     private func loadValues() {
-        apiKey = KeychainStore.shared.anthropicAPIKey ?? ""
+        apiKey = KeychainStore.shared.openAIAPIKey ?? ""
         profession = profile?.profession ?? ""
         customContext = profile?.customContext ?? ""
     }
 
     private func save() {
-        KeychainStore.shared.anthropicAPIKey = apiKey.trimmingCharacters(in: .whitespaces)
+        KeychainStore.shared.openAIAPIKey = apiKey.trimmingCharacters(in: .whitespaces)
         if let profile {
             profile.profession = profession.trimmingCharacters(in: .whitespaces)
             profile.customContext = customContext.trimmingCharacters(in: .whitespaces)

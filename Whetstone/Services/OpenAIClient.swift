@@ -1,12 +1,13 @@
 import Foundation
 
-/// Anthropic Messages API client (streaming, async/await).
-/// 直连 https://api.anthropic.com/v1/messages
-/// 模型 default: claude-opus-4-7  (按 design doc)
-actor ClaudeClient {
-    static let shared = ClaudeClient()
+/// OpenAI Chat Completions API client (non-streaming, async/await).
+/// 直连 https://api.openai.com/v1/chat/completions
+/// 模型 default: gpt-4o  (用户可改; o-系列推理模型需用 max_completion_tokens 而不是 max_tokens)
+/// Prompt caching: OpenAI 对 prompt ≥1024 tokens 的部分自动 cache, 无需 header。
+actor OpenAIClient {
+    static let shared = OpenAIClient()
 
-    enum ClaudeError: LocalizedError {
+    enum OpenAIError: LocalizedError {
         case missingAPIKey
         case invalidResponse
         case http(Int, String)
@@ -14,7 +15,7 @@ actor ClaudeClient {
 
         var errorDescription: String? {
             switch self {
-            case .missingAPIKey: return "未设置 Anthropic API Key。打开 Settings 粘 key 进去。"
+            case .missingAPIKey: return "未设置 OpenAI API Key。打开 Settings 粘 key 进去。"
             case .invalidResponse: return "API 返回了无法解析的响应。"
             case .http(let code, let body): return "HTTP \(code): \(body)"
             case .decoding(let msg): return "解码失败: \(msg)"
@@ -23,13 +24,12 @@ actor ClaudeClient {
     }
 
     struct Message: Codable {
-        let role: String  // "user" | "assistant"
+        let role: String  // "user" | "assistant" | "system"
         let content: String
     }
 
-    private let endpoint = URL(string: "https://api.anthropic.com/v1/messages")!
-    private let model = "claude-opus-4-7"
-    private let apiVersion = "2023-06-01"
+    private let endpoint = URL(string: "https://api.openai.com/v1/chat/completions")!
+    private let model = "gpt-4o"
     private let session: URLSession
 
     private init() {
@@ -40,41 +40,40 @@ actor ClaudeClient {
     }
 
     /// 非流式调用 (一次拿完整响应)。v0 用这个先把流程跑通; v1 可换 SSE streaming。
+    /// cacheArticleContent 会被并入 system message 长前缀, 借 OpenAI 自动 prompt caching 省 token。
     func send(
         systemPrompt: String,
         messages: [Message],
         maxTokens: Int = 1024,
         cacheArticleContent: String? = nil
     ) async throws -> String {
-        guard let apiKey = await MainActor.run(body: { KeychainStore.shared.anthropicAPIKey }),
+        guard let apiKey = await MainActor.run(body: { KeychainStore.shared.openAIAPIKey }),
               !apiKey.isEmpty else {
-            throw ClaudeError.missingAPIKey
+            throw OpenAIError.missingAPIKey
         }
 
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue(apiVersion, forHTTPHeaderField: "anthropic-version")
-        request.setValue("prompt-caching-2024-07-31", forHTTPHeaderField: "anthropic-beta")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
-        // System message: persona + (可选 cached) 文章正文
-        var systemBlocks: [[String: Any]] = [
-            ["type": "text", "text": systemPrompt]
-        ]
+        // System 消息: persona/instructions + (可选) 文章正文长前缀 (自动 cache)
+        var systemContent = systemPrompt
         if let articleContent = cacheArticleContent, !articleContent.isEmpty {
-            systemBlocks.append([
-                "type": "text",
-                "text": "Article content for reference:\n\n\(articleContent)",
-                "cache_control": ["type": "ephemeral"]
-            ])
+            systemContent += "\n\n---\n\nArticle content for reference:\n\n\(articleContent)"
+        }
+
+        var allMessages: [[String: String]] = [
+            ["role": "system", "content": systemContent]
+        ]
+        for m in messages {
+            allMessages.append(["role": m.role, "content": m.content])
         }
 
         let body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
-            "system": systemBlocks,
-            "messages": messages.map { ["role": $0.role, "content": $0.content] }
+            "messages": allMessages
         ]
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -82,30 +81,29 @@ actor ClaudeClient {
         let (data, response) = try await session.data(for: request)
 
         guard let http = response as? HTTPURLResponse else {
-            throw ClaudeError.invalidResponse
+            throw OpenAIError.invalidResponse
         }
 
         guard (200...299).contains(http.statusCode) else {
             let bodyStr = String(data: data, encoding: .utf8) ?? "<binary>"
-            throw ClaudeError.http(http.statusCode, bodyStr)
+            throw OpenAIError.http(http.statusCode, bodyStr)
         }
 
-        // Parse response
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let contentArr = json["content"] as? [[String: Any]],
-              let firstBlock = contentArr.first,
-              let text = firstBlock["text"] as? String else {
+              let choices = json["choices"] as? [[String: Any]],
+              let firstChoice = choices.first,
+              let message = firstChoice["message"] as? [String: Any],
+              let content = message["content"] as? String else {
             let raw = String(data: data, encoding: .utf8) ?? "<binary>"
-            throw ClaudeError.decoding(raw)
+            throw OpenAIError.decoding(raw)
         }
 
-        return text
+        return content
     }
 
     /// 从 AI 返回的 JSON 字符串解析为概念数组。容错: 兼容可能包裹的 markdown 代码块。
     nonisolated func parseConceptsJSON(_ text: String) -> [(name: String, explanation: String)] {
         var cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        // 去掉可能的 ```json ... ``` 包裹
         if cleaned.hasPrefix("```") {
             if let firstNewline = cleaned.firstIndex(of: "\n") {
                 cleaned = String(cleaned[cleaned.index(after: firstNewline)...])

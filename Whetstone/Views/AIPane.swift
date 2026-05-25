@@ -218,13 +218,13 @@ struct AIPane: View {
         isThinking = true
         defer { isThinking = false }
         do {
-            let text = try await ClaudeClient.shared.send(
+            let text = try await OpenAIClient.shared.send(
                 systemPrompt: Prompts.personaSystem(profile),
                 messages: [.init(role: "user", content: Prompts.conceptExtractionUser(articleContent: article.content))],
                 maxTokens: 800,
                 cacheArticleContent: article.content
             )
-            let parsed = await ClaudeClient.shared.parseConceptsJSON(text)
+            let parsed = await OpenAIClient.shared.parseConceptsJSON(text)
             for (idx, c) in parsed.enumerated() {
                 let concept = Concept(name: c.name, explanation: c.explanation, orderIndex: idx, article: article)
                 modelContext.insert(concept)
@@ -265,7 +265,7 @@ struct AIPane: View {
         defer { isThinking = false }
         do {
             // Build message history from this conversation
-            let history: [ClaudeClient.Message] = (conv.messages ?? [])
+            let history: [OpenAIClient.Message] = (conv.messages ?? [])
                 .sorted(by: { $0.timestamp < $1.timestamp })
                 .map { .init(role: $0.role == .user ? "user" : "assistant", content: $0.content) }
             var msgs = history
@@ -276,7 +276,7 @@ struct AIPane: View {
                 msgs.append(.init(role: "user", content: userContent))
             }
 
-            let reply = try await ClaudeClient.shared.send(
+            let reply = try await OpenAIClient.shared.send(
                 systemPrompt: systemPrompt,
                 messages: msgs,
                 maxTokens: 1024,
