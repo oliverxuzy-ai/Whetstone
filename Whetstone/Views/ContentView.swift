@@ -4,6 +4,7 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Article.fetchedAt, order: .reverse) private var articles: [Article]
+    @AppStorage("aiEnhanceLayout") private var aiEnhanceLayout: Bool = false
 
     @State private var selectedArticle: Article? = nil
     @State private var showLibrary: Bool = true
@@ -41,13 +42,30 @@ struct ContentView: View {
         defer { isLoading = false }
         do {
             let extracted = try await ArticleExtractor.shared.extract(urlString: url)
+            var content = extracted.textContent
+            var enhanced = false
+
+            // If user enabled AI 增强排版, run the layout pass NOW and persist
+            // the markdown result. Skipped on next open (isLayoutEnhanced flag).
+            if aiEnhanceLayout, KeychainStore.shared.hasAPIKey {
+                do {
+                    content = try await OpenAIClient.shared.enhanceLayout(rawText: content)
+                    enhanced = true
+                } catch {
+                    // Enhance failed (rate limit, network, etc.) — fall through with raw text.
+                    // User can re-trigger by deleting article + re-adding.
+                    loadError = "AI 增强失败, 用原文显示: \(error.localizedDescription)"
+                }
+            }
+
             let article = Article(
                 url: extracted.url,
                 title: extracted.title,
                 author: extracted.byline,
-                content: extracted.textContent,
+                content: content,
                 excerpt: extracted.excerpt,
-                readingTimeMinutes: max(1, extracted.textContent.split(separator: " ").count / 220)
+                readingTimeMinutes: max(1, extracted.textContent.split(separator: " ").count / 220),
+                isLayoutEnhanced: enhanced
             )
             modelContext.insert(article)
             try? modelContext.save()

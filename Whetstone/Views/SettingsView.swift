@@ -5,6 +5,7 @@ struct SettingsView: View {
     let onClose: () -> Void
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
+    @AppStorage("aiEnhanceLayout") private var aiEnhanceLayout: Bool = false
 
     @State private var apiKey: String = ""
     @State private var profession: String = ""
@@ -53,6 +54,34 @@ struct SettingsView: View {
                     .textFieldStyle(.plain)
                     .padding(12)
                     .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+            }
+
+            // AI 增强排版 toggle —— 一次性, 结果保存到 article.content
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("AI 增强排版").font(.h3).foregroundStyle(Theme.textPrimary)
+                    Text("抓取后让 AI 重排段落 + 加粗关键词。每篇只跑一次, 结果会保存。")
+                        .font(.metaText)
+                        .foregroundStyle(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                Group {
+                    if aiEnhanceLayout {
+                        Button(action: { aiEnhanceLayout.toggle() }) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Theme.bgCream)
+                                .frame(width: 32, height: 32)
+                        }
+                        .buttonStyle(BrutalistFilledStyle())
+                    } else {
+                        Button(action: { aiEnhanceLayout.toggle() }) {
+                            Color.clear.frame(width: 32, height: 32)
+                        }
+                        .buttonStyle(BrutalistRaisedStyle())
+                    }
+                }
             }
 
             Spacer()

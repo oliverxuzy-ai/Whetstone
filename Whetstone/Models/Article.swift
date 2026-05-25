@@ -6,11 +6,12 @@ final class Article {
     var url: String = ""
     var title: String = ""
     var author: String = ""
-    var content: String = ""           // plain-text body, extracted by Readability.js
+    var content: String = ""           // plain-text body (or markdown if isLayoutEnhanced)
     var excerpt: String = ""
     var readingTimeMinutes: Int = 0
     var fetchedAt: Date = Date()
     var latestScore: Int? = nil        // 仅在用户点 "考考我" 后由 Conversation 写入
+    var isLayoutEnhanced: Bool = false // true ⇒ content is AI-formatted markdown, render as such
 
     @Relationship(deleteRule: .cascade, inverse: \Conversation.article)
     var conversations: [Conversation]? = []
@@ -23,7 +24,8 @@ final class Article {
          author: String = "",
          content: String = "",
          excerpt: String = "",
-         readingTimeMinutes: Int = 0) {
+         readingTimeMinutes: Int = 0,
+         isLayoutEnhanced: Bool = false) {
         self.url = url
         self.title = title
         self.author = author
@@ -32,6 +34,7 @@ final class Article {
         self.readingTimeMinutes = readingTimeMinutes
         self.fetchedAt = Date()
         self.latestScore = nil
+        self.isLayoutEnhanced = isLayoutEnhanced
         self.conversations = []
         self.concepts = []
     }

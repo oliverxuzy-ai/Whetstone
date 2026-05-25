@@ -87,13 +87,19 @@ struct ReaderPane: View {
                 .font(.articleTitle)
                 .foregroundStyle(Theme.textPrimary)
                 .padding(.bottom, 32)
+                .textSelection(.enabled)
 
-            ForEach(Array(paragraphs.enumerated()), id: \.offset) { _, p in
-                Text(p)
-                    .font(.bodyArticle)
-                    .foregroundStyle(Theme.textPrimary)
-                    .lineSpacing(8)
-                    .padding(.bottom, 24)
+            if article.isLayoutEnhanced {
+                MarkdownBody(text: article.content)
+            } else {
+                ForEach(Array(paragraphs.enumerated()), id: \.offset) { _, p in
+                    Text(p)
+                        .font(.bodyArticle)
+                        .foregroundStyle(Theme.textPrimary)
+                        .lineSpacing(8)
+                        .padding(.bottom, 24)
+                        .textSelection(.enabled)        // cursor can highlight + copy
+                }
             }
 
             if let concepts = article.concepts, !concepts.isEmpty {

@@ -73,4 +73,25 @@ enum Prompts {
         \(articleContent)
         """
     }
+
+    // MARK: - Layout enhancement (toggled in Settings)
+
+    /// System: typography editor persona, strict preservation rules.
+    static let layoutEnhanceSystem: String = """
+    You are a typography editor. Reformat raw article text into clean markdown.
+
+    Hard rules (do not break):
+    - Preserve every sentence exactly as written; do not paraphrase, summarize, add, or remove ANY content.
+    - Detect natural paragraph boundaries; group related sentences. Use blank lines between paragraphs.
+    - If the article has clear multi-section structure (multiple topics), add `## ` subheadings — sparingly. Otherwise no headings.
+    - Use `**bold**` for the FIRST occurrence of key terms or domain concepts only. Don't over-bold.
+    - Don't use bullet/numbered lists unless the source explicitly has them.
+    - Preserve quotes verbatim.
+
+    Output: ONLY the formatted markdown. No preamble, no explanation, no code fence.
+    """
+
+    static func layoutEnhanceUser(rawText: String) -> String {
+        return "Raw article text:\n\n\(rawText)"
+    }
 }

@@ -101,6 +101,19 @@ actor OpenAIClient {
         return content
     }
 
+    /// Layout enhancement: ask AI to reformat raw extracted text into clean markdown.
+    /// Used when Settings → "AI 增强排版" toggle is on. Result is stored back into
+    /// Article.content with isLayoutEnhanced=true, so we never re-process.
+    /// maxTokens=4096 so even long articles fit (gpt-4o caps at 16k completion).
+    func enhanceLayout(rawText: String) async throws -> String {
+        return try await send(
+            systemPrompt: Prompts.layoutEnhanceSystem,
+            messages: [.init(role: "user", content: Prompts.layoutEnhanceUser(rawText: rawText))],
+            maxTokens: 4096,
+            cacheArticleContent: nil
+        )
+    }
+
     /// 从 AI 返回的 JSON 字符串解析为概念数组。容错: 兼容可能包裹的 markdown 代码块。
     nonisolated func parseConceptsJSON(_ text: String) -> [(name: String, explanation: String)] {
         var cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
