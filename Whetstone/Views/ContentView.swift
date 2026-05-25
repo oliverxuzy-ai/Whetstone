@@ -19,6 +19,7 @@ struct ContentView: View {
                     ReaderPane(article: article, onBack: { selectedArticle = nil })
                     AIPane(article: article)
                 }
+                .ignoresSafeArea(.container, edges: .top)
             } else {
                 LibraryView(
                     articles: articles,
