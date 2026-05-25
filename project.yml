@@ -1,4 +1,4 @@
-name: LearningMate
+name: Whetstone
 options:
   bundleIdPrefix: com.zhengyangxu
   createIntermediateGroups: true
@@ -21,27 +21,27 @@ packages:
     from: "4.2.2"
 
 targets:
-  LearningMate:
+  Whetstone:
     type: application
     platform: macOS
     deploymentTarget: "14.0"
     sources:
-      - path: LearningMate
+      - path: Whetstone
         excludes:
           - "**/*.entitlements"
     dependencies:
       - package: KeychainAccess
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.zhengyangxu.learning-mate
-        PRODUCT_NAME: learning-mate
+        PRODUCT_BUNDLE_IDENTIFIER: com.zhengyangxu.whetstone
+        PRODUCT_NAME: Whetstone
         ENABLE_HARDENED_RUNTIME: YES
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.education
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
-        INFOPLIST_KEY_CFBundleDisplayName: learning-mate
+        INFOPLIST_KEY_CFBundleDisplayName: Whetstone
         INFOPLIST_KEY_NSAppTransportSecurity: "{NSAllowsArbitraryLoads = YES;}"
-        CODE_SIGN_ENTITLEMENTS: LearningMate/LearningMate.entitlements
+        CODE_SIGN_ENTITLEMENTS: Whetstone/Whetstone.entitlements
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
