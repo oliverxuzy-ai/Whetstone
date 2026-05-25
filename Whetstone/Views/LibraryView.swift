@@ -29,10 +29,25 @@ struct LibraryView: View {
             }
         }
         .background(Theme.bgCream)
-        .sheet(isPresented: $showSettings) {
-            SettingsView()
-                .frame(width: 520, height: 420)
+        .overlay {
+            if showSettings {
+                ZStack {
+                    // Dimmed scrim; tap to dismiss
+                    Rectangle()
+                        .fill(Color.black.opacity(0.28))
+                        .ignoresSafeArea()
+                        .contentShape(Rectangle())
+                        .onTapGesture { showSettings = false }
+                    // Brutalist modal card (0 corner, 1px border, no chrome)
+                    SettingsView(onClose: { showSettings = false })
+                        .frame(width: 540, height: 500)
+                        .background(Theme.bgCream)
+                        .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                }
+                .transition(.opacity)
+            }
         }
+        .animation(.easeInOut(duration: 0.15), value: showSettings)
     }
 
     private var header: some View {

@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct SettingsView: View {
-    @Environment(\.dismiss) private var dismiss
+    let onClose: () -> Void
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
 
@@ -18,7 +18,7 @@ struct SettingsView: View {
             HStack {
                 Text("Settings").font(.h1).foregroundStyle(Theme.textPrimary)
                 Spacer()
-                Button(action: { dismiss() }) {
+                Button(action: { onClose() }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 14))
                         .foregroundStyle(Theme.textPrimary)
