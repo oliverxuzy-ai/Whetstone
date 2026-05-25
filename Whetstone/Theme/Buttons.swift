@@ -27,10 +27,13 @@ private struct BrutalistRaisedContent: View {
             .background(fill)
             .overlay(Rectangle().stroke(Color.black, lineWidth: 1))
             .background(
-                // Hard black drop shadow, fixed offset
+                // Shadow position is COMPENSATED so it stays anchored at absolute (3, 3)
+                // even when the face moves. Earlier version offset the whole composition
+                // together so the gap stayed at 3pt; user wanted the face to peel away
+                // from the shadow on hover (gap grows 3pt → 5pt).
                 Rectangle()
                     .fill(Color.black)
-                    .offset(x: 3, y: 3)
+                    .offset(x: 3 + lift, y: 3 + lift)
             )
             .offset(x: -lift, y: -lift)
             .onHover { hovering = $0 }
