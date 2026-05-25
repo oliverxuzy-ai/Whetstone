@@ -1,0 +1,489 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		19DF97091CD5F545E2BF0D9E /* AIPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE4E6A1E0ED35711AD8C44F /* AIPane.swift */; };
+		3253710AACB3B103C2FA9165 /* Prompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8804AA77F158B646436DF6F8 /* Prompts.swift */; };
+		3A50248D4ACC84623773C248 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F42AA0A2A02486FC10B7BC2 /* UserProfile.swift */; };
+		3B6D8EABA711DD4A02734B23 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 971BB6A2F8D5228347BDBBF4 /* KeychainAccess */; };
+		41B033162DEABED0100DDF9D /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13F80EFCCCF72D6C44F27AC1 /* KeychainStore.swift */; };
+		4A165C4478A44444FEDCAB34 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C2BF702F430FB45B9326D4E7 /* Assets.xcassets */; };
+		574852D641190595600B9A49 /* Concept.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB839F4F941D5AD3CD7E6F33 /* Concept.swift */; };
+		5C1504CAF3456AB4751BCFC5 /* ArticleExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA71B70B5F956DC5E7D325CE /* ArticleExtractor.swift */; };
+		7389513F151554CF5D9F0368 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AC742C0C95FD6A092DE36A6 /* OnboardingView.swift */; };
+		7801238589FDA72178957868 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9078FD977FA6922D7EC51C4A /* ContentView.swift */; };
+		79010801C1387411105B4C06 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE115A5038448DB1C4EA833 /* LibraryView.swift */; };
+		7F5B9D4E69D67AE406F6C7E7 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 273C1E857A3EC669EA7962CA /* Message.swift */; };
+		83E84F00789AEA379C18F65E /* ReaderPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DE7B7C3AAE80F12AE9F6731 /* ReaderPane.swift */; };
+		9CB43C5D3E80581DF48DF3EF /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE8606DD96CB07B0EF3C2E9B /* RootView.swift */; };
+		AA6E839ABD767116CD211ED9 /* Conversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4919BDDFB7A4F45295B45F94 /* Conversation.swift */; };
+		AD2A9CBBA974559FC9837485 /* LearningMateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C10848DAAD4E0A2BEAF2FF /* LearningMateApp.swift */; };
+		C48EE09F8BC2D5B00F01F7B0 /* Article.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6DC0BF6E0E8DF7D82D944C2 /* Article.swift */; };
+		C925DF1247E29A3C67C260F0 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0C8965A58333EF5A4F75D7 /* Typography.swift */; };
+		CE6463749EB7BA4211691D00 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA901C28649F24A3626DB3A /* SettingsView.swift */; };
+		DC97E6C66908C9CE46920B0A /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE8072F349F97AE21FED7578 /* Colors.swift */; };
+		E76AB792C49F6E888C4D8318 /* Readability.js in Resources */ = {isa = PBXBuildFile; fileRef = 42C0CF75C3D662A8A5367F79 /* Readability.js */; };
+		E82AF54AEB114DAB41FDAD38 /* ClaudeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 554C4628CCB773B6FEF669ED /* ClaudeClient.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0F42AA0A2A02486FC10B7BC2 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		13F80EFCCCF72D6C44F27AC1 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		1B0C8965A58333EF5A4F75D7 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+		273C1E857A3EC669EA7962CA /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
+		42C0CF75C3D662A8A5367F79 /* Readability.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Readability.js; sourceTree = "<group>"; };
+		4919BDDFB7A4F45295B45F94 /* Conversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Conversation.swift; sourceTree = "<group>"; };
+		4AC742C0C95FD6A092DE36A6 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		554C4628CCB773B6FEF669ED /* ClaudeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeClient.swift; sourceTree = "<group>"; };
+		8804AA77F158B646436DF6F8 /* Prompts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prompts.swift; sourceTree = "<group>"; };
+		8BA773CD168E7ACDD0EBCDBC /* LearningMate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LearningMate.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9078FD977FA6922D7EC51C4A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		9DE7B7C3AAE80F12AE9F6731 /* ReaderPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPane.swift; sourceTree = "<group>"; };
+		A2C10848DAAD4E0A2BEAF2FF /* LearningMateApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningMateApp.swift; sourceTree = "<group>"; };
+		AE8072F349F97AE21FED7578 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
+		AFE115A5038448DB1C4EA833 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		AFE4E6A1E0ED35711AD8C44F /* AIPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPane.swift; sourceTree = "<group>"; };
+		BB839F4F941D5AD3CD7E6F33 /* Concept.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Concept.swift; sourceTree = "<group>"; };
+		C2BF702F430FB45B9326D4E7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CA71B70B5F956DC5E7D325CE /* ArticleExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleExtractor.swift; sourceTree = "<group>"; };
+		DBA901C28649F24A3626DB3A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		DE8606DD96CB07B0EF3C2E9B /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		E6DC0BF6E0E8DF7D82D944C2 /* Article.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Article.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C5710F82273D5B929FE3A174 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3B6D8EABA711DD4A02734B23 /* KeychainAccess in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		197C7C569110C8F23BBBD66E = {
+			isa = PBXGroup;
+			children = (
+				4BDEC3C55B671B0DE66F81FB /* LearningMate */,
+				B3A69FE85FAB56054963B9A5 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		43748BE026E0F5AD7F426728 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				C2BF702F430FB45B9326D4E7 /* Assets.xcassets */,
+				42C0CF75C3D662A8A5367F79 /* Readability.js */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		47C6120AF5F06AC805A2298A /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				CA71B70B5F956DC5E7D325CE /* ArticleExtractor.swift */,
+				554C4628CCB773B6FEF669ED /* ClaudeClient.swift */,
+				13F80EFCCCF72D6C44F27AC1 /* KeychainStore.swift */,
+				8804AA77F158B646436DF6F8 /* Prompts.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		4BDEC3C55B671B0DE66F81FB /* LearningMate */ = {
+			isa = PBXGroup;
+			children = (
+				4E540570ABF3B95C6D17A311 /* App */,
+				856D0A5AC9DA121AA3674B38 /* Models */,
+				43748BE026E0F5AD7F426728 /* Resources */,
+				47C6120AF5F06AC805A2298A /* Services */,
+				6AB87CFCBCE89A1D7C1D7CFA /* Theme */,
+				AF1235416528CEE8820F38F7 /* Views */,
+			);
+			path = LearningMate;
+			sourceTree = "<group>";
+		};
+		4E540570ABF3B95C6D17A311 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A2C10848DAAD4E0A2BEAF2FF /* LearningMateApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		6AB87CFCBCE89A1D7C1D7CFA /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				AE8072F349F97AE21FED7578 /* Colors.swift */,
+				1B0C8965A58333EF5A4F75D7 /* Typography.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		856D0A5AC9DA121AA3674B38 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				E6DC0BF6E0E8DF7D82D944C2 /* Article.swift */,
+				BB839F4F941D5AD3CD7E6F33 /* Concept.swift */,
+				4919BDDFB7A4F45295B45F94 /* Conversation.swift */,
+				273C1E857A3EC669EA7962CA /* Message.swift */,
+				0F42AA0A2A02486FC10B7BC2 /* UserProfile.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AF1235416528CEE8820F38F7 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				AFE4E6A1E0ED35711AD8C44F /* AIPane.swift */,
+				9078FD977FA6922D7EC51C4A /* ContentView.swift */,
+				AFE115A5038448DB1C4EA833 /* LibraryView.swift */,
+				4AC742C0C95FD6A092DE36A6 /* OnboardingView.swift */,
+				9DE7B7C3AAE80F12AE9F6731 /* ReaderPane.swift */,
+				DE8606DD96CB07B0EF3C2E9B /* RootView.swift */,
+				DBA901C28649F24A3626DB3A /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		B3A69FE85FAB56054963B9A5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8BA773CD168E7ACDD0EBCDBC /* LearningMate.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F6AAD5092BDDF90C57160638 /* LearningMate */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6E8C9D904EAA7E7DB2DE94D5 /* Build configuration list for PBXNativeTarget "LearningMate" */;
+			buildPhases = (
+				8A451ED1CB21CF8269C20242 /* Sources */,
+				9B68E4CFA39D38C69BA5B5B0 /* Resources */,
+				C5710F82273D5B929FE3A174 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LearningMate;
+			packageProductDependencies = (
+				971BB6A2F8D5228347BDBBF4 /* KeychainAccess */,
+			);
+			productName = LearningMate;
+			productReference = 8BA773CD168E7ACDD0EBCDBC /* LearningMate.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DB1DFBA18222224287FFEE57 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					F6AAD5092BDDF90C57160638 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = ACCF80F7A6080E91960F67F8 /* Build configuration list for PBXProject "LearningMate" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 197C7C569110C8F23BBBD66E;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BFF9A5880B463FAB573E0BBE /* XCRemoteSwiftPackageReference "KeychainAccess" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B3A69FE85FAB56054963B9A5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F6AAD5092BDDF90C57160638 /* LearningMate */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9B68E4CFA39D38C69BA5B5B0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4A165C4478A44444FEDCAB34 /* Assets.xcassets in Resources */,
+				E76AB792C49F6E888C4D8318 /* Readability.js in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8A451ED1CB21CF8269C20242 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				19DF97091CD5F545E2BF0D9E /* AIPane.swift in Sources */,
+				C48EE09F8BC2D5B00F01F7B0 /* Article.swift in Sources */,
+				5C1504CAF3456AB4751BCFC5 /* ArticleExtractor.swift in Sources */,
+				E82AF54AEB114DAB41FDAD38 /* ClaudeClient.swift in Sources */,
+				DC97E6C66908C9CE46920B0A /* Colors.swift in Sources */,
+				574852D641190595600B9A49 /* Concept.swift in Sources */,
+				7801238589FDA72178957868 /* ContentView.swift in Sources */,
+				AA6E839ABD767116CD211ED9 /* Conversation.swift in Sources */,
+				41B033162DEABED0100DDF9D /* KeychainStore.swift in Sources */,
+				AD2A9CBBA974559FC9837485 /* LearningMateApp.swift in Sources */,
+				79010801C1387411105B4C06 /* LibraryView.swift in Sources */,
+				7F5B9D4E69D67AE406F6C7E7 /* Message.swift in Sources */,
+				7389513F151554CF5D9F0368 /* OnboardingView.swift in Sources */,
+				3253710AACB3B103C2FA9165 /* Prompts.swift in Sources */,
+				83E84F00789AEA379C18F65E /* ReaderPane.swift in Sources */,
+				9CB43C5D3E80581DF48DF3EF /* RootView.swift in Sources */,
+				CE6463749EB7BA4211691D00 /* SettingsView.swift in Sources */,
+				C925DF1247E29A3C67C260F0 /* Typography.swift in Sources */,
+				3A50248D4ACC84623773C248 /* UserProfile.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1D48535B5CDA0AB139BA328F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = LearningMate/LearningMate.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "learning-mate";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_NSAppTransportSecurity = "{NSAllowsArbitraryLoads = YES;}";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.zhengyangxu.learning-mate";
+				PRODUCT_NAME = "learning-mate";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		7EC0D48007ACC33336D5CD4F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		B1A941C3B2849E9CB958C74B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = LearningMate/LearningMate.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "learning-mate";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_NSAppTransportSecurity = "{NSAllowsArbitraryLoads = YES;}";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.zhengyangxu.learning-mate";
+				PRODUCT_NAME = "learning-mate";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		D0C92955C5931D0F29DD3A9D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6E8C9D904EAA7E7DB2DE94D5 /* Build configuration list for PBXNativeTarget "LearningMate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B1A941C3B2849E9CB958C74B /* Debug */,
+				1D48535B5CDA0AB139BA328F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		ACCF80F7A6080E91960F67F8 /* Build configuration list for PBXProject "LearningMate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7EC0D48007ACC33336D5CD4F /* Debug */,
+				D0C92955C5931D0F29DD3A9D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BFF9A5880B463FAB573E0BBE /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.2.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		971BB6A2F8D5228347BDBBF4 /* KeychainAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BFF9A5880B463FAB573E0BBE /* XCRemoteSwiftPackageReference "KeychainAccess" */;
+			productName = KeychainAccess;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = DB1DFBA18222224287FFEE57 /* Project object */;
+}

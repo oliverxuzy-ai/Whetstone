@@ -1,0 +1,30 @@
+# macOS
+.DS_Store
+
+# Xcode user-specific
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+project.xcworkspace/xcuserdata/
+
+# Build output
+build/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.app.dSYM
+
+# Swift Package Manager
+.swiftpm/xcode/xcuserdata/
+.build/
+
+# CocoaPods (not used; defensive)
+Pods/
+
+# Secrets
+*.env
+.env.local
+*.secret
+secrets.plist
