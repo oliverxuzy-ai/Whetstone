@@ -59,6 +59,8 @@ struct ReaderPane: View {
                     .frame(width: 40, height: 40)
             }
             .buttonStyle(BrutalistRaisedStyle())
+            .disabled(true)
+            .opacity(0.45)
         }
         .padding(.horizontal, 32)
         .padding(.top, 16 + Theme.titlebarInset)

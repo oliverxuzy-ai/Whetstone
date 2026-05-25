@@ -41,6 +41,7 @@ struct LibraryView: View {
                     // Brutalist modal card (0 corner, 1px border, no chrome)
                     SettingsView(onClose: { showSettings = false })
                         .frame(width: 540, height: 500)
+                        .clipped()
                         .background(Theme.bgCream)
                         .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
                 }
@@ -113,7 +114,7 @@ struct LibraryView: View {
             if let err = loadError {
                 Text(err)
                     .font(.metaText)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Theme.textPrimary)
             }
         }
     }
