@@ -111,14 +111,19 @@ struct AIPane: View {
                         }
                     }
                 }
-                HStack(spacing: 8) {
-                    ForEach(concepts.prefix(2)) { c in
-                        chip("用类比解释「\(c.name)」") {
-                            Task { await ask(.explain(concept: c.name)) }
-                        }
-                    }
+                // Chip strip: 1 quiz chip + N "explain" chips. AI pane is only ~360pt wide
+                // after padding, so concept-specific labels truncate the concept name to
+                // avoid overflow and the row wraps via LazyVGrid (NOT HStack — long
+                // Chinese+English labels won't fit on one row).
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 8)],
+                          alignment: .leading, spacing: 8) {
                     chip("考考我") {
                         Task { await ask(.quiz) }
+                    }
+                    ForEach(concepts.prefix(3)) { c in
+                        chip("类比「\(truncated(c.name, max: 12))」") {
+                            Task { await ask(.explain(concept: c.name)) }
+                        }
                     }
                 }
             }
@@ -140,10 +145,16 @@ struct AIPane: View {
             Text(label)
                 .font(.chipText)
                 .foregroundStyle(Theme.textPrimary)
-                .padding(.horizontal, 14)
+                .lineLimit(1)
+                .padding(.horizontal, 12)
                 .padding(.vertical, 8)
         }
         .buttonStyle(BrutalistRaisedStyle())
+    }
+
+    private func truncated(_ s: String, max: Int) -> String {
+        if s.count <= max { return s }
+        return String(s.prefix(max)) + "…"
     }
 
     @ViewBuilder
