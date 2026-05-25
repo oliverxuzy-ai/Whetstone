@@ -1,32 +1,40 @@
 import SwiftUI
+import SwiftData
 
 struct ReaderPane: View {
     let article: Article
     let onBack: () -> Void
 
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Highlight.createdAt, order: .reverse) private var allHighlights: [Highlight]
+
     @State private var hoveredConceptIdx: Int? = nil
 
-    private var paragraphs: [String] {
-        article.content
-            .split(separator: "\n", omittingEmptySubsequences: true)
-            .map { String($0) }
-            .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+    private var articleHighlights: [Highlight] {
+        allHighlights.filter { $0.articleID == article.url }
     }
 
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider().background(Theme.borderHeavy)
-            ScrollView {
-                articleBody
-                    .frame(maxWidth: 680, alignment: .leading)
-                    .padding(.horizontal, 48)
-                    .padding(.top, 32)
-                    .padding(.bottom, 120)
-                    .frame(maxWidth: .infinity)
+            GeometryReader { geo in
+                ScrollView {
+                    articleBody(bodyWidth: bodyWidth(for: geo.size.width))
+                        .padding(.horizontal, 48)
+                        .padding(.top, 32)
+                        .padding(.bottom, 120)
+                        .frame(maxWidth: .infinity)
+                }
             }
         }
         .background(Theme.bgCream)
+    }
+
+    /// Body column scales with the Reader pane's width. Capped at 1100pt so
+    /// a wide window doesn't get a 100+ char-per-line wall.
+    private func bodyWidth(for paneWidth: CGFloat) -> CGFloat {
+        min(1100, max(320, paneWidth * 0.86))
     }
 
     private var header: some View {
@@ -67,7 +75,7 @@ struct ReaderPane: View {
         .padding(.bottom, 16)
     }
 
-    private var articleBody: some View {
+    private func articleBody(bodyWidth: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
                 if !article.author.isEmpty {
@@ -92,23 +100,29 @@ struct ReaderPane: View {
                 .padding(.bottom, 32)
                 .textSelection(.enabled)
 
-            if article.isLayoutEnhanced {
-                MarkdownBody(text: article.content)
-            } else {
-                ForEach(Array(paragraphs.enumerated()), id: \.offset) { _, p in
-                    Text(p)
-                        .font(.bodyArticle)
-                        .foregroundStyle(Theme.textPrimary)
-                        .lineSpacing(8)
-                        .padding(.bottom, 24)
-                        .textSelection(.enabled)        // cursor can highlight + copy
-                }
-            }
+            ArticleBodyView(
+                text: article.content,
+                isLayoutEnhanced: article.isLayoutEnhanced,
+                highlights: articleHighlights,
+                onAddHighlight: { range, text in addHighlight(range: range, text: text) }
+            )
 
             if let concepts = article.concepts, !concepts.isEmpty {
                 relatedSection(concepts: concepts.sorted(by: { $0.orderIndex < $1.orderIndex }))
             }
         }
+        .frame(width: bodyWidth, alignment: .leading)
+    }
+
+    private func addHighlight(range: NSRange, text: String) {
+        let h = Highlight(
+            articleID: article.url,
+            charStart: range.location,
+            charEnd: range.location + range.length,
+            selectedText: text
+        )
+        modelContext.insert(h)
+        try? modelContext.save()
     }
 
     private func relatedSection(concepts: [Concept]) -> some View {
