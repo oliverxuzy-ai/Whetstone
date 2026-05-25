@@ -61,7 +61,8 @@ struct ReaderPane: View {
             .buttonStyle(BrutalistRaisedStyle())
         }
         .padding(.horizontal, 32)
-        .padding(.vertical, 16)
+        .padding(.top, 16 + Theme.titlebarInset)
+        .padding(.bottom, 16)
     }
 
     private var articleBody: some View {

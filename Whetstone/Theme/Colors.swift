@@ -10,6 +10,7 @@ enum Theme {
     static let borderHeavy = Color(hex: 0x1A1A1A)
     static let borderLight = Color.black.opacity(0.2)
     static let hoverOverlay = Color.black.opacity(0.05)
+    static let titlebarInset: CGFloat = 28
 }
 
 extension Color {

@@ -45,7 +45,8 @@ struct AIPane: View {
             Spacer()
         }
         .padding(.horizontal, 32)
-        .padding(.vertical, 16)
+        .padding(.top, 16 + Theme.titlebarInset)
+        .padding(.bottom, 16)
     }
 
     private var chatScroll: some View {
