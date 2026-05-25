@@ -25,7 +25,7 @@ struct OnboardingView: View {
 
             VStack(alignment: .leading, spacing: 32) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Welcome to learning-mate")
+                    Text("Welcome to Whetstone")
                         .font(.h1)
                         .foregroundStyle(Theme.textPrimary)
                     Text("一个问题：你是什么职业？")

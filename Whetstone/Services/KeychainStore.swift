@@ -11,7 +11,7 @@ final class KeychainStore {
     private static let anthropicAPIKeyKey = "anthropic.api.key"
 
     private init() {
-        let bundleId = Bundle.main.bundleIdentifier ?? "com.zhengyangxu.learning-mate"
+        let bundleId = Bundle.main.bundleIdentifier ?? "com.zhengyangxu.whetstone"
         self.keychain = Keychain(service: bundleId).accessibility(.whenUnlocked)
     }
 

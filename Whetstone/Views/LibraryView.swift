@@ -37,7 +37,7 @@ struct LibraryView: View {
 
     private var header: some View {
         HStack {
-            Text("learning-mate")
+            Text("Whetstone")
                 .font(.h1)
                 .foregroundStyle(Theme.textPrimary)
             Spacer()

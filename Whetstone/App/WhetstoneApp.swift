@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct LearningMateApp: App {
+struct WhetstoneApp: App {
     let modelContainer: ModelContainer
 
     init() {
