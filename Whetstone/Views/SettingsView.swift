@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var profession: String = ""
     @State private var customContext: String = ""
     @State private var savedFlash: Bool = false
+    @State private var hasStoredAPIKey: Bool = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -30,13 +31,25 @@ struct SettingsView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("OpenAI API Key").font(.h3).foregroundStyle(Theme.textPrimary)
-                Text("存到 macOS Keychain。不会出现在 SwiftData / UserDefaults。")
+                Text(hasStoredAPIKey ? "已保存 API Key。留空不会改动；粘贴新 key 才会替换。" : "存到 macOS Keychain。不会出现在 SwiftData / UserDefaults。")
                     .font(.metaText)
                     .foregroundStyle(Theme.textSecondary)
-                SecureField("sk-...", text: $apiKey)
-                    .textFieldStyle(.plain)
-                    .padding(12)
-                    .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                HStack(spacing: 8) {
+                    SecureField(hasStoredAPIKey ? "Paste a new key to replace" : "sk-...", text: $apiKey)
+                        .textFieldStyle(.plain)
+                        .padding(12)
+                        .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                    if hasStoredAPIKey {
+                        Button(action: clearAPIKey) {
+                            Text("Clear")
+                                .font(.pillBtn)
+                                .foregroundStyle(Theme.textPrimary)
+                                .padding(.horizontal, 14)
+                                .frame(height: 42)
+                        }
+                        .buttonStyle(BrutalistRaisedStyle())
+                    }
+                }
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -102,18 +115,25 @@ struct SettingsView: View {
             }
         }
         .padding(32)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Theme.bgCream)
         .onAppear(perform: loadValues)
     }
 
     private func loadValues() {
-        apiKey = KeychainStore.shared.openAIAPIKey ?? ""
+        apiKey = ""
+        hasStoredAPIKey = KeychainStore.shared.hasAPIKey
         profession = profile?.profession ?? ""
         customContext = profile?.customContext ?? ""
     }
 
     private func save() {
-        KeychainStore.shared.openAIAPIKey = apiKey.trimmingCharacters(in: .whitespaces)
+        let trimmedAPIKey = apiKey.trimmingCharacters(in: .whitespaces)
+        if !trimmedAPIKey.isEmpty {
+            KeychainStore.shared.openAIAPIKey = trimmedAPIKey
+            apiKey = ""
+            hasStoredAPIKey = true
+        }
         if let profile {
             profile.profession = profession.trimmingCharacters(in: .whitespaces)
             profile.customContext = customContext.trimmingCharacters(in: .whitespaces)
@@ -131,5 +151,11 @@ struct SettingsView: View {
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             await MainActor.run { savedFlash = false }
         }
+    }
+
+    private func clearAPIKey() {
+        KeychainStore.shared.openAIAPIKey = nil
+        apiKey = ""
+        hasStoredAPIKey = false
     }
 }

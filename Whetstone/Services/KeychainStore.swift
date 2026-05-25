@@ -27,7 +27,6 @@ final class KeychainStore {
     }
 
     var hasAPIKey: Bool {
-        guard let key = openAIAPIKey else { return false }
-        return !key.isEmpty
+        (try? keychain.contains(Self.openAIAPIKeyKey, withoutAuthenticationUI: true)) ?? false
     }
 }
