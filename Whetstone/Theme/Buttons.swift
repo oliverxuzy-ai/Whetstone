@@ -2,11 +2,6 @@ import SwiftUI
 
 /// Brutalist raised button: hard-offset shadow, lifts toward upper-left on hover,
 /// settles back to flush on press. Used for icon and text buttons.
-///
-/// Visual spec:
-/// - At rest: button face flush with surface; black shadow at (3, 3) offset visible.
-/// - On hover: button face translates (-2, -2), shadow stays — gap widens, feels lifted.
-/// - On press: button drops back flush — feels "clicked into" the shadow.
 struct BrutalistRaisedStyle: ButtonStyle {
     var fill: Color = Theme.bgCream
 
@@ -27,10 +22,6 @@ private struct BrutalistRaisedContent: View {
             .background(fill)
             .overlay(Rectangle().stroke(Color.black, lineWidth: 1))
             .background(
-                // Shadow position is COMPENSATED so it stays anchored at absolute (3, 3)
-                // even when the face moves. Earlier version offset the whole composition
-                // together so the gap stayed at 3pt; user wanted the face to peel away
-                // from the shadow on hover (gap grows 3pt → 5pt).
                 Rectangle()
                     .fill(Color.black)
                     .offset(x: 3 + lift, y: 3 + lift)
@@ -91,7 +82,7 @@ private struct BrutalistFilledContent: View {
             .background(
                 Rectangle()
                     .fill(Color.black.opacity(0.5))
-                    .offset(x: 3, y: 3)
+                    .offset(x: 3 + lift, y: 3 + lift)
             )
             .offset(x: -lift, y: -lift)
             .onHover { hovering = $0 }
