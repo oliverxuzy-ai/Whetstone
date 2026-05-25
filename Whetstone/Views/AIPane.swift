@@ -167,8 +167,8 @@ struct AIPane: View {
                     .font(.bodyChat)
                     .foregroundStyle(Theme.textPrimary)
                     .padding(14)
-                    .background(Theme.bgCream)
-                    .overlay(Rectangle().stroke(Theme.borderLight, lineWidth: 1))
+                    .background(Theme.bgCream, in: UserBubbleShape())
+                    .overlay(UserBubbleShape().stroke(Theme.borderLight, lineWidth: 1))
                     .frame(maxWidth: 320, alignment: .trailing)
             }
         } else {
@@ -236,8 +236,19 @@ struct AIPane: View {
     private func initializeIfNeeded() async {
         guard !conceptsLoaded else { return }
         conceptsLoaded = true
+        loadLatestConversation()
         if let existing = article.concepts, !existing.isEmpty { return }
         await extractConcepts()
+    }
+
+    private func loadLatestConversation() {
+        let latest = (article.conversations ?? [])
+            .sorted(by: { $0.startedAt > $1.startedAt })
+            .first
+        conversation = latest
+        messages = (latest?.messages ?? [])
+            .filter { $0.role != .system }
+            .sorted(by: { $0.timestamp < $1.timestamp })
     }
 
     private func extractConcepts() async {
@@ -344,6 +355,23 @@ struct AIPane: View {
         case .free(let q): return q
         case .quiz: return "考考我吧。"
         }
+    }
+}
+
+private struct UserBubbleShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let radius: CGFloat = 4
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - radius))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX - radius, y: rect.maxY),
+            control: CGPoint(x: rect.maxX, y: rect.maxY)
+        )
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.closeSubpath()
+        return path
     }
 }
 
