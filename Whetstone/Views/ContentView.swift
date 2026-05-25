@@ -37,6 +37,11 @@ struct ContentView: View {
 
     @MainActor
     private func loadArticle(url: String) async {
+        // Re-entrancy guard: the submit button is also disabled on isLoading, but a
+        // fast double-tap before the @State propagates can still fire two Tasks.
+        // Without this, we'd extract the article twice + (if toggle on) burn 2x
+        // OpenAI tokens + insert a duplicate Article row.
+        guard !isLoading else { return }
         isLoading = true
         loadError = nil
         defer { isLoading = false }
@@ -47,14 +52,20 @@ struct ContentView: View {
 
             // If user enabled AI 增强排版, run the layout pass NOW and persist
             // the markdown result. Skipped on next open (isLayoutEnhanced flag).
+            // Failures (missing key, rate limit, truncation) silently fall through
+            // to raw-text rendering — user already sees the article load, so a
+            // top-of-screen red error on a "soft" enhancement was confusing.
+            // The article reads fine without the enhancement; the user can re-trigger
+            // by re-adding the URL after fixing the underlying cause (API key etc.).
             if aiEnhanceLayout, KeychainStore.shared.hasAPIKey {
                 do {
                     content = try await OpenAIClient.shared.enhanceLayout(rawText: content)
                     enhanced = true
                 } catch {
-                    // Enhance failed (rate limit, network, etc.) — fall through with raw text.
-                    // User can re-trigger by deleting article + re-adding.
-                    loadError = "AI 增强失败, 用原文显示: \(error.localizedDescription)"
+                    // Intentionally silent — fall through with raw text.
+                    // (TODO v1: surface this in the article card subtitle or a
+                    // small toast, not as a top-level loadError.)
+                    enhanced = false
                 }
             }
 
