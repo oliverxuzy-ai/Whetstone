@@ -27,6 +27,10 @@ struct AIPane: View {
         }
         .frame(width: 420)
         .background(Theme.bgSage)
+        .overlay(alignment: .leading) {
+            // 1px black separator between Reader (cream) and AI (sage) panes
+            Rectangle().fill(Color.black).frame(width: 1)
+        }
         .task { await initializeIfNeeded() }
     }
 
@@ -138,10 +142,8 @@ struct AIPane: View {
                 .foregroundStyle(Theme.textPrimary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .background(Theme.bgCream)
-                .overlay(Rectangle().stroke(Theme.borderLight, lineWidth: 1))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(BrutalistRaisedStyle())
     }
 
     @ViewBuilder

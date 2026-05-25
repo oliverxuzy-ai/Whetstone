@@ -55,34 +55,15 @@ struct OnboardingView: View {
                         .padding(.vertical, 12)
                         .frame(maxWidth: .infinity)
                         .contentShape(Rectangle())
-                        .background(Theme.bgCream)
-                        .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(BrutalistFlatStyle())
                     .popover(isPresented: $menuOpen, arrowEdge: .bottom) {
                         VStack(spacing: 0) {
                             ForEach(UserProfile.presetProfessions, id: \.self) { p in
-                                Button(action: {
+                                PopoverItem(label: p, isSelected: p == selectedProfession) {
                                     selectedProfession = p
                                     menuOpen = false
-                                }) {
-                                    HStack {
-                                        Text(p)
-                                            .font(.bodyChat)
-                                            .foregroundStyle(Theme.textPrimary)
-                                        Spacer()
-                                        if p == selectedProfession {
-                                            Image(systemName: "checkmark")
-                                                .font(.system(size: 12, weight: .medium))
-                                                .foregroundStyle(Theme.textPrimary)
-                                        }
-                                    }
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 10)
-                                    .frame(width: 320, alignment: .leading)
-                                    .contentShape(Rectangle())
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                         .background(Theme.bgCream)
@@ -115,14 +96,13 @@ struct OnboardingView: View {
                     }) {
                         Text("Continue")
                             .font(.pillBtn)
-                            .foregroundStyle(canContinue ? Theme.bgCream : Theme.textSecondary)
+                            .foregroundStyle(Theme.bgCream)
                             .frame(width: 200)
                             .padding(.vertical, 12)
-                            .background(canContinue ? Theme.textPrimary : Color.clear)
-                            .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(BrutalistFilledStyle())
                     .disabled(!canContinue)
+                    .opacity(canContinue ? 1.0 : 0.4)
                 }
             }
             .frame(maxWidth: 520)
@@ -132,5 +112,35 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity)
         }
         .background(Theme.bgCream)
+    }
+}
+
+private struct PopoverItem: View {
+    let label: String
+    let isSelected: Bool
+    let onTap: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack {
+                Text(label)
+                    .font(.bodyChat)
+                    .foregroundStyle(Theme.textPrimary)
+                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Theme.textPrimary)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .frame(width: 320, alignment: .leading)
+            .background(hovering ? Theme.textPrimary.opacity(0.08) : Color.clear)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
     }
 }

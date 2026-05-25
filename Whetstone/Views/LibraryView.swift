@@ -60,10 +60,9 @@ struct LibraryView: View {
                 Image(systemName: "gearshape")
                     .font(.system(size: 16))
                     .foregroundStyle(Theme.textPrimary)
-                    .frame(width: 44, height: 44)
-                    .overlay(Circle().stroke(Theme.borderLight, lineWidth: 1))
+                    .frame(width: 40, height: 40)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(BrutalistRaisedStyle())
         }
         .padding(.horizontal, 32)
         .padding(.vertical, 16)
@@ -198,7 +197,7 @@ private struct ArticleCard: View {
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.textPrimary)
                     .frame(width: 32, height: 32)
-                    .overlay(Circle().stroke(Theme.borderLight, lineWidth: 1))
+                    .overlay(Rectangle().stroke(Theme.borderLight, lineWidth: 1))
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)

@@ -23,7 +23,7 @@ struct WhetstoneApp: App {
                 .frame(minWidth: 1100, minHeight: 700)
                 .preferredColorScheme(.light)   // brutalist editorial is light-only by design
         }
-        .windowResizability(.contentSize)
+        .windowResizability(.contentMinSize)     // user can drag to resize freely above 1100x700
         .windowStyle(.hiddenTitleBar)            // traffic lights float on bgCream, no chrome strip
     }
 }

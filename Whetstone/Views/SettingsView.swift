@@ -23,9 +23,8 @@ struct SettingsView: View {
                         .font(.system(size: 14))
                         .foregroundStyle(Theme.textPrimary)
                         .frame(width: 36, height: 36)
-                        .overlay(Circle().stroke(Theme.borderLight, lineWidth: 1))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(BrutalistRaisedStyle())
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -67,12 +66,10 @@ struct SettingsView: View {
                     Text("Save")
                         .font(.pillBtn)
                         .foregroundStyle(Theme.bgCream)
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, 28)
                         .padding(.vertical, 12)
-                        .background(Theme.textPrimary)
-                        .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(BrutalistFilledStyle())
             }
         }
         .padding(32)

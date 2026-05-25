@@ -10,9 +10,11 @@
 		1CA2588485F71078766F2DA4 /* Concept.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CE28E7D452F0535902E8DF0 /* Concept.swift */; };
 		21ADCF5233BF01DEDACE7E8B /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 572ED605203604B509234AB5 /* LibraryView.swift */; };
 		2D31503655A5CE949308E619 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FFC365912AAB6D21D57E62B /* Colors.swift */; };
+		31707DEF6FE69074388BB400 /* Buttons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10F4CCB783DA27E190848B5B /* Buttons.swift */; };
 		6A6B74A047056B98B491D5A0 /* Readability.js in Resources */ = {isa = PBXBuildFile; fileRef = 744CC4170B6ADA72588F05BD /* Readability.js */; };
 		7BB6F1F5C17227ECB764580F /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10FF3EEC047B25F697F250CE /* RootView.swift */; };
 		8206008CECFC04AE1AA68270 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5036684D5E118FEEB1D8AA7C /* Typography.swift */; };
+		82DC70DF734A6DFEF9C9E437 /* MarkdownBody.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19E7A4A341B883C6424DC7F4 /* MarkdownBody.swift */; };
 		94B319CFAF07316F4F31C180 /* ReaderPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6CCC7F8A3F2E459EA5048FD /* ReaderPane.swift */; };
 		9632A780D7FAB4C9150B019C /* Article.swift in Sources */ = {isa = PBXBuildFile; fileRef = 070DB5B72E9EC3554770F0EE /* Article.swift */; };
 		9D40C64FC35C2D7D95020DAD /* Prompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD3B55ABEC6C54A9BC06ABE7 /* Prompts.swift */; };
@@ -35,8 +37,10 @@
 		070DB5B72E9EC3554770F0EE /* Article.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Article.swift; sourceTree = "<group>"; };
 		0CE28E7D452F0535902E8DF0 /* Concept.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Concept.swift; sourceTree = "<group>"; };
 		0FFC365912AAB6D21D57E62B /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
+		10F4CCB783DA27E190848B5B /* Buttons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Buttons.swift; sourceTree = "<group>"; };
 		10FF3EEC047B25F697F250CE /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		157C6D506EB122AEC79AC5D0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		19E7A4A341B883C6424DC7F4 /* MarkdownBody.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownBody.swift; sourceTree = "<group>"; };
 		1C95592D92FC1EEECC22D6B6 /* ArticleExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleExtractor.swift; sourceTree = "<group>"; };
 		31D615F55DEA42C699B1652B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		3CAB1D129DF972C87015E4E4 /* OpenAIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIClient.swift; sourceTree = "<group>"; };
@@ -86,6 +90,7 @@
 				C2642B310BE7538FB49979AE /* AIPane.swift */,
 				31D615F55DEA42C699B1652B /* ContentView.swift */,
 				572ED605203604B509234AB5 /* LibraryView.swift */,
+				19E7A4A341B883C6424DC7F4 /* MarkdownBody.swift */,
 				C575F7BAFF7C220F3D44F12E /* OnboardingView.swift */,
 				C6CCC7F8A3F2E459EA5048FD /* ReaderPane.swift */,
 				10FF3EEC047B25F697F250CE /* RootView.swift */,
@@ -127,6 +132,7 @@
 		EB3D30CD9919A07C0293C4C7 /* Theme */ = {
 			isa = PBXGroup;
 			children = (
+				10F4CCB783DA27E190848B5B /* Buttons.swift */,
 				0FFC365912AAB6D21D57E62B /* Colors.swift */,
 				5036684D5E118FEEB1D8AA7C /* Typography.swift */,
 			);
@@ -240,12 +246,14 @@
 				E0172CDFE56ECB354669C4EC /* AIPane.swift in Sources */,
 				9632A780D7FAB4C9150B019C /* Article.swift in Sources */,
 				B6093F5EEFD6CC01687AF318 /* ArticleExtractor.swift in Sources */,
+				31707DEF6FE69074388BB400 /* Buttons.swift in Sources */,
 				2D31503655A5CE949308E619 /* Colors.swift in Sources */,
 				1CA2588485F71078766F2DA4 /* Concept.swift in Sources */,
 				DF1FA309485EB9F1CE8BD7AF /* ContentView.swift in Sources */,
 				A146F67534E0DE94A31575C6 /* Conversation.swift in Sources */,
 				CCC238F406915232794D8E70 /* KeychainStore.swift in Sources */,
 				21ADCF5233BF01DEDACE7E8B /* LibraryView.swift in Sources */,
+				82DC70DF734A6DFEF9C9E437 /* MarkdownBody.swift in Sources */,
 				C11C34F1E69EDD16BAA5B242 /* Message.swift in Sources */,
 				B1EA9AAFE79A70E1970D8C8A /* OnboardingView.swift in Sources */,
 				A3DC978C62731D1123AE6BDD /* OpenAIClient.swift in Sources */,

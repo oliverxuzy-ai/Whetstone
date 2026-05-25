@@ -35,10 +35,9 @@ struct ReaderPane: View {
                 Image(systemName: "arrow.left")
                     .font(.system(size: 16))
                     .foregroundStyle(Theme.textPrimary)
-                    .frame(width: 44, height: 44)
-                    .overlay(Circle().stroke(Theme.borderLight, lineWidth: 1))
+                    .frame(width: 40, height: 40)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(BrutalistRaisedStyle())
 
             Spacer()
 
@@ -52,11 +51,14 @@ struct ReaderPane: View {
 
             Spacer()
 
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 16))
-                .foregroundStyle(Theme.textPrimary)
-                .frame(width: 44, height: 44)
-                .overlay(Circle().stroke(Theme.borderLight, lineWidth: 1))
+            // Search button (placeholder — wires up in v1)
+            Button(action: {}) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16))
+                    .foregroundStyle(Theme.textPrimary)
+                    .frame(width: 40, height: 40)
+            }
+            .buttonStyle(BrutalistRaisedStyle())
         }
         .padding(.horizontal, 32)
         .padding(.vertical, 16)
