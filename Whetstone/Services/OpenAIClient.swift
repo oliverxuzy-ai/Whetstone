@@ -12,6 +12,7 @@ actor OpenAIClient {
         case invalidResponse
         case http(Int, String)
         case decoding(String)
+        case responseTruncated  // finish_reason == "length"; partial content unsafe to persist
 
         var errorDescription: String? {
             switch self {
@@ -19,6 +20,7 @@ actor OpenAIClient {
             case .invalidResponse: return "API 返回了无法解析的响应。"
             case .http(let code, let body): return "HTTP \(code): \(body)"
             case .decoding(let msg): return "解码失败: \(msg)"
+            case .responseTruncated: return "AI 响应被 token 上限截断 (文章太长)。"
             }
         }
     }
@@ -96,6 +98,15 @@ actor OpenAIClient {
               let content = message["content"] as? String else {
             let raw = String(data: data, encoding: .utf8) ?? "<binary>"
             throw OpenAIError.decoding(raw)
+        }
+
+        // Guard against silent truncation: if OpenAI ran out of completion tokens,
+        // the returned content is a partial response. Persisting it (with
+        // isLayoutEnhanced=true) would leave the user reading a permanently
+        // truncated article. Surface as a specific error so callers can fall back.
+        if let finishReason = firstChoice["finish_reason"] as? String,
+           finishReason == "length" {
+            throw OpenAIError.responseTruncated
         }
 
         return content
