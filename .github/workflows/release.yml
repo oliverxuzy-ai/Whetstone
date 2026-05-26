@@ -1,0 +1,111 @@
+name: Release
+
+# Every push to main: derive the next version from conventional commits since
+# the last tag (feat → minor, fix → patch), build the .dmg, and publish a
+# PUBLIC "Latest" GitHub release. Pushes with no feat/fix commit make no
+# release. A major bump (X+1.0.0) is manual only: Actions → Release →
+# "Run workflow" → bump = major.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "auto = feat/fix from commits · major = X+1.0.0"
+        type: choice
+        options: [auto, major]
+        default: auto
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false      # queue overlapping pushes, never race a version
+
+jobs:
+  release:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history → tags + commit count
+
+      - name: Compute next version
+        id: ver
+        env:
+          BUMP: ${{ github.event.inputs.bump || 'auto' }}
+        run: sh scripts/next-version.sh
+
+      - name: Nothing to release
+        if: steps.ver.outputs.should_release != 'true'
+        run: echo "No feat/fix commits since the last tag — skipping."
+
+      # xcodegen emits the Xcode 16+ pbxproj format (objectVersion 77); the
+      # runner's default Xcode 15.4 can't open it. Pin to latest stable.
+      - name: Select Xcode
+        if: steps.ver.outputs.should_release == 'true'
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install tooling
+        if: steps.ver.outputs.should_release == 'true'
+        run: brew install xcodegen create-dmg
+
+      - name: Sync version into project
+        if: steps.ver.outputs.should_release == 'true'
+        run: |
+          printf '%s\n' "${{ steps.ver.outputs.version }}" > VERSION
+          sh scripts/sync-version.sh
+
+      - name: Generate Xcode project
+        if: steps.ver.outputs.should_release == 'true'
+        run: xcodegen generate
+
+      # SwiftPM deps (KeychainAccess) — `xcodebuild archive` resolves on demand,
+      # but doing it explicitly gives a cleaner failure mode if the SPM registry
+      # is flaky.
+      - name: Resolve SPM packages
+        if: steps.ver.outputs.should_release == 'true'
+        run: |
+          xcodebuild -project Whetstone.xcodeproj -scheme Whetstone \
+            -destination 'platform=macOS,arch=arm64' \
+            -resolvePackageDependencies
+
+      - name: Archive (Release, ad-hoc)
+        if: steps.ver.outputs.should_release == 'true'
+        run: |
+          xcodebuild -project Whetstone.xcodeproj -scheme Whetstone \
+            -configuration Release \
+            -archivePath "$RUNNER_TEMP/Whetstone.xcarchive" archive
+
+      - name: Build .dmg
+        if: steps.ver.outputs.should_release == 'true'
+        run: |
+          app="$RUNNER_TEMP/Whetstone.xcarchive/Products/Applications/Whetstone.app"
+          test -d "$app" || { echo "::error::no Whetstone.app in archive"; exit 1; }
+          create-dmg \
+            --volname "Whetstone" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "Whetstone.app" 175 200 \
+            --hide-extension "Whetstone.app" \
+            --app-drop-link 425 200 \
+            "Whetstone-${{ steps.ver.outputs.version }}.dmg" "$app"
+
+      - name: Publish public release
+        if: steps.ver.outputs.should_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: "Whetstone ${{ steps.ver.outputs.tag }}"
+          draft: false                  # public immediately
+          prerelease: false
+          make_latest: true
+          generate_release_notes: true  # notes auto-built from commits
+          files: "Whetstone-*.dmg"
+          fail_on_unmatched_files: true
