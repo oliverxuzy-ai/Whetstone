@@ -9,6 +9,9 @@ struct ReaderPane: View {
     @Query(sort: \Highlight.createdAt, order: .reverse) private var allHighlights: [Highlight]
 
     @State private var hoveredConceptIdx: Int? = nil
+    @State private var tab: ReaderTab = .article
+
+    private enum ReaderTab { case article, concepts }
 
     private var articleHighlights: [Highlight] {
         allHighlights.filter { $0.articleID == article.url }
@@ -20,11 +23,18 @@ struct ReaderPane: View {
             Divider().background(Theme.borderHeavy)
             GeometryReader { geo in
                 ScrollView {
-                    articleBody(bodyWidth: bodyWidth(for: geo.size.width))
-                        .padding(.horizontal, 48)
-                        .padding(.top, 32)
-                        .padding(.bottom, 120)
-                        .frame(maxWidth: .infinity)
+                    Group {
+                        switch tab {
+                        case .article:
+                            articleBody(bodyWidth: bodyWidth(for: geo.size.width))
+                        case .concepts:
+                            conceptsBody(bodyWidth: bodyWidth(for: geo.size.width))
+                        }
+                    }
+                    .padding(.horizontal, 48)
+                    .padding(.top, 32)
+                    .padding(.bottom, 120)
+                    .frame(maxWidth: .infinity)
                 }
             }
         }
@@ -49,13 +59,11 @@ struct ReaderPane: View {
 
             Spacer()
 
-            Text("Article")
-                .font(.pillBtn)
-                .foregroundStyle(Theme.bgCream)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 10)
-                .background(Theme.textPrimary)
-                .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+            HStack(spacing: 0) {
+                tabPill("Article", isActive: tab == .article) { tab = .article }
+                tabPill("Concepts", isActive: tab == .concepts) { tab = .concepts }
+            }
+            .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
 
             Spacer()
 
@@ -106,12 +114,41 @@ struct ReaderPane: View {
                 highlights: articleHighlights,
                 onAddHighlight: { range, text in addHighlight(range: range, text: text) }
             )
+        }
+        .frame(width: bodyWidth, alignment: .leading)
+    }
 
-            if let concepts = article.concepts, !concepts.isEmpty {
-                relatedSection(concepts: concepts.sorted(by: { $0.orderIndex < $1.orderIndex }))
+    private func conceptsBody(bodyWidth: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let concepts = article.concepts?.sorted(by: { $0.orderIndex < $1.orderIndex }),
+               !concepts.isEmpty {
+                relatedSection(concepts: concepts)
+            } else {
+                HStack(spacing: 12) {
+                    ProgressView().controlSize(.small)
+                    Text("正在提取概念…")
+                        .font(.metaText)
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                .padding(.top, 40)
             }
         }
         .frame(width: bodyWidth, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func tabPill(_ label: String, isActive: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.pillBtn)
+                .foregroundStyle(isActive ? Theme.bgCream : Theme.textPrimary)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 10)
+                .frame(minWidth: 110)
+                .background(isActive ? Theme.textPrimary : Color.clear)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func addHighlight(range: NSRange, text: String) {
