@@ -13,19 +13,18 @@ enum Prompts {
         """
     }
 
-    /// 概念提取 (P1 PASS 原版): 把文章正文当 user message 直接传入。
-    /// 返回应该解析为 [Concept]; v0 让 AI 返回 JSON。
+    /// 概念提取: 把文章正文当 user message 直接传入。返回应该解析为 [Concept]。
+    /// v0 让 AI 决定数量 (2-7), 由文章复杂度决定 — 内容稀薄就少, 密集就多。
     static func conceptExtractionUser(articleContent: String) -> String {
         return """
-        以下是一篇文章。提取 3 个核心概念,每个用一句话说明,不要说任何不相关的话。
+        以下是一篇文章。提取 2 到 7 个核心概念,数量由文章复杂度决定 — 内容稀薄就少,密集就多。每个用一句话说明,不要说任何不相关的话。
 
         返回严格的 JSON 数组,每项有 "name" 和 "explanation" 字段。不要 markdown 代码块,不要解释,直接 JSON。
 
         例如:
         [
           {"name": "Qubits", "explanation": "..."},
-          {"name": "Superposition", "explanation": "..."},
-          {"name": "Decoherence", "explanation": "..."}
+          {"name": "Superposition", "explanation": "..."}
         ]
 
         文章正文:
