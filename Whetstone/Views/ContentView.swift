@@ -29,7 +29,8 @@ struct ContentView: View {
                     onSelect: { selectedArticle = $0 },
                     onAddURL: { url in
                         Task { await loadArticle(url: url) }
-                    }
+                    },
+                    onDelete: { article in deleteArticle(article) }
                 )
             }
         }
@@ -86,5 +87,23 @@ struct ContentView: View {
         } catch {
             loadError = "无法抽取文章: \(error.localizedDescription)"
         }
+    }
+
+    /// 删除一篇文章 + 它的所有派生数据。
+    /// - Article 上的 `@Relationship deleteRule: .cascade` 自动连带 Conversations/
+    ///   Messages/Concepts。
+    /// - Highlight 用 String articleID 关联(不是 SwiftData @Relationship),
+    ///   所以需要单独 fetch + delete。
+    @MainActor
+    private func deleteArticle(_ article: Article) {
+        let articleURL = article.url
+        let descriptor = FetchDescriptor<Highlight>(
+            predicate: #Predicate { $0.articleID == articleURL }
+        )
+        if let orphans = try? modelContext.fetch(descriptor) {
+            orphans.forEach { modelContext.delete($0) }
+        }
+        modelContext.delete(article)
+        try? modelContext.save()
     }
 }
