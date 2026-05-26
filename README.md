@@ -4,6 +4,8 @@
 
 # Whetstone
 
+[![release](https://img.shields.io/github/v/release/oliverxuzy-ai/Whetstone?sort=semver&style=flat-square&color=6E8060&label=release)](https://github.com/oliverxuzy-ai/Whetstone/releases/latest)
+
 **A macOS app that turns articles you read into knowledge you actually keep.**
 
 </div>
@@ -11,6 +13,14 @@
 Drop a URL. An AI tutor — using [Feynman](https://en.wikipedia.org/wiki/Feynman_Technique) and [Socratic](https://en.wikipedia.org/wiki/Socratic_questioning) methods, tailored to your profession — helps you internalize what matters. Score yourself only when you're ready to be tested.
 
 > **Status:** v0 skeleton. Builds cleanly, all core flows wired, end-to-end un-validated. Pre-real-use.
+
+## Install
+
+Grab the latest **`Whetstone-x.y.z.dmg`** from **[Releases](https://github.com/oliverxuzy-ai/Whetstone/releases/latest)**.
+
+1. Double-click the `.dmg` to mount it.
+2. Drag `Whetstone.app` into `/Applications`.
+3. **First launch:** right-click `Whetstone.app` → *Open* → *Open* (the build is ad-hoc signed, not notarized, so Gatekeeper needs an explicit "I know what I'm doing" the first time).
 
 ---
 
@@ -36,8 +46,9 @@ Existing tools (Pocket, Readwise, Recall) optimize for **capture** and surface-l
 ## Stack
 
 - **macOS 14+** native · SwiftUI · SwiftData (local; CloudKit deferred to v1)
-- **Anthropic Claude API** — `claude-opus-4-7`, prompt caching enabled
+- **OpenAI Chat Completions API** — `gpt-4o`, automatic prompt caching
 - **WKWebView + [Mozilla Readability.js](https://github.com/mozilla/readability)** for article extraction
+- **NSTextView body** with custom selection color + floating selection popover for highlights
 - **[KeychainAccess](https://github.com/kishikawakatsumi/KeychainAccess)** for API-key storage
 - **Brutalist editorial aesthetic** — warm cream `#EFECE5` + sage `#C5D2D3`, 0 border-radius, no shadows
 
@@ -57,7 +68,7 @@ open Whetstone.xcodeproj
 
 In Xcode: ⌘R to build and run.
 
-**First launch**: onboarding asks your profession. Then the Library opens — paste an [Anthropic API key](https://console.anthropic.com/) in Settings (gear icon top-right). The key is stored in macOS Keychain, never in code or `UserDefaults`.
+**First launch**: onboarding asks your profession. Then the Library opens — paste an [OpenAI API key](https://platform.openai.com/api-keys) in Settings (gear icon top-right). The key is stored in macOS Keychain, never in code or `UserDefaults`.
 
 **Test fixture URL** (readability-friendly): `https://paulgraham.com/greatwork.html`
 
@@ -71,6 +82,12 @@ In Xcode: ⌘R to build and run.
 - Streaming responses (replace blocking `URLSession.data(for:)`)
 
 **Out of scope** for now: Windows / Linux / iOS / web. macOS-only is a deliberate v0 constraint.
+
+## Releases
+
+Every push to `main` runs `.github/workflows/release.yml`. The workflow derives the next semver tag from conventional commits since the last `vX.Y.Z` tag (`feat:` → minor, `fix:` → patch, anything else → no release), syncs the version into `project.yml`, builds an ad-hoc-signed `.dmg`, and publishes a public GitHub release. A major bump is manual: *Actions* → *Release* → *Run workflow* → `bump=major`.
+
+Source of truth for the version string is the [`VERSION`](./VERSION) file at repo root. Don't edit `MARKETING_VERSION` in `project.yml` by hand — `scripts/sync-version.sh` regenerates it on every CI run.
 
 ## Project documents
 
