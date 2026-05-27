@@ -30,12 +30,25 @@ struct SettingsView: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("OpenAI API Key").font(.h3).foregroundStyle(Theme.textPrimary)
-                Text(hasStoredAPIKey ? "已保存 API Key。留空不会改动；粘贴新 key 才会替换。" : "存到 macOS Keychain。不会出现在 SwiftData / UserDefaults。")
+                HStack(spacing: 10) {
+                    Text("OpenAI API Key").font(.h3).foregroundStyle(Theme.textPrimary)
+                    if hasStoredAPIKey {
+                        Text("✓ 已保存到 Keychain")
+                            .font(.system(size: 11, weight: .semibold))
+                            .tracking(0.4)
+                            .foregroundStyle(Theme.textPrimary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                    }
+                    Spacer()
+                }
+                Text(hasStoredAPIKey ? "粘贴新 key 会替换;留空保存不会改动已存的 key。" : "存到 macOS Keychain。不会出现在 SwiftData / UserDefaults。")
                     .font(.metaText)
                     .foregroundStyle(Theme.textSecondary)
                 HStack(spacing: 8) {
-                    SecureField(hasStoredAPIKey ? "Paste a new key to replace" : "sk-...", text: $apiKey)
+                    // 已保存时 placeholder 用圆点 → 视觉上"有内容",不会让人误以为没保存。
+                    SecureField(hasStoredAPIKey ? "••••••••••••••••••••••••" : "sk-...", text: $apiKey)
                         .textFieldStyle(.plain)
                         .padding(12)
                         .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
