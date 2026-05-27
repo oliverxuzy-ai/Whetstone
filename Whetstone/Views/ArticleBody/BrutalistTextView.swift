@@ -15,6 +15,11 @@ final class BrutalistTextView: NSTextView {
 
     private var popoverWindow: NSPanel?
     private var pendingPopoverWorkItem: DispatchWorkItem?
+    /// Local NSEvent monitor used while the popover is shown — catches
+    /// outside-panel clicks so we can dismiss without waiting for a
+    /// selection-change notification (which won't fire if the user clicks
+    /// outside the textview entirely).
+    private var clickMonitor: Any?
 
     override init(frame frameRect: NSRect, textContainer container: NSTextContainer?) {
         super.init(frame: frameRect, textContainer: container)
@@ -57,6 +62,16 @@ final class BrutalistTextView: NSTextView {
     deinit {
         NotificationCenter.default.removeObserver(self)
         pendingPopoverWorkItem?.cancel()
+        if let m = clickMonitor { NSEvent.removeMonitor(m) }
+    }
+
+    /// When this textview is detached from its window (SwiftUI removing
+    /// the parent view, e.g. user tapped Back to return to Library), close
+    /// any popover panel — it was addChildWindow'd to the main NSWindow and
+    /// would otherwise outlive the textview that anchors it.
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        super.viewWillMove(toWindow: newWindow)
+        if newWindow == nil { dismissPopover() }
     }
 
     // MARK: - Selection → popover
@@ -154,9 +169,33 @@ final class BrutalistTextView: NSTextView {
         popoverWindow = panel
         window.addChildWindow(panel, ordered: .above)
         panel.orderFront(nil)
+        startClickMonitor()
+    }
+
+    /// While the panel is shown, watch for in-app mouseDowns. Any click whose
+    /// event window isn't the panel itself dismisses — covers clicks on the
+    /// AIPane, the back/tab buttons, the sidebar after navigation, etc., none
+    /// of which trigger a selectionDidChange in this textview.
+    private func startClickMonitor() {
+        stopClickMonitor()
+        clickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+            guard let self = self else { return event }
+            if event.window !== self.popoverWindow {
+                DispatchQueue.main.async { self.dismissPopover() }
+            }
+            return event
+        }
+    }
+
+    private func stopClickMonitor() {
+        if let m = clickMonitor {
+            NSEvent.removeMonitor(m)
+            clickMonitor = nil
+        }
     }
 
     private func dismissPopover() {
+        stopClickMonitor()
         pendingPopoverWorkItem?.cancel()
         pendingPopoverWorkItem = nil
         popoverWindow?.close()
