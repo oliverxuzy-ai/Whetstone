@@ -32,23 +32,36 @@ targets:
       - path: Whetstone
         excludes:
           - "**/*.entitlements"
+          - "**/Info.plist"     # xcodegen 生成的 Info.plist 不当 source 编进 bundle
     dependencies:
       - package: KeychainAccess
       - package: Sparkle
+    # 用 xcodegen 显式生成 Info.plist (而不是 GENERATE_INFOPLIST_FILE),
+    # 因为 Sparkle 的 SUFeedURL / SUPublicEDKey 是自定义 key,Xcode 的
+    # INFOPLIST_KEY_* 机制只认 Apple 已知的 key,自定义会被静默丢弃 →
+    # 之前 v0.4.0 的 Info.plist 缺这两个,Sparkle 报 "Update Error: must
+    # specify SUFeedURL"。
+    info:
+      path: Whetstone/Info.plist
+      properties:
+        LSApplicationCategoryType: public.app-category.education
+        CFBundleDisplayName: Whetstone
+        # 版本必须引用 build setting (而不是 xcodegen 的默认硬编 "1.0"),
+        # 这样 CI 里 sync-version.sh 改 MARKETING_VERSION 就能传到 plist,
+        # Sparkle 才能正确对比当前 vs appcast 版本。
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        # Sparkle 自动更新 — appcast 跟 DMG 一起作为 GH release asset 发布。
+        # 公钥用于校验下载的 DMG 没被中间人改过;私钥仅在 GH Actions secret。
+        SUFeedURL: https://github.com/oliverxuzy-ai/Whetstone/releases/latest/download/appcast.xml
+        SUPublicEDKey: YD2eyoshST6Rpttk+WhHAglopfGEk/If/Di92omJhhc=
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.zhengyangxu.whetstone
         PRODUCT_NAME: Whetstone
         ENABLE_HARDENED_RUNTIME: YES
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.education
-        INFOPLIST_KEY_NSHumanReadableCopyright: ""
-        INFOPLIST_KEY_CFBundleDisplayName: Whetstone
-        INFOPLIST_KEY_NSAppTransportSecurity: "{NSAllowsArbitraryLoads = YES;}"
-        # Sparkle 自动更新 — appcast 跟 DMG 一起作为 GH release asset 发布。
-        # 公钥用于校验下载的 DMG 没被中间人改过;私钥仅在 GH Actions secret。
-        INFOPLIST_KEY_SUFeedURL: https://github.com/oliverxuzy-ai/Whetstone/releases/latest/download/appcast.xml
-        INFOPLIST_KEY_SUPublicEDKey: YD2eyoshST6Rpttk+WhHAglopfGEk/If/Di92omJhhc=
         CODE_SIGN_ENTITLEMENTS: Whetstone/Whetstone.entitlements
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
