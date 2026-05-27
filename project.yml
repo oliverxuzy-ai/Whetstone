@@ -19,6 +19,9 @@ packages:
   KeychainAccess:
     url: https://github.com/kishikawakatsumi/KeychainAccess
     from: "4.2.2"
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.6.0"
 
 targets:
   Whetstone:
@@ -31,6 +34,7 @@ targets:
           - "**/*.entitlements"
     dependencies:
       - package: KeychainAccess
+      - package: Sparkle
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.zhengyangxu.whetstone
@@ -41,6 +45,10 @@ targets:
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
         INFOPLIST_KEY_CFBundleDisplayName: Whetstone
         INFOPLIST_KEY_NSAppTransportSecurity: "{NSAllowsArbitraryLoads = YES;}"
+        # Sparkle 自动更新 — appcast 跟 DMG 一起作为 GH release asset 发布。
+        # 公钥用于校验下载的 DMG 没被中间人改过;私钥仅在 GH Actions secret。
+        INFOPLIST_KEY_SUFeedURL: https://github.com/oliverxuzy-ai/Whetstone/releases/latest/download/appcast.xml
+        INFOPLIST_KEY_SUPublicEDKey: YD2eyoshST6Rpttk+WhHAglopfGEk/If/Di92omJhhc=
         CODE_SIGN_ENTITLEMENTS: Whetstone/Whetstone.entitlements
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"

@@ -10,6 +10,7 @@
 		1CA2588485F71078766F2DA4 /* Concept.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CE28E7D452F0535902E8DF0 /* Concept.swift */; };
 		21ADCF5233BF01DEDACE7E8B /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 572ED605203604B509234AB5 /* LibraryView.swift */; };
 		2D31503655A5CE949308E619 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FFC365912AAB6D21D57E62B /* Colors.swift */; };
+		30E830D81A664CEE3CFD6D19 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 6735A56D04DB2339F919E8AC /* Sparkle */; };
 		31707DEF6FE69074388BB400 /* Buttons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10F4CCB783DA27E190848B5B /* Buttons.swift */; };
 		4D4347A0BAAC2F67DDD377D9 /* SelectionActionPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB791305B6ED41DBB4961CB1 /* SelectionActionPopover.swift */; };
 		4F3A4743890093F1CE4420BC /* BrutalistTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55201CB2A7C87A616B775EBF /* BrutalistTextView.swift */; };
@@ -74,6 +75,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B84FD7032C0C7C60A8B3E537 /* KeychainAccess in Frameworks */,
+				30E830D81A664CEE3CFD6D19 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -204,6 +206,7 @@
 			name = Whetstone;
 			packageProductDependencies = (
 				55D5E77953E70815D202EB8A /* KeychainAccess */,
+				6735A56D04DB2339F919E8AC /* Sparkle */,
 			);
 			productName = Whetstone;
 			productReference = DEBED77120E4C0DFFCC0DDA4 /* Whetstone.app */;
@@ -235,6 +238,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				616240A4D1538090894098EF /* XCRemoteSwiftPackageReference "KeychainAccess" */,
+				CBA9AA904683F04CC07A63FF /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F2F6481CEA8CE48EF99A962F /* Products */;
@@ -309,6 +313,9 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_NSAppTransportSecurity = "{NSAllowsArbitraryLoads = YES;}";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_SUEnableAutomaticChecks = YES;
+				INFOPLIST_KEY_SUFeedURL = "https://github.com/oliverxuzy-ai/Whetstone/releases/latest/download/appcast.xml";
+				INFOPLIST_KEY_SUPublicEDKey = "YD2eyoshST6Rpttk+WhHAglopfGEk/If/Di92omJhhc=";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -462,6 +469,9 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_NSAppTransportSecurity = "{NSAllowsArbitraryLoads = YES;}";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_SUEnableAutomaticChecks = YES;
+				INFOPLIST_KEY_SUFeedURL = "https://github.com/oliverxuzy-ai/Whetstone/releases/latest/download/appcast.xml";
+				INFOPLIST_KEY_SUPublicEDKey = "YD2eyoshST6Rpttk+WhHAglopfGEk/If/Di92omJhhc=";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -507,6 +517,14 @@
 				minimumVersion = 4.2.2;
 			};
 		};
+		CBA9AA904683F04CC07A63FF /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.6.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -514,6 +532,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 616240A4D1538090894098EF /* XCRemoteSwiftPackageReference "KeychainAccess" */;
 			productName = KeychainAccess;
+		};
+		6735A56D04DB2339F919E8AC /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CBA9AA904683F04CC07A63FF /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

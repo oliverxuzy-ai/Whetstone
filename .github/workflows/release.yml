@@ -96,6 +96,66 @@ jobs:
             --app-drop-link 425 200 \
             "Whetstone-${{ steps.ver.outputs.version }}.dmg" "$app"
 
+      # Sparkle 自动更新链路:
+      # 1. 下载官方 Sparkle release tarball,拿到 sign_update 工具
+      # 2. 用 GH secret 里的 EdDSA 私钥签 DMG → 得到 signature + length
+      # 3. 写 appcast.xml(单条 item, 指向本次 release 的 DMG)
+      # 4. appcast.xml 跟 DMG 一起作为 release asset 上传
+      # App 端: Info.plist 里的 SUFeedURL 指向
+      # github.com/.../releases/latest/download/appcast.xml,GH 始终把它解析到最新
+      # release 的同名 asset。Sparkle 拉到 appcast,对比 sparkle:version(= build
+      # number = git commit count)和当前 bundle version,有新就提示用户更新。
+      - name: Sign DMG + write appcast.xml
+        if: steps.ver.outputs.should_release == 'true'
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
+            echo "::error::SPARKLE_PRIVATE_KEY secret not set — auto-update will fail signature verification."
+            exit 1
+          fi
+          curl -sSL -o sparkle.tar.xz \
+            "https://github.com/sparkle-project/Sparkle/releases/download/2.6.4/Sparkle-2.6.4.tar.xz"
+          mkdir -p sparkle-tools && tar -xJf sparkle.tar.xz -C sparkle-tools
+          SIGN=sparkle-tools/bin/sign_update
+
+          dmg="Whetstone-${{ steps.ver.outputs.version }}.dmg"
+          # sign_update 输出格式: sparkle:edSignature="..." length="..."
+          # `-f -` 从 stdin 读私钥 → 不落盘
+          sig_attrs=$(printf '%s' "$SPARKLE_PRIVATE_KEY" | "$SIGN" -f - "$dmg")
+          echo "signed: $sig_attrs"
+
+          build_no=$(git rev-list --count HEAD)
+          version="${{ steps.ver.outputs.version }}"
+          tag="${{ steps.ver.outputs.tag }}"
+          pub_date=$(LC_ALL=C date -u +"%a, %d %b %Y %H:%M:%S +0000")
+          repo="${GITHUB_REPOSITORY}"
+
+          cat > appcast.xml <<EOF
+          <?xml version="1.0" standalone="yes"?>
+          <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+            <channel>
+              <title>Whetstone</title>
+              <link>https://github.com/${repo}</link>
+              <description>Whetstone update feed</description>
+              <language>en</language>
+              <item>
+                <title>${tag}</title>
+                <pubDate>${pub_date}</pubDate>
+                <sparkle:version>${build_no}</sparkle:version>
+                <sparkle:shortVersionString>${version}</sparkle:shortVersionString>
+                <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+                <description><![CDATA[<p>Release notes: <a href="https://github.com/${repo}/releases/tag/${tag}">${tag}</a></p>]]></description>
+                <enclosure url="https://github.com/${repo}/releases/download/${tag}/${dmg}"
+                           ${sig_attrs}
+                           type="application/octet-stream"/>
+              </item>
+            </channel>
+          </rss>
+          EOF
+          echo "--- appcast.xml ---"
+          cat appcast.xml
+
       - name: Publish public release
         if: steps.ver.outputs.should_release == 'true'
         uses: softprops/action-gh-release@v2
@@ -107,5 +167,7 @@ jobs:
           prerelease: false
           make_latest: true
           generate_release_notes: true  # notes auto-built from commits
-          files: "Whetstone-*.dmg"
+          files: |
+            Whetstone-*.dmg
+            appcast.xml
           fail_on_unmatched_files: true

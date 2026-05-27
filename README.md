@@ -22,6 +22,8 @@ Grab the latest **`Whetstone-x.y.z.dmg`** from **[Releases](https://github.com/o
 2. Drag `Whetstone.app` into `/Applications`.
 3. **First launch:** right-click `Whetstone.app` → *Open* → *Open* (the build is ad-hoc signed, not notarized, so Gatekeeper needs an explicit "I know what I'm doing" the first time).
 
+**Auto-update.** Whetstone checks for new releases automatically via [Sparkle](https://sparkle-project.org/) (EdDSA-signed `appcast.xml` hosted on the latest GitHub release). When a newer version is available the app shows a standard "An update is available" dialog. Manual trigger: *Whetstone* menu → *Check for Updates…*.
+
 ---
 
 ## Why
@@ -50,6 +52,7 @@ Existing tools (Pocket, Readwise, Recall) optimize for **capture** and surface-l
 - **WKWebView + [Mozilla Readability.js](https://github.com/mozilla/readability)** for article extraction
 - **NSTextView body** with custom selection color + floating selection popover for highlights
 - **[KeychainAccess](https://github.com/kishikawakatsumi/KeychainAccess)** for API-key storage
+- **[Sparkle 2](https://sparkle-project.org/)** for auto-update (EdDSA-signed appcast served from GH Releases)
 - **Brutalist editorial aesthetic** — warm cream `#EFECE5` + sage `#C5D2D3`, 0 border-radius, no shadows
 
 Project is generated from `project.yml` via [xcodegen](https://github.com/yonaskolb/XcodeGen).
@@ -88,6 +91,8 @@ In Xcode: ⌘R to build and run.
 Every push to `main` runs `.github/workflows/release.yml`. The workflow derives the next semver tag from conventional commits since the last `vX.Y.Z` tag (`feat:` → minor, `fix:` → patch, anything else → no release), syncs the version into `project.yml`, builds an ad-hoc-signed `.dmg`, and publishes a public GitHub release. A major bump is manual: *Actions* → *Release* → *Run workflow* → `bump=major`.
 
 Source of truth for the version string is the [`VERSION`](./VERSION) file at repo root. Don't edit `MARKETING_VERSION` in `project.yml` by hand — `scripts/sync-version.sh` regenerates it on every CI run.
+
+Each release also publishes an `appcast.xml` asset, EdDSA-signed with the key in the `SPARKLE_PRIVATE_KEY` GH secret. Sparkle in the app pulls `releases/latest/download/appcast.xml` and verifies the signature before installing.
 
 ## Project documents
 
