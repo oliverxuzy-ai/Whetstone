@@ -15,16 +15,156 @@ enum MarkdownToAttributed {
     private static let h2Font = NSFont.systemFont(ofSize: 24, weight: .medium)
     private static let h3Font = NSFont.systemFont(ofSize: 19, weight: .medium)
     private static let textColor = NSColor(srgbRed: 0x1A/255, green: 0x1A/255, blue: 0x1A/255, alpha: 1)
+    /// 中文译文用次要色 (跟 Theme.textSecondary 对齐), 视觉上跟英文原文分层。
+    private static let translationColor = NSColor(srgbRed: 0x5C/255, green: 0x5C/255, blue: 0x5C/255, alpha: 1)
     /// Per design spec: rgba(216, 198, 106, 0.45) bg, #171717 text.
     private static let highlightBG = NSColor(srgbRed: 216/255, green: 198/255, blue: 106/255, alpha: 0.45)
     private static let highlightFG = NSColor(srgbRed: 0x17/255, green: 0x17/255, blue: 0x17/255, alpha: 1)
 
+    /// 段落切分: 跟翻译流水线共享的唯一切分入口。
+    /// Bilingual 模式翻译数组按这个切分结果 1:1 对齐。
+    static func paragraphs(from text: String) -> [String] {
+        let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
+        return splitOnBlankLines(normalized)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                     .replacingOccurrences(of: "\n", with: " ") }
+            .filter { !$0.isEmpty }
+    }
+
     static func attributedBody(from text: String,
                                isEnhanced: Bool,
-                               highlights: [Highlight]) -> NSAttributedString {
+                               highlights: [Highlight],
+                               translation: [String]? = nil,
+                               showBilingual: Bool = false) -> NSAttributedString {
+        // 双语模式: 只在有对齐翻译时启用; 否则降级到原文渲染。
+        // Enhanced (markdown) 模式下也走 plain 双语渲染 —— v0 不在双语里维持标题层级,
+        // 主要为了对齐简单 + 高亮 char 映射可控。
+        if showBilingual, let translation, !translation.isEmpty {
+            return bilingual(text: text, translation: translation, highlights: highlights)
+        }
         let body = isEnhanced ? enhanced(text) : plain(text)
         apply(highlights: highlights, to: body, originalText: text)
         return body
+    }
+
+    // MARK: - Bilingual path
+
+    /// 拼装规则:
+    ///   for each i:  EN_i + "\n" (paragraph terminator)
+    ///                ZH_i + "\n"
+    /// EN 段落间靠 paragraphSpacing 拉开,EN→ZH 内部用更小的 paragraphSpacing 拉近
+    /// (视觉上让 EN+ZH 看起来是一组)。
+    ///
+    /// Highlights 是用户在「仅原文」模式下保存的, charStart/charEnd 是在那个
+    /// EN-only 渲染串里的位置。我们边拼边记录:
+    ///   - enRangesInEnOnly[i]: 第 i 段在 EN-only 渲染串里的 range (highlights 的坐标系)
+    ///   - enRangesRendered[i]: 第 i 段在双语渲染串里的 range
+    /// 然后对每个 highlight,定位到所属段落 → 算段内 offset → 平移到 rendered。
+    private static func bilingual(text: String, translation: [String], highlights: [Highlight]) -> NSAttributedString {
+        let enParas = paragraphs(from: text)
+        let n = min(enParas.count, translation.count)
+
+        let pairStyle = NSMutableParagraphStyle()
+        pairStyle.lineSpacing = 6
+        pairStyle.paragraphSpacing = 6        // EN→ZH 之间的小间距
+
+        let groupStyle = NSMutableParagraphStyle()
+        groupStyle.lineSpacing = 6
+        groupStyle.paragraphSpacing = 18      // 一组 (EN+ZH) 跟下一组之间的大间距
+
+        let result = NSMutableAttributedString()
+        var enRangesInEnOnly: [NSRange] = []
+        var enRangesRendered: [NSRange] = []
+        var enOnlyCursor = 0
+
+        for i in 0..<n {
+            let en = enParas[i]
+            let zh = translation[i]
+            let isLast = (i == n - 1) && (enParas.count == n)
+
+            // EN: 用 pairStyle (跟下面 ZH 之间拉近)
+            let enAttr: [NSAttributedString.Key: Any] = [
+                .font: bodyFont,
+                .foregroundColor: textColor,
+                .paragraphStyle: pairStyle
+            ]
+            let enStart = result.length
+            result.append(NSAttributedString(string: en + "\n", attributes: enAttr))
+            enRangesRendered.append(NSRange(location: enStart, length: (en as NSString).length))
+            enRangesInEnOnly.append(NSRange(location: enOnlyCursor, length: (en as NSString).length))
+            enOnlyCursor += (en as NSString).length + 1  // +1 = "\n" terminator in EN-only render
+
+            // ZH: 最后一段用 pairStyle (页面尾不需要大间距);其他用 groupStyle (跟下组拉开)
+            let zhStyle = isLast ? pairStyle : groupStyle
+            let zhAttr: [NSAttributedString.Key: Any] = [
+                .font: bodyFont,
+                .foregroundColor: translationColor,
+                .paragraphStyle: zhStyle
+            ]
+            result.append(NSAttributedString(string: zh + "\n", attributes: zhAttr))
+        }
+
+        // 翻译数组不足 (count < enParas.count): 后续 EN 段照常拼,不带 ZH。
+        for i in n..<enParas.count {
+            let en = enParas[i]
+            let style = (i == enParas.count - 1) ? pairStyle : groupStyle
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: bodyFont,
+                .foregroundColor: textColor,
+                .paragraphStyle: style
+            ]
+            let enStart = result.length
+            result.append(NSAttributedString(string: en + "\n", attributes: attrs))
+            enRangesRendered.append(NSRange(location: enStart, length: (en as NSString).length))
+            enRangesInEnOnly.append(NSRange(location: enOnlyCursor, length: (en as NSString).length))
+            enOnlyCursor += (en as NSString).length + 1
+        }
+
+        applyBilingualHighlights(
+            highlights,
+            enRangesInEnOnly: enRangesInEnOnly,
+            enRangesRendered: enRangesRendered,
+            body: result
+        )
+        return result
+    }
+
+    private static func applyBilingualHighlights(_ highlights: [Highlight],
+                                                 enRangesInEnOnly: [NSRange],
+                                                 enRangesRendered: [NSRange],
+                                                 body: NSMutableAttributedString) {
+        for h in highlights {
+            let saved = NSRange(location: h.charStart, length: max(0, h.charEnd - h.charStart))
+            guard saved.length > 0 else { continue }
+            // 找包含整个 highlight 的 EN 段 (不跨段)
+            let paraIdx = enRangesInEnOnly.firstIndex { para in
+                saved.location >= para.location &&
+                (saved.location + saved.length) <= (para.location + para.length)
+            }
+            if let i = paraIdx {
+                let offsetInPara = saved.location - enRangesInEnOnly[i].location
+                let renderedLoc = enRangesRendered[i].location + offsetInPara
+                guard renderedLoc + saved.length <= body.length else { continue }
+                body.addAttributes([
+                    .backgroundColor: highlightBG,
+                    .foregroundColor: highlightFG
+                ], range: NSRange(location: renderedLoc, length: saved.length))
+                continue
+            }
+            // 跨段 / 越界 → 在 EN 段范围内按 selectedText 兜底搜一下
+            guard !h.selectedText.isEmpty else { continue }
+            for r in enRangesRendered {
+                let ns = body.string as NSString
+                let found = ns.range(of: h.selectedText, options: [], range: r)
+                if found.location != NSNotFound {
+                    body.addAttributes([
+                        .backgroundColor: highlightBG,
+                        .foregroundColor: highlightFG
+                    ], range: found)
+                    break
+                }
+            }
+        }
     }
 
     // MARK: - Plain path (no markdown)

@@ -73,6 +73,36 @@ enum Prompts {
         """
     }
 
+    // MARK: - Bilingual translation (Reader → 中译按钮)
+
+    /// 翻译 system: 严格 JSON 对齐, 段落数必须等同输入。
+    static let bilingualTranslationSystem: String = """
+    你是一位专业翻译, 把英文文章逐段翻译成简体中文。
+
+    输入是 JSON 数组 (string[]),每项是文章的一段。
+    输出是相同长度的 JSON 数组 (string[]),index 严格对齐:
+    output[i] 必须是 input[i] 的中文翻译。
+
+    规则:
+    - 忠实于原文,不省略不总结不解释,不要加任何额外的话
+    - 通顺地道,符合中文表达习惯
+    - 技术术语 / 人名 / 产品名 / 专业名词保留英文原文 (可在括号补简短中文注解,不强制)
+    - 引语保持引号格式,数字 / 单位 / URL 原样保留
+    - 段落数严格等于输入,不要合并也不要拆分
+
+    输出严格 JSON,不要 markdown 代码块,不要任何前后缀。
+    """
+
+    static func bilingualTranslationUser(paragraphs: [String]) -> String {
+        let json = (try? JSONSerialization.data(withJSONObject: paragraphs))
+            .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
+        return """
+        把以下英文段落翻译成简体中文。返回相同长度的 JSON 数组,index 严格对应。
+
+        \(json)
+        """
+    }
+
     // MARK: - Layout enhancement (toggled in Settings)
 
     /// System: typography editor persona, strict preservation rules.

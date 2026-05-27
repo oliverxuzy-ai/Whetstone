@@ -8,6 +8,8 @@ struct ArticleBodyView: NSViewRepresentable {
     let text: String
     let isLayoutEnhanced: Bool
     let highlights: [Highlight]
+    var translation: [String]? = nil
+    var showBilingual: Bool = false
     let onAddHighlight: (NSRange, String) -> Void
 
     func makeNSView(context: Context) -> BrutalistTextView {
@@ -31,7 +33,9 @@ struct ArticleBodyView: NSViewRepresentable {
         let attr = MarkdownToAttributed.attributedBody(
             from: text,
             isEnhanced: isLayoutEnhanced,
-            highlights: highlights
+            highlights: highlights,
+            translation: translation,
+            showBilingual: showBilingual
         )
         if tv.attributedString() != attr {
             tv.textStorage?.setAttributedString(attr)

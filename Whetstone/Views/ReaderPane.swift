@@ -10,6 +10,9 @@ struct ReaderPane: View {
 
     @State private var hoveredConceptIdx: Int? = nil
     @State private var tab: ReaderTab = .article
+    @State private var showBilingual: Bool = false
+    @State private var isTranslating: Bool = false
+    @State private var translationError: String? = nil
 
     private enum ReaderTab { case article, concepts }
 
@@ -39,6 +42,14 @@ struct ReaderPane: View {
             }
         }
         .background(Theme.bgCream)
+        .alert("翻译失败", isPresented: Binding(
+            get: { translationError != nil },
+            set: { if !$0 { translationError = nil } }
+        )) {
+            Button("好") { translationError = nil }
+        } message: {
+            Text(translationError ?? "")
+        }
     }
 
     /// Body column scales with the Reader pane's width. Capped at 1100pt so
@@ -67,6 +78,9 @@ struct ReaderPane: View {
 
             Spacer()
 
+            // 翻译按钮: 切换 EN ↔ 中英对照。第一次点会调 OpenAI 翻译,之后用缓存。
+            translateButton
+
             // Search button (placeholder — wires up in v1)
             Button(action: {}) {
                 Image(systemName: "magnifyingglass")
@@ -81,6 +95,70 @@ struct ReaderPane: View {
         .padding(.horizontal, 32)
         .padding(.top, 16 + Theme.titlebarInset)
         .padding(.bottom, 16)
+    }
+
+    @ViewBuilder
+    private var translateButton: some View {
+        let hint: String = showBilingual
+            ? "切回原文"
+            : (article.translatedParagraphs != nil ? "中英对照" : "翻译成中文 (中英对照)")
+        if showBilingual {
+            Button(action: toggleTranslation) { translateButtonLabel }
+                .buttonStyle(BrutalistFilledStyle())
+                .disabled(isTranslating || article.content.isEmpty)
+                .help(hint)
+        } else {
+            Button(action: toggleTranslation) { translateButtonLabel }
+                .buttonStyle(BrutalistRaisedStyle())
+                .disabled(isTranslating || article.content.isEmpty)
+                .help(hint)
+        }
+    }
+
+    private var translateButtonLabel: some View {
+        ZStack {
+            Image(systemName: "character.bubble")
+                .font(.system(size: 16))
+                .foregroundStyle(showBilingual ? Theme.bgCream : Theme.textPrimary)
+                .opacity(isTranslating ? 0 : 1)
+            if isTranslating {
+                ProgressView().controlSize(.small)
+            }
+        }
+        .frame(width: 40, height: 40)
+    }
+
+    /// 三个状态:
+    ///   - 已经在双语模式 → 切回纯原文
+    ///   - 有缓存翻译,在纯原文 → 切到双语
+    ///   - 没缓存翻译 → 调 OpenAI,持久化,然后切到双语
+    private func toggleTranslation() {
+        if showBilingual {
+            showBilingual = false
+            return
+        }
+        if article.translatedParagraphs != nil {
+            showBilingual = true
+            return
+        }
+        guard !isTranslating else { return }
+        let paragraphs = MarkdownToAttributed.paragraphs(from: article.content)
+        guard !paragraphs.isEmpty else {
+            translationError = "文章内容为空,没东西可翻译。"
+            return
+        }
+        isTranslating = true
+        Task { @MainActor in
+            defer { isTranslating = false }
+            do {
+                let zh = try await OpenAIClient.shared.translate(paragraphs: paragraphs)
+                article.setTranslatedParagraphs(zh)
+                try? modelContext.save()
+                showBilingual = true
+            } catch {
+                translationError = error.localizedDescription
+            }
+        }
     }
 
     private func articleBody(bodyWidth: CGFloat) -> some View {
@@ -112,6 +190,8 @@ struct ReaderPane: View {
                 text: article.content,
                 isLayoutEnhanced: article.isLayoutEnhanced,
                 highlights: articleHighlights,
+                translation: article.translatedParagraphs,
+                showBilingual: showBilingual,
                 onAddHighlight: { range, text in addHighlight(range: range, text: text) }
             )
         }

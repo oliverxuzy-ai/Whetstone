@@ -112,6 +112,44 @@ actor OpenAIClient {
         return content
     }
 
+    /// Bilingual translation: 一次性把所有段落传给 GPT-4o,返回与输入 1:1 对齐的中文数组。
+    /// 失败 (count 不齐 / JSON 损坏) → throw,调用方负责 alert + 不落盘。
+    /// 这是一次性大调用 (整篇文章),结果会持久化到 article.translatedParagraphsData,
+    /// 后续切换中英对照模式不会再次调用。
+    func translate(paragraphs: [String]) async throws -> [String] {
+        guard !paragraphs.isEmpty else { return [] }
+
+        // gpt-4o completion 上限 16k。中文 token 密度高于英文,粗略 1 char ≈ 0.5 token,
+        // 保守按英文字符数 × 1.5 估计输出 token,再 + 缓冲。封顶 16k。
+        let estimatedTokens = paragraphs.reduce(0) { $0 + $1.count } * 3 / 2 + 1000
+        let maxTokens = min(16000, max(2048, estimatedTokens))
+
+        let raw = try await send(
+            systemPrompt: Prompts.bilingualTranslationSystem,
+            messages: [.init(role: "user", content: Prompts.bilingualTranslationUser(paragraphs: paragraphs))],
+            maxTokens: maxTokens,
+            cacheArticleContent: nil
+        )
+        return try parseTranslationJSON(raw, expectedCount: paragraphs.count)
+    }
+
+    nonisolated func parseTranslationJSON(_ text: String, expectedCount: Int) throws -> [String] {
+        var cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if cleaned.hasPrefix("```") {
+            if let nl = cleaned.firstIndex(of: "\n") { cleaned = String(cleaned[cleaned.index(after: nl)...]) }
+            if cleaned.hasSuffix("```") { cleaned = String(cleaned.dropLast(3)) }
+            cleaned = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        guard let data = cleaned.data(using: .utf8),
+              let arr = try? JSONSerialization.jsonObject(with: data) as? [String] else {
+            throw OpenAIError.decoding("translation: 返回不是字符串数组. 前 200 字符: \(cleaned.prefix(200))")
+        }
+        guard arr.count == expectedCount else {
+            throw OpenAIError.decoding("translation: 段落数不齐 (got \(arr.count), expected \(expectedCount))")
+        }
+        return arr
+    }
+
     /// Layout enhancement: ask AI to reformat raw extracted text into clean markdown.
     /// Used when Settings → "AI 增强排版" toggle is on. Result is stored back into
     /// Article.content with isLayoutEnhanced=true, so we never re-process.
