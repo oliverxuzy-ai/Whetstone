@@ -8,5 +8,11 @@
 	<true/>
 	<key>com.apple.security.files.user-selected.read-write</key>
 	<true/>
+	<!-- 必需: 我们是 ad-hoc 签名(没 Team ID),没这个 entitlement 则
+	     hardened runtime 拒绝加载 Sparkle.framework(同样 ad-hoc 的非平台库)。
+	     一旦改用真正的 Developer ID 签名 + 同一 Team 内的所有 framework,
+	     可以删掉。 -->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
 </dict>
 </plist>
