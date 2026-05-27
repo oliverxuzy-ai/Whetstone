@@ -186,8 +186,7 @@ struct LibraryView: View {
         if showSettings {
             modalOverlay(onDismiss: { showSettings = false }) {
                 SettingsView(onClose: { showSettings = false })
-                    .frame(width: 540, height: 500)
-                    .clipped()
+                    .frame(width: 600, height: 600)
                     .background(Theme.bgCream)
                     .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
             }

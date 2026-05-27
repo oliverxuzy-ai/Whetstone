@@ -127,7 +127,7 @@ struct SettingsView: View {
                 .buttonStyle(BrutalistFilledStyle())
             }
         }
-        .padding(32)
+        .padding(40)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Theme.bgCream)
         .onAppear(perform: loadValues)
