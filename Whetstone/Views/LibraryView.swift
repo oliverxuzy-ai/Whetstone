@@ -284,59 +284,17 @@ private struct LibraryArticleCard: View {
     @State private var confirmingDelete = false
 
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 0) {
-                // 顶部 score 行 — v0 没 category 字段;有 score 就显示,否则占位保持高度
-                HStack {
-                    if let score = article.latestScore {
-                        Text("SCORE \(score)")
-                            .font(.system(size: 11, weight: .semibold))
-                            .tracking(0.5)
-                            .foregroundStyle(Theme.textSecondary)
-                    } else {
-                        Text(" ").font(.system(size: 11))
-                    }
-                    Spacer()
-                }
-                .padding(.bottom, 8)
-
-                Text(article.title.isEmpty ? article.url : article.title)
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(Theme.textPrimary)
-                    .lineLimit(3)
-                    .multilineTextAlignment(.leading)
-                    .padding(.bottom, 12)
-
-                Text(cardExcerpt)
-                    .font(.system(size: 14))
-                    .lineSpacing(2)
-                    .foregroundStyle(Theme.textSecondary)
-                    .lineLimit(3)
-                    .multilineTextAlignment(.leading)
-                    .padding(.bottom, 24)
-
-                Spacer(minLength: 0)
-
-                HStack(spacing: 12) {
-                    if !article.author.isEmpty {
-                        Rectangle().fill(Theme.textPrimary).frame(width: 24, height: 24)
-                    }
-                    HStack(spacing: 6) {
-                        if !article.author.isEmpty {
-                            Text(article.author)
-                            Text("·")
-                        }
-                        Text("\(article.readingTimeMinutes) min")
-                    }
-                    .font(.system(size: 12))
-                    .foregroundStyle(Theme.textSecondary)
-                }
+        // ZStack + Color.clear: 给 .onHover 一个固定的检测区域。
+        // 之前 .onHover 套在 Button 外, 而 Button 的 .offset 会同时移动 hit-test
+        // 区域 → 鼠标在卡片边缘时,lift 后 cursor 出框 → hovering=false →
+        // 回原位 → cursor 入框 → 死循环闪烁。现在 ZStack 自身 frame 不动,
+        // 视觉 offset 留在内部子 view 里。
+        ZStack(alignment: .topTrailing) {
+            Color.clear
+            Button(action: onTap) {
+                cardContent
             }
-            .padding(24)
-            .frame(maxWidth: .infinity, minHeight: 200, alignment: .leading)
-            .background(Theme.bgCream)
-            .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
-            // 4pt 硬偏移阴影 — 跟 BrutalistRaisedStyle 同语言, hover 时加深
+            .buttonStyle(.plain)
             .background(
                 Rectangle()
                     .fill(Color.black.opacity(hovering ? 0.22 : 0.15))
@@ -344,10 +302,18 @@ private struct LibraryArticleCard: View {
             )
             .offset(x: hovering ? -2 : 0, y: hovering ? -2 : 0)
             .animation(.easeOut(duration: 0.10), value: hovering)
+
+            // 始终渲染删除按钮,只切 opacity / hit-testing —— 避免出现/消失
+            // 时引发的 layout cascade,也是闪烁的次因。
+            deleteButton
+                .opacity(hovering ? 1 : 0)
+                .allowsHitTesting(hovering)
+                .offset(x: hovering ? -2 : 0, y: hovering ? -2 : 0)
+                .animation(.easeOut(duration: 0.10), value: hovering)
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, minHeight: 200)
+        .contentShape(Rectangle())
         .onHover { hovering = $0 }
-        .overlay(alignment: .topTrailing) { deleteButton }
         .contextMenu {
             Button(role: .destructive, action: { confirmingDelete = true }) {
                 Label("删除", systemImage: "trash")
@@ -361,27 +327,76 @@ private struct LibraryArticleCard: View {
         }
     }
 
+    private var cardContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                if let score = article.latestScore {
+                    Text("SCORE \(score)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(0.5)
+                        .foregroundStyle(Theme.textSecondary)
+                } else {
+                    Text(" ").font(.system(size: 11))
+                }
+                Spacer()
+            }
+            .padding(.bottom, 8)
+
+            Text(article.title.isEmpty ? article.url : article.title)
+                .font(.system(size: 20, weight: .medium))
+                .foregroundStyle(Theme.textPrimary)
+                .lineLimit(3)
+                .multilineTextAlignment(.leading)
+                .padding(.bottom, 12)
+
+            Text(cardExcerpt)
+                .font(.system(size: 14))
+                .lineSpacing(2)
+                .foregroundStyle(Theme.textSecondary)
+                .lineLimit(3)
+                .multilineTextAlignment(.leading)
+                .padding(.bottom, 24)
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 12) {
+                if !article.author.isEmpty {
+                    Rectangle().fill(Theme.textPrimary).frame(width: 24, height: 24)
+                }
+                HStack(spacing: 6) {
+                    if !article.author.isEmpty {
+                        Text(article.author)
+                        Text("·")
+                    }
+                    Text("\(article.readingTimeMinutes) min")
+                }
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.textSecondary)
+            }
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, minHeight: 200, alignment: .leading)
+        .background(Theme.bgCream)
+        .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+    }
+
     private var cardExcerpt: String {
         if !article.excerpt.isEmpty { return article.excerpt }
         let trimmed = article.content.trimmingCharacters(in: .whitespacesAndNewlines)
         return String(trimmed.prefix(180))
     }
 
-    @ViewBuilder
     private var deleteButton: some View {
-        if hovering {
-            Button(action: { confirmingDelete = true }) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Theme.textPrimary)
-                    .frame(width: 26, height: 26)
-                    .background(Theme.bgCream)
-                    .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
-            }
-            .buttonStyle(.plain)
-            .padding(10)
-            .transition(.opacity)
+        Button(action: { confirmingDelete = true }) {
+            Image(systemName: "xmark")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Theme.textPrimary)
+                .frame(width: 26, height: 26)
+                .background(Theme.bgCream)
+                .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
         }
+        .buttonStyle(.plain)
+        .padding(10)
     }
 }
 
