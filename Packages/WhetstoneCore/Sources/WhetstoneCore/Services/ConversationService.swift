@@ -175,11 +175,17 @@ public final class ConversationService {
     public func gradeQuiz(_ conversation: Conversation, article: Article, context: ModelContext) async throws -> Int {
         let concepts = (article.concepts ?? []).sorted { $0.orderIndex < $1.orderIndex }
         let names = concepts.map(\.name)
+        guard !names.isEmpty else { return 0 }   // 无概念可考：直接返回，不调用评分员
         let conceptList = Self.conceptListText(article)
         let transcript = (conversation.messages ?? [])
-            .filter { $0.role != .system }
             .sorted { $0.timestamp < $1.timestamp }
-            .map { ($0.role == .user ? "用户: " : "导师: ") + $0.content }
+            .compactMap { msg -> String? in
+                switch msg.role {
+                case .user:   return "用户: " + msg.content
+                case .ai:     return "导师: " + msg.content
+                case .system: return nil   // system 消息不进 transcript，只是元数据
+                }
+            }
             .joined(separator: "\n")
 
         let reply = try await ai.send(

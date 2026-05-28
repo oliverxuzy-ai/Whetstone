@@ -212,7 +212,7 @@ final class ConversationServiceTests: XCTestCase {
 
         let total = try await svc.gradeQuiz(conv, article: article, context: ctx)
 
-        // A=100, B=(2+2+0)/12*100=33 -> mean(100,33)=66.5 -> 67
+        // A(2,2,2)=100；B(2,1,0)=(2×1+1×2+0×3)/12×100=33 -> mean(100,33)=66.5 -> 67
         XCTAssertEqual(total, 67)
         XCTAssertEqual(conv.score, 67)
         XCTAssertEqual(article.latestScore, 67)
