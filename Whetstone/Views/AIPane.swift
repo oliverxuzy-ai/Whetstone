@@ -201,7 +201,10 @@ struct AIPane: View {
             messages.append(result.aiMessage)
 
             if case .quiz = kind { quizActive = true; quizCurrentConcept = 1 }
-            if let n = result.quizCurrentConcept { quizCurrentConcept = n }
+            if let n = result.quizCurrentConcept {
+                let total = article.concepts?.count ?? n
+                quizCurrentConcept = min(max(n, 1), max(total, 1))
+            }
             if result.quizDone {
                 quizActive = false
                 await gradeQuiz(result.conversation)

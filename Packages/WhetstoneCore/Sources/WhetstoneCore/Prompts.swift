@@ -1,7 +1,10 @@
 import Foundation
 
-/// Validated prompts (P1 PASS 2026-05-24).
-/// 这些 prompt 是用户手测通过的版本, 改它之前先重测 P1。
+/// Prompt definitions. P1 manual-validation status:
+/// - Concept extraction & explanation/persona prompts: P1 PASS 2026-05-24.
+/// - Socratic quiz v2 (socraticTutorSystem/socraticTutorUser/graderSystem/graderUser),
+///   added 2026-05-28: automated tests green; P1 manual retest PENDING (see CLAUDE.md prompt change log).
+/// 改任何 prompt 前先重测 P1。
 public enum Prompts {
 
     /// 系统级 persona, 注入到每次请求的 system message。
