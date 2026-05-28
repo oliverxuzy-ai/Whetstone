@@ -79,4 +79,21 @@ public enum BilingualMapper {
         let renderedLoc = mapping.enRangesRendered[i].location + offsetInPara
         return NSRange(location: renderedLoc, length: saved.length)
     }
+
+    /// True when the stored char range still matches the stored selectedText in the
+    /// given source text (UTF-16 offsets). Used to detect stale highlight offsets
+    /// after content drift — when false, callers should fall back to substring search.
+    ///
+    /// Offsets are NSString / UTF-16 to match how highlights are stored elsewhere
+    /// (see MarkdownToAttributed.resolveRange / BilingualMapper.mappedRange).
+    /// Returns false for an empty selectedText (nothing to validate against → force
+    /// the substring-search fallback) and for any out-of-bounds or non-positive range.
+    public static func storedRangeIsValid(charStart: Int, charEnd: Int, selectedText: String, in source: String) -> Bool {
+        guard !selectedText.isEmpty else { return false }
+        guard charStart >= 0, charEnd > charStart else { return false }
+        let ns = source as NSString
+        guard charEnd <= ns.length else { return false }
+        let slice = ns.substring(with: NSRange(location: charStart, length: charEnd - charStart))
+        return slice == selectedText
+    }
 }

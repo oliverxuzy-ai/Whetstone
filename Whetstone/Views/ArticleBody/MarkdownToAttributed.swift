@@ -68,6 +68,11 @@ enum MarkdownToAttributed {
         // (每段 EN + "\n", 配对段后接 ZH + "\n")。
         let mapping = BilingualMapper.ranges(enParagraphs: enParas, translation: translation)
 
+        // 高亮 offset 校验用的 "EN-only" 源串: 跟 enRangesInEnOnly 坐标系一致
+        // (每段 EN + "\n", 背靠背)。highlights 的 charStart/charEnd 是存在这个坐标系里的。
+        // 内容漂移 (AI 排版改写 article.content) 后, 这个串变了, 存的 offset 就过期了。
+        let enOnlySource = enParas.map { $0 + "\n" }.joined()
+
         let pairStyle = NSMutableParagraphStyle()
         pairStyle.lineSpacing = 6
         pairStyle.paragraphSpacing = 6        // EN→ZH 之间的小间距
@@ -113,16 +118,28 @@ enum MarkdownToAttributed {
             result.append(NSAttributedString(string: en + "\n", attributes: attrs))
         }
 
-        applyBilingualHighlights(highlights, mapping: mapping, body: result)
+        applyBilingualHighlights(highlights, mapping: mapping, enOnlySource: enOnlySource, body: result)
         return result
     }
 
     private static func applyBilingualHighlights(_ highlights: [Highlight],
                                                  mapping: BilingualMapper.Mapping,
+                                                 enOnlySource: String,
                                                  body: NSMutableAttributedString) {
         for h in highlights {
+            // 先校验存的 offset 在当前 EN-only 源串里是否还指向 selectedText。
+            // 内容漂移后 offset 会过期 (指向错误字符) —— 这时跳过映射路径, 直接走
+            // selectedText 兜底搜索, 避免高亮错的 span (Bug #2)。
+            let offsetsStillValid = BilingualMapper.storedRangeIsValid(
+                charStart: h.charStart,
+                charEnd: h.charEnd,
+                selectedText: h.selectedText,
+                in: enOnlySource)
+
             // 主路径: 纯映射 (定位段落 + 平移 offset)。WhetstoneCore.BilingualMapper 已单测。
-            if let renderedRange = BilingualMapper.mappedRange(charStart: h.charStart,
+            // 仅在 offset 仍有效时信任它。
+            if offsetsStillValid,
+               let renderedRange = BilingualMapper.mappedRange(charStart: h.charStart,
                                                               charEnd: h.charEnd,
                                                               mapping: mapping) {
                 // body.length 越界保护留在 app 层 (依赖已拼好的串长度)。
@@ -285,12 +302,14 @@ enum MarkdownToAttributed {
 
     private static func resolveRange(for h: Highlight, in text: String) -> NSRange? {
         let ns = text as NSString
-        let len = ns.length
-        // 1. Try the saved offsets first.
-        if h.charStart >= 0, h.charEnd <= len, h.charStart < h.charEnd {
-            let candidate = NSRange(location: h.charStart, length: h.charEnd - h.charStart)
-            let slice = ns.substring(with: candidate)
-            if slice == h.selectedText { return candidate }
+        // 1. Try the saved offsets first — only if they still match the snapshot.
+        //    storedRangeIsValid 是 WhetstoneCore 里的纯函数 (单测覆盖), 跟双语路径共用同一套
+        //    漂移检测逻辑 (Bug #2)。
+        if BilingualMapper.storedRangeIsValid(charStart: h.charStart,
+                                              charEnd: h.charEnd,
+                                              selectedText: h.selectedText,
+                                              in: text) {
+            return NSRange(location: h.charStart, length: h.charEnd - h.charStart)
         }
         // 2. Fall back to a single-occurrence text match.
         guard !h.selectedText.isEmpty else { return nil }
