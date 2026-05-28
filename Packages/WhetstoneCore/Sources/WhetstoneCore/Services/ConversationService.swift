@@ -166,6 +166,62 @@ public final class ConversationService {
         )
     }
 
+    // MARK: - Grade (独立评分员)
+
+    /// 全部概念问完后调用：把概念清单 + transcript 交给 temp 0 评分员，解析结构化分，
+    /// 用 ScoreCalculator 聚合成总分，落 ConceptScore 明细 + conversation/article 总分。
+    /// 评分员 JSON 坏 / 数量对不齐 / 调用失败 → throw，不落分。
+    @discardableResult
+    public func gradeQuiz(_ conversation: Conversation, article: Article, context: ModelContext) async throws -> Int {
+        let concepts = (article.concepts ?? []).sorted { $0.orderIndex < $1.orderIndex }
+        let names = concepts.map(\.name)
+        let conceptList = Self.conceptListText(article)
+        let transcript = (conversation.messages ?? [])
+            .filter { $0.role != .system }
+            .sorted { $0.timestamp < $1.timestamp }
+            .map { ($0.role == .user ? "用户: " : "导师: ") + $0.content }
+            .joined(separator: "\n")
+
+        let reply = try await ai.send(
+            systemPrompt: Prompts.graderSystem,
+            messages: [AIMessage(role: "user", content: Prompts.graderUser(conceptList: conceptList, transcript: transcript))],
+            maxTokens: 1500,
+            temperature: 0,
+            cacheArticleContent: nil
+        )
+
+        let rows = try ResponseParser.conceptScores(reply, expectedConcepts: names)
+
+        var percents: [Int] = []
+        for (idx, row) in rows.enumerated() {
+            let cs = ConceptScore(
+                concept: row.concept,
+                recall: row.recall,
+                apply: row.apply,
+                analyze: row.analyze,
+                note: row.note,
+                orderIndex: idx,
+                conversation: conversation
+            )
+            context.insert(cs)
+            percents.append(ScoreCalculator.conceptPercent(recall: row.recall, apply: row.apply, analyze: row.analyze))
+        }
+
+        let total = ScoreCalculator.totalScore(percents)
+        conversation.score = total
+        conversation.endedAt = Date()
+        article.latestScore = total
+
+        do {
+            try context.save()
+        } catch {
+            Log.persistence.error("ConversationService.gradeQuiz save failed: \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
+
+        return total ?? 0
+    }
+
     /// 概念清单文本: "1. 名 — 解释" 每行一个，按 orderIndex 排序。
     static func conceptListText(_ article: Article) -> String {
         let concepts = (article.concepts ?? []).sorted { $0.orderIndex < $1.orderIndex }
