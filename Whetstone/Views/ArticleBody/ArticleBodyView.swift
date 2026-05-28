@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import WhetstoneCore
 
 /// SwiftUI wrapper around BrutalistTextView. Sized via sizeThatFits so the
 /// parent ScrollView in ReaderPane can scroll the whole body — the textview

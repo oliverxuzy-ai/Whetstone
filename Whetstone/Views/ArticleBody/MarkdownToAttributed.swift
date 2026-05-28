@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import WhetstoneCore
 
 /// Builds an NSAttributedString for the article body, supporting:
 /// - Plain paragraphs (split on blank lines) when `isEnhanced == false`

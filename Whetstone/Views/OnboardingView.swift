@@ -1,4 +1,5 @@
 import SwiftUI
+import WhetstoneCore
 
 struct OnboardingView: View {
     let onComplete: (String, String) -> Void

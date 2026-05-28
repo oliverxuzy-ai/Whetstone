@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WhetstoneCore
 
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
