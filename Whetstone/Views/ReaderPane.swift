@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WhetstoneCore
 
 struct ReaderPane: View {
     let article: Article
@@ -151,7 +152,7 @@ struct ReaderPane: View {
         Task { @MainActor in
             defer { isTranslating = false }
             do {
-                let zh = try await OpenAIClient.shared.translate(paragraphs: paragraphs)
+                let zh = try await AIClientProvider.shared.translate(paragraphs: paragraphs)
                 article.setTranslatedParagraphs(zh)
                 try? modelContext.save()
                 showBilingual = true

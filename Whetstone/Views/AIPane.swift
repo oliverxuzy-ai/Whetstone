@@ -289,13 +289,13 @@ struct AIPane: View {
         isThinking = true
         defer { isThinking = false }
         do {
-            let text = try await OpenAIClient.shared.send(
+            let text = try await AIClientProvider.shared.send(
                 systemPrompt: Prompts.personaSystem(personaPromptLine: profile.personaPromptLine),
-                messages: [.init(role: "user", content: Prompts.conceptExtractionUser(articleContent: article.content))],
+                messages: [AIMessage(role: "user", content: Prompts.conceptExtractionUser(articleContent: article.content))],
                 maxTokens: 800,
                 cacheArticleContent: article.content
             )
-            let parsed = await OpenAIClient.shared.parseConceptsJSON(text)
+            let parsed = ResponseParser.concepts(text)
             for (idx, c) in parsed.enumerated() {
                 let concept = Concept(name: c.name, explanation: c.explanation, orderIndex: idx, article: article)
                 modelContext.insert(concept)
@@ -336,18 +336,18 @@ struct AIPane: View {
         defer { isThinking = false }
         do {
             // Build message history from this conversation
-            let history: [OpenAIClient.Message] = (conv.messages ?? [])
+            let history: [AIMessage] = (conv.messages ?? [])
                 .sorted(by: { $0.timestamp < $1.timestamp })
-                .map { .init(role: $0.role == .user ? "user" : "assistant", content: $0.content) }
+                .map { AIMessage(role: $0.role == .user ? "user" : "assistant", content: $0.content) }
             var msgs = history
             // Last user message: use FULL prompted content (with article injection)
             if !msgs.isEmpty, msgs.last?.role == "user" {
-                msgs[msgs.count - 1] = .init(role: "user", content: userContent)
+                msgs[msgs.count - 1] = AIMessage(role: "user", content: userContent)
             } else {
-                msgs.append(.init(role: "user", content: userContent))
+                msgs.append(AIMessage(role: "user", content: userContent))
             }
 
-            let reply = try await OpenAIClient.shared.send(
+            let reply = try await AIClientProvider.shared.send(
                 systemPrompt: systemPrompt,
                 messages: msgs,
                 maxTokens: 1024,
