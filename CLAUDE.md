@@ -37,6 +37,15 @@ Key visual locks (deviating without explicit user approval = a bug to flag):
 
 **Do not change these prompts without re-running the P1 protocol** (see design doc Assignment section). If you change them, log the new test results in this CLAUDE.md.
 
+### Prompt change log
+
+- **2026-05-28 — 苏格拉底 quiz 重做（concept-driven）.** The old `socraticQuizSystem`/`socraticQuizUser` (single "考考我" turn that emitted a `SCORE:` line) were **removed** and replaced by a two-layer flow in `Packages/WhetstoneCore/Sources/WhetstoneCore/Prompts.swift`:
+  - `socraticTutorSystem(conceptList:conceptCount:)` + `socraticTutorUser()` — concept-driven tutor; each concept probed ≥1×, ≤4 questions/concept; emits hidden `<<NEXT concept=N>>` / `<<DONE>>` control marks (stripped by `QuizControlMarks`).
+  - `graderSystem` + `graderUser(conceptList:transcript:)` — separate temperature-0 grader; emits structured per-concept JSON (recall/apply/analyze 0–2). Code aggregates via `ScoreCalculator` (rubric weights 1/2/3). `ResponseParser.conceptScores` parses; bad/misaligned JSON → no score persisted.
+  - Concept-extraction & explanation prompts UNCHANGED (still P1-validated).
+  - Spec/plan: `docs/superpowers/specs/2026-05-28-socratic-redesign-design.md`, `docs/superpowers/plans/2026-05-28-socratic-redesign.md`.
+  - **⚠️ P1 manual retest: PENDING.** Automated layer is green (package 106 tests / 0 failures incl. parser/scoring/control-mark/turn-cap units; app builds). The manual P1 protocol — load a fixture article (e.g. Quantum entanglement), run a full quiz via the new header Socrates button, and confirm (a) every concept probed, (b) ≤4 follow-ups/concept, (c) end-of-quiz score+diagnosis card, (d) **score consistency**: same article + similar answers across 2–3 runs lands in a tight band — requires a live OpenAI key and has NOT been run yet. There is also a gated consistency integration test: `WHETSTONE_TEST_API_KEY=sk-... swift test --filter GraderConsistencyTests` (asserts 5-run range ≤ 8). Record the manual scores here once run.
+
 ## Build & Run
 
 ```bash
