@@ -1,6 +1,9 @@
 import SwiftUI
 import SwiftData
 import WhetstoneCore
+import os
+
+private let persistenceLog = Logger(subsystem: "com.zhengyangxu.whetstone", category: "persistence")
 
 struct ReaderPane: View {
     let article: Article
@@ -15,6 +18,7 @@ struct ReaderPane: View {
     @State private var showBilingual: Bool = false
     @State private var isTranslating: Bool = false
     @State private var translationError: String? = nil
+    @State private var saveError: String? = nil
 
     private enum ReaderTab { case article, concepts }
 
@@ -51,6 +55,14 @@ struct ReaderPane: View {
             Button("好") { translationError = nil }
         } message: {
             Text(translationError ?? "")
+        }
+        .alert("保存失败", isPresented: Binding(
+            get: { saveError != nil },
+            set: { if !$0 { saveError = nil } }
+        )) {
+            Button("好") { saveError = nil }
+        } message: {
+            Text(saveError ?? "")
         }
     }
 
@@ -230,7 +242,12 @@ struct ReaderPane: View {
             selectedText: text
         )
         modelContext.insert(h)
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            persistenceLog.error("addHighlight save failed: \(error.localizedDescription, privacy: .public)")
+            saveError = "高亮没能保存: \(error.localizedDescription)"
+        }
     }
 
     /// 用户单击高亮 → popover 选「取消高亮」时调用。
@@ -251,7 +268,12 @@ struct ReaderPane: View {
         let toRemove = indices.map { highlights[$0] }
         guard !toRemove.isEmpty else { return }
         toRemove.forEach { modelContext.delete($0) }
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            persistenceLog.error("removeHighlights save failed: \(error.localizedDescription, privacy: .public)")
+            saveError = "取消高亮没能保存: \(error.localizedDescription)"
+        }
     }
 
     private func relatedSection(concepts: [Concept]) -> some View {
