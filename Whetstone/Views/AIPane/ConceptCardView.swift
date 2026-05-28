@@ -33,7 +33,7 @@ struct ConceptCardView: View {
                         }
                     }
                 }
-                // Chip strip: 1 quiz chip + N "explain" chips. AI pane is only ~360pt wide
+                // Chip strip: N "explain" chips（quiz 入口已移到 header QuizEntryButton）。AI pane is only ~360pt wide
                 // after padding, so concept-specific labels truncate the concept name to
                 // avoid overflow and the row wraps via LazyVGrid (NOT HStack — long
                 // Chinese+English labels won't fit on one row).

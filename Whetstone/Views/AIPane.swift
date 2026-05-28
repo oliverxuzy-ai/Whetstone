@@ -125,6 +125,7 @@ struct AIPane: View {
 
     private func startQuiz() {
         guard !isThinking, !(article.concepts ?? []).isEmpty else { return }
+        quizActive = false          // 清掉旧局，避免重测时 header 闪 "概念 0/N"
         messages = []
         conversation = nil
         quizResultConversation = nil
@@ -225,9 +226,11 @@ struct AIPane: View {
         isThinking = true
         defer { isThinking = false }
         do {
-            _ = try await services.conversation.gradeQuiz(conv, article: article, context: modelContext)
+            try await services.conversation.gradeQuiz(conv, article: article, context: modelContext)
             quizResultConversation = conv   // 触发 QuizResultCard 渲染
         } catch {
+            // 评分失败：仅提示错误，不出结果卡；quizActive 已在 ask() 置 false，
+            // 用户可点 header 苏格拉底按钮重测。
             self.error = error.localizedDescription
         }
     }
