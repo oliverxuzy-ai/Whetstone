@@ -150,11 +150,11 @@ public final class ConversationService {
             throw error
         }
 
-        // 兜底：导师若一直不发 <<DONE>>，按导师轮数封顶（每概念上限 4 轮）。
-        // 达 conceptCount×4 个导师(.ai)轮即强制收尾，防止永远问不完。
-        // tutorTurns 含本轮刚保存的 aiMsg；故 cap=conceptCount×4 时，第 4 个 .ai 轮即触发收尾（用 >=）。
+        // 兜底：导师若一直不发 <<DONE>>，按导师轮数硬封顶，防止 quiz 膨胀（亲测 ×4 太长）。
+        // 每概念 1 问 → 正常约 N 个问题轮 + 1 个 <<DONE>> 轮；cap = conceptCount + 2 留 1 轮缓冲。
+        // tutorTurns 含本轮刚保存的 aiMsg；用 >= 判定。
         let tutorTurns = (conv.messages ?? []).filter { $0.role == .ai }.count
-        let cap = max(1, conceptCount) * 4
+        let cap = max(1, conceptCount) + 2
         let forcedDone = kind.isQuiz && tutorTurns >= cap
 
         return AskResult(

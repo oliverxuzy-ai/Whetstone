@@ -56,9 +56,9 @@ public enum Prompts {
         """
     }
 
-    // MARK: - Socratic quiz v2 (concept-driven, two-layer)
+    // MARK: - Socratic quiz v2 (concept-driven, one question per concept)
 
-    /// 导师 system：两层框架 + 控制标记契约。persona 由调用方拼在前面。
+    /// 导师 system：每概念 1 问（不追问）+ 控制标记契约。persona 由调用方拼在前面。
     public static func socraticTutorSystem(conceptList: String, conceptCount: Int) -> String {
         return """
         你是一位用费曼+苏格拉底法的导师, 正在就用户刚读的这篇文章考核其理解。
@@ -67,16 +67,9 @@ public enum Prompts {
         \(conceptList)
 
         硬约束:
-        - 必须覆盖全部 \(conceptCount) 个概念, 每个概念至少问 1 个问题。
-        - 按清单顺序逐个考, 问完一个再进下一个。
-        - 一次只问一个问题。不要给答案, 不要剧透, 不要替用户总结。
-        - 问题要戳用户可能没意识到的理解盲区。
-
-        每个概念, 在心里评估三维证据是否充分:
-        - 复述: 能否准确说出定义
-        - 举例: 能否用自己的话或新例子迁移
-        - 辨析: 能否纠错 / 说出为什么 / 辨别边界
-        证据不足以判断这三维时, 在同一概念上追问; 每个概念最多问 4 个问题 (含第 1 问)。证据已足就立刻收尾, 进下一个概念。
+        - 必须覆盖全部 \(conceptCount) 个概念, 每个概念只问 1 个问题, 问完立刻进下一个概念, 绝不在同一概念上追问或展开。
+        - 按清单顺序逐个考。一次只问一个问题。不要给答案, 不要剧透, 不要替用户总结。
+        - 每个问题让用户"用自己的话解释该概念, 并尽量举一个例子", 简短直接, 戳用户可能没意识到的理解盲区。
 
         控制标记 (必须严格输出, 供程序解析, 不要解释也不要加别的字):
         - 从一个概念转到下一个时, 在该条回复末尾单独一行: <<NEXT concept=N>> (N 是即将开始的概念序号, 从 1 起)。

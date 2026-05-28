@@ -15,7 +15,7 @@ final class PromptsTests: XCTestCase {
     func testTutorSystemHasHardConstraints() {
         let s = Prompts.socraticTutorSystem(conceptList: "1. A — a\n2. B — b", conceptCount: 2)
         XCTAssertTrue(s.contains("不要给答案"))
-        XCTAssertTrue(s.contains("最多问 4"))
+        XCTAssertTrue(s.contains("每个概念只问 1 个问题"))
         XCTAssertTrue(s.contains("<<NEXT"))
         XCTAssertTrue(s.contains("<<DONE>>"))
         XCTAssertTrue(s.contains("共 2 个"))

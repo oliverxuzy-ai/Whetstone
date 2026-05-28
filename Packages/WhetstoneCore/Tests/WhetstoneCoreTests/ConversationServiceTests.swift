@@ -173,9 +173,9 @@ final class ConversationServiceTests: XCTestCase {
         try ctx.save()
         let conv = Conversation(mode: .quiz, article: article)
         ctx.insert(conv)
+        // 1 个概念 → cap = 1 + 2 = 3。预置 2 个 .ai 轮，本次 reply 产生第 3 个 → 达 cap 强制收尾。
         ctx.insert(Message(role: .ai, content: "q1", conversation: conv))
         ctx.insert(Message(role: .ai, content: "q2", conversation: conv))
-        ctx.insert(Message(role: .ai, content: "q3", conversation: conv))
         try ctx.save()
 
         let mock = MockAIClient()
