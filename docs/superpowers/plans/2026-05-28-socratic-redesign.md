@@ -878,6 +878,29 @@ In `Packages/WhetstoneCore/Tests/WhetstoneCoreTests/ConversationServiceTests.swi
         XCTAssertTrue(result.quizDone)
         XCTAssertEqual(result.aiMessage.content, "都问完了。")
     }
+
+    func testAskQuizReplyForcesDoneAtTurnCap() async throws {
+        // 兜底：导师一直不发 <<DONE>>。1 个概念 → cap = 1×4 = 4 个导师轮。
+        // 预置 3 个 AI 轮，本次 reply 产生第 4 个 AI 轮 → 即使无 <<DONE>> 也强制收尾。
+        let ctx = try makeInMemoryContext()
+        let article = Article(url: "u", content: "body")
+        ctx.insert(article)
+        ctx.insert(Concept(name: "A", explanation: "a", orderIndex: 0, article: article))
+        try ctx.save()
+        let conv = Conversation(mode: .quiz, article: article)
+        ctx.insert(conv)
+        ctx.insert(Message(role: .ai, content: "q1", conversation: conv))
+        ctx.insert(Message(role: .ai, content: "q2", conversation: conv))
+        ctx.insert(Message(role: .ai, content: "q3", conversation: conv))
+        try ctx.save()
+
+        let mock = MockAIClient()
+        mock.sendResult = .success("再追问一句，没有结束标记")   // 故意不发 <<DONE>>
+        let svc = ConversationService(ai: mock)
+
+        let result = try await svc.ask(.quizReply(answer: "答"), in: conv, article: article, personaPromptLine: "", context: ctx)
+        XCTAssertTrue(result.quizDone)   // 第 4 个 AI 轮达 cap，强制 done
+    }
 ```
 
 - [ ] **Step 2: 跑测试确认失败**
@@ -996,12 +1019,18 @@ In `Packages/WhetstoneCore/Sources/WhetstoneCore/Services/ConversationService.sw
             throw error
         }
 
+        // 兜底：导师若一直不发 <<DONE>>，按导师轮数封顶（每概念上限 4 轮）。
+        // 达 conceptCount×4 个导师(.ai)轮即强制收尾，防止永远问不完。
+        let tutorTurns = (conv.messages ?? []).filter { $0.role == .ai }.count
+        let cap = max(1, conceptCount) * 4
+        let forcedDone = kind.isQuiz && tutorTurns >= cap
+
         return AskResult(
             conversation: conv,
             userMessage: userMsg,
             aiMessage: aiMsg,
             quizCurrentConcept: parsed.nextConcept,
-            quizDone: parsed.done
+            quizDone: parsed.done || forcedDone
         )
     }
 
@@ -1672,10 +1701,10 @@ git commit -m "docs: 记录苏格拉底 quiz 重做的 P1 重测结果"
 - 第 4 节 ConceptScore 模型 + 关系 → Task 2 ✓
 - 第 5 节文件清单（一次做完，含 View）→ Task 9（出分用专用 `QuizResultCard` 组件，非纯文本消息；底部总评由 `ScoreCalculator.overallDiagnosis` 代码模板生成，不额外调 LLM）✓
 - 第 6 节错误处理 + 测试（纯函数/解析/标记/一致性回归/P1）→ Task 1/4/5/8/10/11 ✓
-  - 控制标记缺失兜底（"概念数×4 轮强制 DONE"）：spec 第 6 节列出，但当前计划未在 service 层实现自动兜底——**已知缺口**：v0 依赖 tutor 守约发 `<<DONE>>`；若线上发现导师不收尾，再补一个轮次计数兜底（不阻塞主线，记为后续）。
+  - 控制标记缺失兜底（"概念数×4 轮强制 DONE"）：已在 Task 7 的 `ask` 实现 —— 按 `.ai` 导师轮数封顶 `conceptCount×4`，达上限即强制 `quizDone`，并有单测 `testAskQuizReplyForcesDoneAtTurnCap` 覆盖 ✓
 
 **占位符扫描：** 无 TBD/TODO；每个代码步骤都有完整代码；命令均给出预期输出。
 
 **类型一致性：** `ScoreCalculator.conceptPercent/totalScore`、`ResponseParser.ConceptScoreRow`(concept/recall/apply/analyze/note)、`QuizControlMarks.Parsed`(cleaned/nextConcept/done)、`AskKind.quizReply`、`AskResult.quizCurrentConcept/quizDone`、`ConceptScore` 初始化器参数、`gradeQuiz` 签名 —— 跨 Task 引用一致。
 
-**已知取舍（非缺陷）：** 控制标记缺失的自动兜底留作后续；评分员按 index 对齐依赖导师保序输出（prompt 已要求保序）。
+**已知取舍（非缺陷）：** 评分员按 index 对齐依赖导师保序输出（prompt 已要求保序）。
