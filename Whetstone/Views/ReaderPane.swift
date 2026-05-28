@@ -250,12 +250,16 @@ struct ReaderPane: View {
     ///   1) 存储 [charStart, charEnd) 跟 range 重叠 — 非双语模式精准命中
     ///   2) selectedText 跟 h.selectedText 互为子串 — 双语模式 / 兜底
     private func removeHighlights(in range: NSRange, selectedText: String) {
-        let toRemove = articleHighlights.filter { h in
-            let stored = NSRange(location: h.charStart, length: max(0, h.charEnd - h.charStart))
-            if NSIntersectionRange(stored, range).length > 0 { return true }
-            guard !selectedText.isEmpty, !h.selectedText.isEmpty else { return false }
-            return selectedText.contains(h.selectedText) || h.selectedText.contains(selectedText)
+        let highlights = articleHighlights
+        let spans = highlights.map {
+            HighlightSpan(charStart: $0.charStart, charEnd: $0.charEnd, text: $0.selectedText)
         }
+        let indices = HighlightMatcher.indicesToRemove(
+            spans: spans,
+            range: (range.location, range.length),
+            selectedText: selectedText
+        )
+        let toRemove = indices.map { highlights[$0] }
         guard !toRemove.isEmpty else { return }
         toRemove.forEach { modelContext.delete($0) }
         try? modelContext.save()
