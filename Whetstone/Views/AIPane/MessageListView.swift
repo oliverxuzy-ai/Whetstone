@@ -10,6 +10,7 @@ struct MessageListView: View {
     let messages: [Message]
     let isThinking: Bool
     let error: String?
+    let quizResult: Conversation?
     let onAsk: (AIPane.AskKind) -> Void
 
     var body: some View {
@@ -18,6 +19,9 @@ struct MessageListView: View {
                 ConceptCardView(article: article, conceptsLoaded: conceptsLoaded, onAsk: onAsk)
                 ForEach(messages) { msg in
                     messageBubble(msg)
+                }
+                if let quizResult {
+                    QuizResultCard(conversation: quizResult)
                 }
                 if isThinking {
                     HStack {

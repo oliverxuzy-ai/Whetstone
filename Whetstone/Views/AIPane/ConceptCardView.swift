@@ -39,9 +39,6 @@ struct ConceptCardView: View {
                 // Chinese+English labels won't fit on one row).
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 8)],
                           alignment: .leading, spacing: 8) {
-                    chip("考考我") {
-                        onAsk(.quiz)
-                    }
                     ForEach(concepts.prefix(3)) { c in
                         chip("类比「\(truncated(c.name, max: 12))」") {
                             onAsk(.explain(concept: c.name))
