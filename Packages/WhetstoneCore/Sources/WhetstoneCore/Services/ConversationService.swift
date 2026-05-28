@@ -19,7 +19,15 @@ public final class ConversationService {
     public enum AskKind: Equatable {
         case explain(concept: String)
         case free(question: String)
-        case quiz
+        case quiz                        // 开始 quiz（首轮）
+        case quizReply(answer: String)   // quiz 进行中的用户答题
+
+        var isQuiz: Bool {
+            switch self {
+            case .quiz, .quizReply: return true
+            case .explain, .free: return false
+            }
+        }
     }
 
     /// Result of an `ask` turn. The View syncs its @State `conversation` / `messages`
@@ -29,6 +37,8 @@ public final class ConversationService {
         public let conversation: Conversation
         public let userMessage: Message
         public let aiMessage: Message
+        public var quizCurrentConcept: Int? = nil   // <<NEXT concept=N>> 解析出的序号，驱动进度
+        public var quizDone: Bool = false           // 见到 <<DONE>>，调用方据此触发 gradeQuiz
     }
 
     // MARK: - Concept extraction
@@ -79,34 +89,39 @@ public final class ConversationService {
         if let conversation {
             conv = conversation
         } else {
-            let created = Conversation(mode: kind == .quiz ? .quiz : .companion, article: article)
+            let created = Conversation(mode: kind.isQuiz ? .quiz : .companion, article: article)
             context.insert(created)
             conv = created
         }
+
+        let conceptList = Self.conceptListText(article)
+        let conceptCount = (article.concepts ?? []).count
+        let persona = Prompts.personaSystem(personaPromptLine: personaPromptLine)
 
         let userContent: String
         let systemPrompt: String
         switch kind {
         case .explain(let concept):
             userContent = Prompts.explanationUser(concept: concept, articleContent: article.content)
-            systemPrompt = Prompts.personaSystem(personaPromptLine: personaPromptLine)
+            systemPrompt = persona
         case .free(let q):
             userContent = Prompts.freeQuestionUser(question: q, articleContent: article.content)
-            systemPrompt = Prompts.personaSystem(personaPromptLine: personaPromptLine)
+            systemPrompt = persona
         case .quiz:
-            userContent = Prompts.socraticQuizUser(articleContent: article.content)
-            systemPrompt = Prompts.personaSystem(personaPromptLine: personaPromptLine) + "\n\n" + Prompts.socraticQuizSystem()
+            userContent = Prompts.socraticTutorUser()
+            systemPrompt = persona + "\n\n" + Prompts.socraticTutorSystem(conceptList: conceptList, conceptCount: conceptCount)
+        case .quizReply(let answer):
+            userContent = answer
+            systemPrompt = persona + "\n\n" + Prompts.socraticTutorSystem(conceptList: conceptList, conceptCount: conceptCount)
         }
 
         let userMsg = Message(role: .user, content: shortVersionForDisplay(kind: kind, raw: userContent), conversation: conv)
         context.insert(userMsg)
 
-        // Build message history from this conversation (user/ai → user/assistant).
         let history: [AIMessage] = (conv.messages ?? [])
             .sorted(by: { $0.timestamp < $1.timestamp })
             .map { AIMessage(role: $0.role == .user ? "user" : "assistant", content: $0.content) }
         var msgs = history
-        // Last user message: use FULL prompted content (with article injection).
         if !msgs.isEmpty, msgs.last?.role == "user" {
             msgs[msgs.count - 1] = AIMessage(role: "user", content: userContent)
         } else {
@@ -121,14 +136,13 @@ public final class ConversationService {
             cacheArticleContent: article.content
         )
 
-        let aiMsg = Message(role: .ai, content: reply, conversation: conv)
+        let parsed: QuizControlMarks.Parsed = kind.isQuiz
+            ? QuizControlMarks.parse(reply)
+            : QuizControlMarks.Parsed(cleaned: reply, nextConcept: nil, done: false)
+
+        let aiMsg = Message(role: .ai, content: parsed.cleaned, conversation: conv)
         context.insert(aiMsg)
 
-        if let score = Self.parseScore(from: reply) {
-            conv.score = score
-            conv.endedAt = Date()
-            article.latestScore = score
-        }
         do {
             try context.save()
         } catch {
@@ -136,28 +150,37 @@ public final class ConversationService {
             throw error
         }
 
-        return AskResult(conversation: conv, userMessage: userMsg, aiMessage: aiMsg)
+        // 兜底：导师若一直不发 <<DONE>>，按导师轮数封顶（每概念上限 4 轮）。
+        // 达 conceptCount×4 个导师(.ai)轮即强制收尾，防止永远问不完。
+        let tutorTurns = (conv.messages ?? []).filter { $0.role == .ai }.count
+        let cap = max(1, conceptCount) * 4
+        let forcedDone = kind.isQuiz && tutorTurns >= cap
+
+        return AskResult(
+            conversation: conv,
+            userMessage: userMsg,
+            aiMessage: aiMsg,
+            quizCurrentConcept: parsed.nextConcept,
+            quizDone: parsed.done || forcedDone
+        )
+    }
+
+    /// 概念清单文本: "1. 名 — 解释" 每行一个，按 orderIndex 排序。
+    static func conceptListText(_ article: Article) -> String {
+        let concepts = (article.concepts ?? []).sorted { $0.orderIndex < $1.orderIndex }
+        return concepts.enumerated()
+            .map { "\($0.offset + 1). \($0.element.name) — \($0.element.explanation)" }
+            .joined(separator: "\n")
     }
 
     // MARK: - Helpers (mirror AIPane)
-
-    /// Finds a line like "SCORE: 73" and returns the integer if 0...100.
-    static func parseScore(from text: String) -> Int? {
-        let pattern = #"SCORE\s*[:：]\s*(\d{1,3})"#
-        if let regex = try? NSRegularExpression(pattern: pattern),
-           let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
-           let range = Range(match.range(at: 1), in: text),
-           let n = Int(text[range]), (0...100).contains(n) {
-            return n
-        }
-        return nil
-    }
 
     private func shortVersionForDisplay(kind: AskKind, raw: String) -> String {
         switch kind {
         case .explain(let concept): return "用一个我能懂的类比解释「\(concept)」"
         case .free(let q): return q
         case .quiz: return "考考我吧。"
+        case .quizReply(let answer): return answer
         }
     }
 }
