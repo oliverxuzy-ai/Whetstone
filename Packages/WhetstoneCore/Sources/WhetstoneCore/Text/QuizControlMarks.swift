@@ -11,20 +11,24 @@ public enum QuizControlMarks {
         public let done: Bool
     }
 
+    // 模式是硬编码字面量，用 try! 一次编译：拼错会在启动/CI/测试即刻崩，而不是运行时静默失效。
+    private static let nextRegex = try! NSRegularExpression(pattern: #"<<\s*NEXT\s+concept\s*=\s*(\d+)\s*>>"#)
+    private static let stripRegex = try! NSRegularExpression(pattern: #"<<\s*NEXT\s+concept\s*=\s*\d*\s*>>|<<\s*DONE\s*>>"#)
+
     public static func parse(_ raw: String) -> Parsed {
+        let fullRange = NSRange(raw.startIndex..., in: raw)
+
         var next: Int? = nil
-        if let regex = try? NSRegularExpression(pattern: #"<<\s*NEXT\s+concept\s*=\s*(\d+)\s*>>"#),
-           let m = regex.firstMatch(in: raw, range: NSRange(raw.startIndex..., in: raw)),
+        if let m = nextRegex.firstMatch(in: raw, range: fullRange),
            let r = Range(m.range(at: 1), in: raw) {
             next = Int(raw[r])
         }
+
         let done = raw.range(of: #"<<\s*DONE\s*>>"#, options: .regularExpression) != nil
 
-        var cleaned = raw
-        for pattern in [#"<<\s*NEXT\s+concept\s*=\s*\d+\s*>>"#, #"<<\s*DONE\s*>>"#] {
-            cleaned = cleaned.replacingOccurrences(of: pattern, with: "", options: .regularExpression)
-        }
-        cleaned = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleaned = stripRegex
+            .stringByReplacingMatches(in: raw, range: fullRange, withTemplate: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
 
         return Parsed(cleaned: cleaned, nextConcept: next, done: done)
     }

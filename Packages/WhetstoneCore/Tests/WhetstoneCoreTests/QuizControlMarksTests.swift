@@ -25,4 +25,11 @@ final class QuizControlMarksTests: XCTestCase {
         XCTAssertFalse(p.cleaned.contains("<<"))
         XCTAssertEqual(p.nextConcept, 2)
     }
+    func testMalformedNextStrippedButNilIndex() {
+        // <<NEXT concept=>> 无数字：仍从展示中剥掉，但 nextConcept 为 nil（不推进，安全降级）
+        let p = QuizControlMarks.parse("继续。\n<<NEXT concept=>>")
+        XCTAssertFalse(p.cleaned.contains("<<"))
+        XCTAssertNil(p.nextConcept)
+        XCTAssertFalse(p.done)
+    }
 }
