@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WhetstoneCore
 
 struct AIPane: View {
     let article: Article
@@ -289,7 +290,7 @@ struct AIPane: View {
         defer { isThinking = false }
         do {
             let text = try await OpenAIClient.shared.send(
-                systemPrompt: Prompts.personaSystem(profile),
+                systemPrompt: Prompts.personaSystem(personaPromptLine: profile.personaPromptLine),
                 messages: [.init(role: "user", content: Prompts.conceptExtractionUser(articleContent: article.content))],
                 maxTokens: 800,
                 cacheArticleContent: article.content
@@ -318,13 +319,13 @@ struct AIPane: View {
         switch kind {
         case .explain(let concept):
             userContent = Prompts.explanationUser(concept: concept, articleContent: article.content)
-            systemPrompt = Prompts.personaSystem(profile)
+            systemPrompt = Prompts.personaSystem(personaPromptLine: profile.personaPromptLine)
         case .free(let q):
             userContent = Prompts.freeQuestionUser(question: q, articleContent: article.content)
-            systemPrompt = Prompts.personaSystem(profile)
+            systemPrompt = Prompts.personaSystem(personaPromptLine: profile.personaPromptLine)
         case .quiz:
             userContent = Prompts.socraticQuizUser(articleContent: article.content)
-            systemPrompt = Prompts.personaSystem(profile) + "\n\n" + Prompts.socraticQuizSystem()
+            systemPrompt = Prompts.personaSystem(personaPromptLine: profile.personaPromptLine) + "\n\n" + Prompts.socraticQuizSystem()
         }
 
         let userMsg = Message(role: .user, content: shortVersionForDisplay(kind: kind, raw: userContent), conversation: conv)

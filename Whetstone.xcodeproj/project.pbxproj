@@ -20,7 +20,7 @@
 		84E84F6A20A3FC317A8F4D8A /* MarkdownToAttributed.swift in Sources */ = {isa = PBXBuildFile; fileRef = F02CAA5836DBA916D520504A /* MarkdownToAttributed.swift */; };
 		94B319CFAF07316F4F31C180 /* ReaderPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6CCC7F8A3F2E459EA5048FD /* ReaderPane.swift */; };
 		9632A780D7FAB4C9150B019C /* Article.swift in Sources */ = {isa = PBXBuildFile; fileRef = 070DB5B72E9EC3554770F0EE /* Article.swift */; };
-		9D40C64FC35C2D7D95020DAD /* Prompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD3B55ABEC6C54A9BC06ABE7 /* Prompts.swift */; };
+		A146E8BB58180A38BA30D07B /* WhetstoneCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0E37FC53A24048B0A0B14560 /* WhetstoneCore */; };
 		A146F67534E0DE94A31575C6 /* Conversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A168CC2D09CED8A697B08B1F /* Conversation.swift */; };
 		A3DC978C62731D1123AE6BDD /* OpenAIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CAB1D129DF972C87015E4E4 /* OpenAIClient.swift */; };
 		B1EA9AAFE79A70E1970D8C8A /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C575F7BAFF7C220F3D44F12E /* OnboardingView.swift */; };
@@ -59,9 +59,9 @@
 		744CC4170B6ADA72588F05BD /* Readability.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Readability.js; sourceTree = "<group>"; };
 		75EAA13F1CEFC833316A3C43 /* WhetstoneApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhetstoneApp.swift; sourceTree = "<group>"; };
 		81F54D8F83E5FE56B7758BE4 /* ArticleBodyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleBodyView.swift; sourceTree = "<group>"; };
+		95D9E3C26BE04786148D427E /* WhetstoneCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = WhetstoneCore; path = Packages/WhetstoneCore; sourceTree = SOURCE_ROOT; };
 		A168CC2D09CED8A697B08B1F /* Conversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Conversation.swift; sourceTree = "<group>"; };
 		BB791305B6ED41DBB4961CB1 /* SelectionActionPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionActionPopover.swift; sourceTree = "<group>"; };
-		BD3B55ABEC6C54A9BC06ABE7 /* Prompts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prompts.swift; sourceTree = "<group>"; };
 		C2642B310BE7538FB49979AE /* AIPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPane.swift; sourceTree = "<group>"; };
 		C575F7BAFF7C220F3D44F12E /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		C6CCC7F8A3F2E459EA5048FD /* ReaderPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPane.swift; sourceTree = "<group>"; };
@@ -76,12 +76,21 @@
 			files = (
 				B84FD7032C0C7C60A8B3E537 /* KeychainAccess in Frameworks */,
 				30E830D81A664CEE3CFD6D19 /* Sparkle in Frameworks */,
+				A146E8BB58180A38BA30D07B /* WhetstoneCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		03476FD0B9E2F80C6F6D353F /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				95D9E3C26BE04786148D427E /* WhetstoneCore */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
 		0782E7D50C8A75086CEBECB1 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -137,6 +146,7 @@
 		4FAFB315ACFDAC6C25F60669 = {
 			isa = PBXGroup;
 			children = (
+				03476FD0B9E2F80C6F6D353F /* Packages */,
 				3A957DBE30BD779140441751 /* Whetstone */,
 				F2F6481CEA8CE48EF99A962F /* Products */,
 			);
@@ -183,7 +193,6 @@
 				1C95592D92FC1EEECC22D6B6 /* ArticleExtractor.swift */,
 				4E25C492806C814FA0DF0273 /* KeychainStore.swift */,
 				3CAB1D129DF972C87015E4E4 /* OpenAIClient.swift */,
-				BD3B55ABEC6C54A9BC06ABE7 /* Prompts.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -207,6 +216,7 @@
 			packageProductDependencies = (
 				55D5E77953E70815D202EB8A /* KeychainAccess */,
 				6735A56D04DB2339F919E8AC /* Sparkle */,
+				0E37FC53A24048B0A0B14560 /* WhetstoneCore */,
 			);
 			productName = Whetstone;
 			productReference = DEBED77120E4C0DFFCC0DDA4 /* Whetstone.app */;
@@ -239,6 +249,7 @@
 			packageReferences = (
 				616240A4D1538090894098EF /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 				CBA9AA904683F04CC07A63FF /* XCRemoteSwiftPackageReference "Sparkle" */,
+				5AFD1A85CB146DC4C98C3C15 /* XCLocalSwiftPackageReference "Packages/WhetstoneCore" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F2F6481CEA8CE48EF99A962F /* Products */;
@@ -284,7 +295,6 @@
 				C11C34F1E69EDD16BAA5B242 /* Message.swift in Sources */,
 				B1EA9AAFE79A70E1970D8C8A /* OnboardingView.swift in Sources */,
 				A3DC978C62731D1123AE6BDD /* OpenAIClient.swift in Sources */,
-				9D40C64FC35C2D7D95020DAD /* Prompts.swift in Sources */,
 				94B319CFAF07316F4F31C180 /* ReaderPane.swift in Sources */,
 				7BB6F1F5C17227ECB764580F /* RootView.swift in Sources */,
 				4D4347A0BAAC2F67DDD377D9 /* SelectionActionPopover.swift in Sources */,
@@ -494,6 +504,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		5AFD1A85CB146DC4C98C3C15 /* XCLocalSwiftPackageReference "Packages/WhetstoneCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/WhetstoneCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		616240A4D1538090894098EF /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -514,6 +531,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		0E37FC53A24048B0A0B14560 /* WhetstoneCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WhetstoneCore;
+		};
 		55D5E77953E70815D202EB8A /* KeychainAccess */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 616240A4D1538090894098EF /* XCRemoteSwiftPackageReference "KeychainAccess" */;

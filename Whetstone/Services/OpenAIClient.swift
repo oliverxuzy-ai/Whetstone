@@ -1,4 +1,5 @@
 import Foundation
+import WhetstoneCore
 
 /// OpenAI Chat Completions API client (non-streaming, async/await).
 /// 直连 https://api.openai.com/v1/chat/completions
