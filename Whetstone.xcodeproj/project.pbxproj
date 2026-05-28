@@ -11,7 +11,7 @@
 		12390E8A58154F18DD7F2651 /* AddArticleSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A75BDB9C227E6F1AD69B1E58 /* AddArticleSheet.swift */; };
 		21ADCF5233BF01DEDACE7E8B /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 572ED605203604B509234AB5 /* LibraryView.swift */; };
 		2D31503655A5CE949308E619 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FFC365912AAB6D21D57E62B /* Colors.swift */; };
-		30E830D81A664CEE3CFD6D19 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 6735A56D04DB2339F919E8AC /* Sparkle */; };
+		30E830D81A664CEE3CFD6D19 /* WhetstoneCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0E37FC53A24048B0A0B14560 /* WhetstoneCore */; };
 		31707DEF6FE69074388BB400 /* Buttons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10F4CCB783DA27E190848B5B /* Buttons.swift */; };
 		4D4347A0BAAC2F67DDD377D9 /* SelectionActionPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB791305B6ED41DBB4961CB1 /* SelectionActionPopover.swift */; };
 		4D4C9522038462B4C3574ACD /* LibraryGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 578E69420B23E1E3D7E90A8A /* LibraryGrid.swift */; };
@@ -24,12 +24,11 @@
 		84E84F6A20A3FC317A8F4D8A /* MarkdownToAttributed.swift in Sources */ = {isa = PBXBuildFile; fileRef = F02CAA5836DBA916D520504A /* MarkdownToAttributed.swift */; };
 		94B319CFAF07316F4F31C180 /* ReaderPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6CCC7F8A3F2E459EA5048FD /* ReaderPane.swift */; };
 		9912A523A3B6F5E0FD3349EA /* ConceptCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24EFBBCCC763A2105F25576 /* ConceptCardView.swift */; };
-		A146E8BB58180A38BA30D07B /* WhetstoneCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0E37FC53A24048B0A0B14560 /* WhetstoneCore */; };
 		A2885CE61EE667C8653E0A90 /* ChatInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E4CF8D6E7A59A1FBC6BA9D0 /* ChatInputView.swift */; };
 		B1EA9AAFE79A70E1970D8C8A /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C575F7BAFF7C220F3D44F12E /* OnboardingView.swift */; };
 		B6093F5EEFD6CC01687AF318 /* ArticleExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C95592D92FC1EEECC22D6B6 /* ArticleExtractor.swift */; };
 		B69D2F7E3DEA973463D45553 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C4B6B1592DF8CC8F4838BD1 /* SettingsView.swift */; };
-		B84FD7032C0C7C60A8B3E537 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 55D5E77953E70815D202EB8A /* KeychainAccess */; };
+		B84FD7032C0C7C60A8B3E537 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 6735A56D04DB2339F919E8AC /* Sparkle */; };
 		CC719A3D10136A6D4C1BB96D /* WhetstoneApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EAA13F1CEFC833316A3C43 /* WhetstoneApp.swift */; };
 		CCC238F406915232794D8E70 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E25C492806C814FA0DF0273 /* KeychainStore.swift */; };
 		D82C61805132EB222BB78BE2 /* ArticleBodyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81F54D8F83E5FE56B7758BE4 /* ArticleBodyView.swift */; };
@@ -74,9 +73,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B84FD7032C0C7C60A8B3E537 /* KeychainAccess in Frameworks */,
-				30E830D81A664CEE3CFD6D19 /* Sparkle in Frameworks */,
-				A146E8BB58180A38BA30D07B /* WhetstoneCore in Frameworks */,
+				B84FD7032C0C7C60A8B3E537 /* Sparkle in Frameworks */,
+				30E830D81A664CEE3CFD6D19 /* WhetstoneCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -230,7 +228,6 @@
 			);
 			name = Whetstone;
 			packageProductDependencies = (
-				55D5E77953E70815D202EB8A /* KeychainAccess */,
 				6735A56D04DB2339F919E8AC /* Sparkle */,
 				0E37FC53A24048B0A0B14560 /* WhetstoneCore */,
 			);
@@ -263,7 +260,6 @@
 			mainGroup = 4FAFB315ACFDAC6C25F60669;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				616240A4D1538090894098EF /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 				CBA9AA904683F04CC07A63FF /* XCRemoteSwiftPackageReference "Sparkle" */,
 				5AFD1A85CB146DC4C98C3C15 /* XCLocalSwiftPackageReference "Packages/WhetstoneCore" */,
 			);
@@ -528,14 +524,6 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		616240A4D1538090894098EF /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 4.2.2;
-			};
-		};
 		CBA9AA904683F04CC07A63FF /* XCRemoteSwiftPackageReference "Sparkle" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sparkle-project/Sparkle";
@@ -550,11 +538,6 @@
 		0E37FC53A24048B0A0B14560 /* WhetstoneCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WhetstoneCore;
-		};
-		55D5E77953E70815D202EB8A /* KeychainAccess */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 616240A4D1538090894098EF /* XCRemoteSwiftPackageReference "KeychainAccess" */;
-			productName = KeychainAccess;
 		};
 		6735A56D04DB2339F919E8AC /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
