@@ -4,6 +4,7 @@ import SwiftUI
 /// adding Copy / Quote-in-chat / Define / etc. later is one case + one button.
 enum SelectionAction: Hashable, Identifiable {
     case highlight
+    case removeHighlight
     case ask
     // Future: case copy, case quoteInChat, case define
 
@@ -12,6 +13,7 @@ enum SelectionAction: Hashable, Identifiable {
     var label: String {
         switch self {
         case .highlight: return "Highlight"
+        case .removeHighlight: return "取消高亮"
         case .ask: return "Ask"
         }
     }

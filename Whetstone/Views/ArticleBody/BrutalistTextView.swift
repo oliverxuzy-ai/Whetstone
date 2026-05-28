@@ -13,8 +13,16 @@ final class BrutalistTextView: NSTextView {
     /// highlights array.
     var onAddHighlight: ((NSRange, String) -> Void)?
 
+    /// Invoked when the popover's "取消高亮" action is selected. Range is the
+    /// rendered text range of the auto-selected highlight; selectedText is the
+    /// text content (兜底用). Caller deletes the matching Highlight rows.
+    var onRemoveHighlights: ((NSRange, String) -> Void)?
+
     private var popoverWindow: NSPanel?
     private var pendingPopoverWorkItem: DispatchWorkItem?
+    /// One-shot: 下一次 showPopoverIfSelection 应该显示"取消高亮"动作集而不是
+    /// 默认的"高亮"动作集。Set by mouseUp 单击命中现有高亮时,read+reset 在 popover 弹出时。
+    private var pendingPopoverIsRemove: Bool = false
     /// Local NSEvent monitor used while the popover is shown — catches
     /// outside-panel clicks so we can dismiss without waiting for a
     /// selection-change notification (which won't fire if the user clicks
@@ -80,7 +88,43 @@ final class BrutalistTextView: NSTextView {
     /// notifications below cover AppKit paths that do not reliably land here.
     override func mouseUp(with event: NSEvent) {
         super.mouseUp(with: event)
+        let sel = selectedRange()
+        // 单击 (无选区) 命中已有高亮 → auto-select 整段高亮 + 标记下一次 popover
+        // 为 "取消高亮" 模式。拖选 / 普通点击空白处都走默认路径。
+        if sel.length == 0, let h = highlightRange(containing: sel.location) {
+            pendingPopoverIsRemove = true
+            setSelectedRange(h)
+            schedulePopoverPresentation(after: 0.02)
+            return
+        }
+        pendingPopoverIsRemove = false
         schedulePopoverPresentation(after: 0.02)
+    }
+
+    /// 扫描 textStorage 找包含 charIdx 的高亮 backgroundColor 段。
+    /// 用户高亮渲染时只设过 backgroundColor 这一种 storage 级属性 (selection 的
+    /// 蓝色背景是 NSTextView 动态绘制的,不写进 storage),所以任意 backgroundColor
+    /// 都视作高亮。
+    private func highlightRange(containing charIdx: Int) -> NSRange? {
+        guard let storage = textStorage else { return nil }
+        let total = storage.length
+        guard total > 0 else { return nil }
+        // 单击末尾 (charIdx == total) 时不算命中任何字符;clamp 进字符空间。
+        // 但要保留 charIdx-1 的检测 — 用户可能正好点在高亮最后一个字符的右边。
+        let probes: [Int] = {
+            var ps: [Int] = []
+            if charIdx >= 0, charIdx < total { ps.append(charIdx) }
+            if charIdx - 1 >= 0, charIdx - 1 < total { ps.append(charIdx - 1) }
+            return ps
+        }()
+        for p in probes {
+            var effective = NSRange(location: 0, length: 0)
+            let attr = storage.attribute(.backgroundColor, at: p, effectiveRange: &effective)
+            if attr != nil, effective.length > 0 {
+                return effective
+            }
+        }
+        return nil
     }
 
     /// Keyboard-driven selection (Shift+arrow, Cmd+A) also lands a popover at
@@ -134,19 +178,28 @@ final class BrutalistTextView: NSTextView {
         guard let window = window else { return }
         popoverWindow?.close()
 
+        let isRemoveMode = pendingPopoverIsRemove
+        pendingPopoverIsRemove = false  // 消费 one-shot 标记
+        let actions: [SelectionAction] = isRemoveMode ? [.removeHighlight, .ask] : [.highlight, .ask]
+
         let host = NSHostingController(rootView:
-            SelectionActionPopover(actions: [.highlight, .ask]) { [weak self] action in
+            SelectionActionPopover(actions: actions) { [weak self] action in
                 guard let self = self else { return }
                 switch action {
                 case .highlight:
                     self.onAddHighlight?(sel, selectedText)
+                case .removeHighlight:
+                    self.onRemoveHighlights?(sel, selectedText)
                 case .ask:
                     break
                 }
                 self.dismissPopover()
             }
         )
-        let size = NSSize(width: 153, height: 36)
+        // "取消高亮" 4 个汉字比 "Highlight" 略宽,稍微多给点宽度避免 SwiftUI 在
+        // 固定 panel 里 clip。两按钮 + 1 分隔线: 默认 76*2+1=153; 中文模式给 86*2+1=173。
+        let panelWidth: CGFloat = isRemoveMode ? 173 : 153
+        let size = NSSize(width: panelWidth, height: 36)
         let windowRect = convert(rect, to: nil)
         let screenRect = window.convertToScreen(windowRect)
         let panelOrigin = NSPoint(

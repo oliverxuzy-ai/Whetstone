@@ -192,7 +192,8 @@ struct ReaderPane: View {
                 highlights: articleHighlights,
                 translation: article.translatedParagraphs,
                 showBilingual: showBilingual,
-                onAddHighlight: { range, text in addHighlight(range: range, text: text) }
+                onAddHighlight: { range, text in addHighlight(range: range, text: text) },
+                onRemoveHighlights: { range, text in removeHighlights(in: range, selectedText: text) }
             )
         }
         .frame(width: bodyWidth, alignment: .leading)
@@ -239,6 +240,23 @@ struct ReaderPane: View {
             selectedText: text
         )
         modelContext.insert(h)
+        try? modelContext.save()
+    }
+
+    /// 用户单击高亮 → popover 选「取消高亮」时调用。
+    /// `range` 是渲染坐标系下被 auto-select 的高亮 range,`selectedText` 是它的文本。
+    /// 两条匹配路径任一命中就删:
+    ///   1) 存储 [charStart, charEnd) 跟 range 重叠 — 非双语模式精准命中
+    ///   2) selectedText 跟 h.selectedText 互为子串 — 双语模式 / 兜底
+    private func removeHighlights(in range: NSRange, selectedText: String) {
+        let toRemove = articleHighlights.filter { h in
+            let stored = NSRange(location: h.charStart, length: max(0, h.charEnd - h.charStart))
+            if NSIntersectionRange(stored, range).length > 0 { return true }
+            guard !selectedText.isEmpty, !h.selectedText.isEmpty else { return false }
+            return selectedText.contains(h.selectedText) || h.selectedText.contains(selectedText)
+        }
+        guard !toRemove.isEmpty else { return }
+        toRemove.forEach { modelContext.delete($0) }
         try? modelContext.save()
     }
 

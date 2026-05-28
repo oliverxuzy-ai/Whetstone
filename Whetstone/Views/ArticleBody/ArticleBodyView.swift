@@ -11,6 +11,7 @@ struct ArticleBodyView: NSViewRepresentable {
     var translation: [String]? = nil
     var showBilingual: Bool = false
     let onAddHighlight: (NSRange, String) -> Void
+    var onRemoveHighlights: ((NSRange, String) -> Void)? = nil
 
     func makeNSView(context: Context) -> BrutalistTextView {
         let storage = NSTextStorage()
@@ -41,6 +42,7 @@ struct ArticleBodyView: NSViewRepresentable {
             tv.textStorage?.setAttributedString(attr)
         }
         tv.onAddHighlight = onAddHighlight
+        tv.onRemoveHighlights = onRemoveHighlights
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: BrutalistTextView, context: Context) -> CGSize? {
