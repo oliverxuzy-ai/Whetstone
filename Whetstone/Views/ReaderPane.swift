@@ -1,9 +1,6 @@
 import SwiftUI
 import SwiftData
 import WhetstoneCore
-import os
-
-private let persistenceLog = Logger(subsystem: "com.zhengyangxu.whetstone", category: "persistence")
 
 struct ReaderPane: View {
     let article: Article
@@ -245,7 +242,7 @@ struct ReaderPane: View {
         do {
             try modelContext.save()
         } catch {
-            persistenceLog.error("addHighlight save failed: \(error.localizedDescription, privacy: .public)")
+            Log.persistence.error("addHighlight save failed: \(error.localizedDescription, privacy: .public)")
             saveError = "高亮没能保存: \(error.localizedDescription)"
         }
     }
@@ -271,7 +268,7 @@ struct ReaderPane: View {
         do {
             try modelContext.save()
         } catch {
-            persistenceLog.error("removeHighlights save failed: \(error.localizedDescription, privacy: .public)")
+            Log.persistence.error("removeHighlights save failed: \(error.localizedDescription, privacy: .public)")
             saveError = "取消高亮没能保存: \(error.localizedDescription)"
         }
     }

@@ -1,9 +1,6 @@
 import SwiftUI
 import SwiftData
 import WhetstoneCore
-import os
-
-private let persistenceLog = Logger(subsystem: "com.zhengyangxu.whetstone", category: "persistence")
 
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
@@ -22,7 +19,7 @@ struct RootView: View {
                         // persisted — otherwise the user lands in an app with no profile.
                         hasCompletedOnboarding = true
                     } catch {
-                        persistenceLog.error("onboarding profile save failed: \(error.localizedDescription, privacy: .public)")
+                        Log.persistence.error("onboarding profile save failed: \(error.localizedDescription, privacy: .public)")
                     }
                 })
             } else {

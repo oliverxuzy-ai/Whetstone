@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 public enum ResponseParser {
     public struct Concept: Equatable {
@@ -10,9 +11,11 @@ public enum ResponseParser {
         let cleaned = stripFence(text)
         guard let data = cleaned.data(using: .utf8),
               let arr = try? JSONSerialization.jsonObject(with: data) as? [String] else {
+            Log.parse.error("translation parse failed: not a string array. prefix=\(String(cleaned.prefix(200)), privacy: .public)")
             throw AIClientError.decoding("translation: 返回不是字符串数组. 前 200 字符: \(cleaned.prefix(200))")
         }
         guard !arr.isEmpty else {
+            Log.parse.error("translation parse failed: returned empty array")
             throw AIClientError.decoding("translation: 返回空数组,无可用译文。")
         }
         if arr.count == expectedCount { return arr }
@@ -24,6 +27,7 @@ public enum ResponseParser {
         let cleaned = stripFence(text)
         guard let data = cleaned.data(using: .utf8),
               let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: String]] else {
+            Log.parse.error("concepts parse failed: not a [{name,explanation}] array. prefix=\(String(cleaned.prefix(200)), privacy: .public)")
             return []
         }
         return arr.compactMap { d in

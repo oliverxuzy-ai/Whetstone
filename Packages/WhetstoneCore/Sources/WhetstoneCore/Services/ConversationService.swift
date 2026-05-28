@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import os
 
 /// Owns the three AI business-logic flows that used to live inline in `AIPane`:
 /// concept extraction, free-form ask / per-concept explanation, and the Socratic
@@ -49,7 +50,12 @@ public final class ConversationService {
             context.insert(concept)
             inserted.append(concept)
         }
-        try context.save()   // Bug #1: surface save failures, do not swallow
+        do {
+            try context.save()   // Bug #1: surface save failures, do not swallow
+        } catch {
+            Log.persistence.error("ConversationService.extractConcepts save failed: \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
         return inserted
     }
 
@@ -121,7 +127,12 @@ public final class ConversationService {
             conv.endedAt = Date()
             article.latestScore = score
         }
-        try context.save()
+        do {
+            try context.save()
+        } catch {
+            Log.persistence.error("ConversationService.ask save failed: \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
 
         return AskResult(conversation: conv, userMessage: userMsg, aiMessage: aiMsg)
     }

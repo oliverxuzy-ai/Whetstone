@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import os
 
 public enum TranslationServiceError: LocalizedError {
     case emptyContent
@@ -26,7 +27,12 @@ public final class TranslationService {
         guard !paragraphs.isEmpty else { throw TranslationServiceError.emptyContent }
         let zh = try await ai.translate(paragraphs: paragraphs)
         article.setTranslatedParagraphs(zh)
-        try context.save()   // Bug #1: surface save failures, do not swallow
+        do {
+            try context.save()   // Bug #1: surface save failures, do not swallow
+        } catch {
+            Log.persistence.error("TranslationService save failed: \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
         return zh
     }
 }

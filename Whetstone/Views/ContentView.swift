@@ -1,9 +1,6 @@
 import SwiftUI
 import SwiftData
 import WhetstoneCore
-import os
-
-private let persistenceLog = Logger(subsystem: "com.zhengyangxu.whetstone", category: "persistence")
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
@@ -90,7 +87,7 @@ struct ContentView: View {
             urlInput = ""
             selectedArticle = article
         } catch {
-            persistenceLog.error("loadArticle save/extract failed: \(error.localizedDescription, privacy: .public)")
+            Log.persistence.error("loadArticle save/extract failed: \(error.localizedDescription, privacy: .public)")
             loadError = "无法抽取文章: \(error.localizedDescription)"
         }
     }
@@ -113,7 +110,7 @@ struct ContentView: View {
         do {
             try modelContext.save()
         } catch {
-            persistenceLog.error("deleteArticle save failed: \(error.localizedDescription, privacy: .public)")
+            Log.persistence.error("deleteArticle save failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

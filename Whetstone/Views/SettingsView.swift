@@ -1,9 +1,6 @@
 import SwiftUI
 import SwiftData
 import WhetstoneCore
-import os
-
-private let persistenceLog = Logger(subsystem: "com.zhengyangxu.whetstone", category: "persistence")
 
 struct SettingsView: View {
     let onClose: () -> Void
@@ -165,7 +162,7 @@ struct SettingsView: View {
         do {
             try modelContext.save()
         } catch {
-            persistenceLog.error("settings save failed: \(error.localizedDescription, privacy: .public)")
+            Log.persistence.error("settings save failed: \(error.localizedDescription, privacy: .public)")
             // Don't show the "Saved." flash if the persist actually failed —
             // a false confirmation is worse than no confirmation.
             return

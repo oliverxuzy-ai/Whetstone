@@ -65,6 +65,7 @@ public actor OpenAIClient: AIClient {
 
         guard (200...299).contains(http.statusCode) else {
             let bodyStr = String(data: data, encoding: .utf8) ?? "<binary>"
+            Log.api.error("HTTP error: status=\(http.statusCode, privacy: .public) reason=\(String(bodyStr.prefix(120)), privacy: .public)")
             throw AIClientError.http(http.statusCode, bodyStr)
         }
 
@@ -74,6 +75,7 @@ public actor OpenAIClient: AIClient {
               let message = firstChoice["message"] as? [String: Any],
               let content = message["content"] as? String else {
             let raw = String(data: data, encoding: .utf8) ?? "<binary>"
+            Log.api.error("Response decoding failed: \(String(raw.prefix(120)), privacy: .public)")
             throw AIClientError.decoding(raw)
         }
 
@@ -83,6 +85,7 @@ public actor OpenAIClient: AIClient {
         // truncated article. Surface as a specific error so callers can fall back.
         if let finishReason = firstChoice["finish_reason"] as? String,
            finishReason == "length" {
+            Log.api.warning("Response truncated by token limit (finish_reason=length)")
             throw AIClientError.responseTruncated
         }
 
