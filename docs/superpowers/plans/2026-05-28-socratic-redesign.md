@@ -43,8 +43,9 @@
 | `Whetstone/App/WhetstoneApp.swift` | ModelContainer 注册 `ConceptScore.self` | 改 |
 | `Whetstone/Views/AIPane/QuizResultCard.swift` | 出分卡：大号总分 + 三维方块 + note + 总评 | 新建 |
 | `Whetstone/Views/AIPane/MessageListView.swift` | 末尾渲染 `QuizResultCard` | 改 |
-| `Whetstone/Views/AIPane/ConceptCardView.swift` | quiz chip 文案「考考我/再测一次」 | 改 |
-| `Whetstone/Views/AIPane.swift` | quiz 路由、进度 N/M、触发 gradeQuiz、placeholder、清场复测 | 改 |
+| `Whetstone/Views/AIPane/ConceptCardView.swift` | 删除「考考我」chip（入口移到 header） | 改 |
+| `Whetstone/Views/AIPane.swift` | quiz 路由、进度 N/M、触发 gradeQuiz、placeholder、`startQuiz`、`QuizEntryButton` | 改 |
+| `Whetstone/Views/Library/LibraryGrid.swift` | SCORE 徽标移到卡片右下角 | 改 |
 | `Tests/.../Support/MockAIClient.swift` | 新签名 + 顺序响应队列 + 记录 temperature | 改 |
 | `Tests/.../Support/InMemoryContext.swift` | 注册 `ConceptScore.self` | 改 |
 | `Tests/.../ScoreCalculatorTests.swift` | ScoreCalculator 单测 | 新建 |
@@ -1201,10 +1202,11 @@ git commit -m "feat(core): gradeQuiz 独立评分员调用 + 聚合 + ConceptSco
 **Files:**
 - Create: `Whetstone/Views/AIPane/QuizResultCard.swift`
 - Modify: `Whetstone/Views/AIPane/MessageListView.swift`（末尾渲染出分卡）
-- Modify: `Whetstone/Views/AIPane/ConceptCardView.swift`（复测 chip 文案）
-- Modify: `Whetstone/Views/AIPane.swift`（状态、路由、触发评分、placeholder）
+- Modify: `Whetstone/Views/AIPane/ConceptCardView.swift`（**删除** quiz chip —— 入口改到 header 方形按钮）
+- Modify: `Whetstone/Views/AIPane.swift`（状态、路由、触发评分、placeholder、header 苏格拉底方形按钮）
+- Modify: `Whetstone/Views/Library/LibraryGrid.swift`（SCORE 徽标从卡片左上移到右下角）
 
-> 这是 UI 任务，无单测；用 CLAUDE.md 的视觉验证协议把关。出分卡 = 用户选定的「完整诊断卡」：大号总分 + 每概念三维方块（■/□，无强调色）+ 单概念 note + 底部总评。
+> 这是 UI 任务，无单测；用 CLAUDE.md 的视觉验证协议把关。本任务含三块：① 出分卡（用户选定的「完整诊断卡」：大号总分 + 每概念三维方块 ■/□ + 单概念 note + 底部总评）；② 苏格拉底入口从对话内 chip 移到 AI pane header 右上角的正方形按钮（黑块头像剪影 + 问号，常驻、兼做"再测一次"）；③ Library 卡片分数移到右下角（分数已持久化于 `article.latestScore`，仅挪位置）。
 
 - [ ] **Step 1: 建 QuizResultCard 组件**
 
@@ -1390,22 +1392,24 @@ In `Whetstone/Views/AIPane.swift`:
     }
 ```
 
-(d) 处理「考考我 / 再测一次」入口：找到接收 `onAsk` 的闭包（把 chip 意图转给 `ask`），在处理 `.quiz` 时先清场再开新一局：
+(d) 加一个 `startQuiz()` 助手（由 Step 5 的 header 方形按钮调用）：先清场，再开新一局：
 
 ```swift
-            case .quiz:
-                messages = []
-                conversation = nil
-                quizResultConversation = nil
-                quizCurrentConcept = 0
-                Task { await ask(.quiz) }
+    private func startQuiz() {
+        guard !isThinking, !(article.concepts ?? []).isEmpty else { return }
+        messages = []
+        conversation = nil
+        quizResultConversation = nil
+        quizCurrentConcept = 0
+        Task { await ask(.quiz) }
+    }
 ```
 
-> 说明：`ask(.quiz)` 内部 `in: conversation` 此时为 nil → service 新建一次 quiz `Conversation`，旧局的 score / ConceptScore 仍留档。
+> 说明：清场后 `conversation == nil` → `ask(.quiz)` 内部 `in: conversation` 为 nil → service 新建一次 quiz `Conversation`，旧局的 score / ConceptScore 仍留档（Library 卡片分数不受影响，只有新一局出分后才覆盖 `latestScore`）。概念未提取时按钮禁用（guard）。
 
-- [ ] **Step 5: 进度指示器 + 复测 chip 文案**
+- [ ] **Step 5: header 进度标签 + 苏格拉底方形入口按钮**
 
-(a) header（`AIPane.swift` line ~80-93）的 `Text("Learning Guide")` 之后、`Spacer()` 之前加：
+(a) header（`AIPane.swift` line ~80-93，结构为 `HStack { HStack{dot, "Learning Guide"} ; Spacer() }`）的 `Text("Learning Guide")` 之后加低调进度（仅 quiz 中）：
 
 ```swift
                 if quizActive {
@@ -1415,15 +1419,99 @@ In `Whetstone/Views/AIPane.swift`:
                 }
 ```
 
-(b) `ConceptCardView.swift` 的 quiz chip（line ~42-44）文案按是否已有成绩切换：
+(b) 在 header 的 `Spacer()` **之后**（即最右）加苏格拉底入口按钮：
 
 ```swift
-                    chip(article.latestScore == nil ? "考考我" : "再测一次") {
+                QuizEntryButton(
+                    enabled: !isThinking && !(article.concepts ?? []).isEmpty,
+                    action: startQuiz
+                )
+```
+
+(c) 在 `AIPane.swift` 文件末尾（`AIPane` struct 之外，与 `MessageListView` 等并列）加按钮组件 —— 黑块头像剖面剪影 + 问号，38px 正方、cream 底、1px 黑边、直角，hover 反色：
+
+```swift
+/// AI pane header 右上角的苏格拉底考核入口。常驻，兼做"再测一次"。
+/// brutalist：正方形、1px 黑边、直角、无阴影、无强调色；hover → 黑底 cream 图标。
+private struct QuizEntryButton: View {
+    let enabled: Bool
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "brain.head.profile")   // 头像剖面剪影
+                    .font(.system(size: 18, weight: .regular))
+                Image(systemName: "questionmark")          // 问号
+                    .font(.system(size: 9, weight: .bold))
+                    .offset(x: 4, y: -3)
+            }
+            .foregroundStyle(hovering && enabled ? Theme.bgCream : Theme.textPrimary)
+            .frame(width: 38, height: 38)
+            .background(hovering && enabled ? Theme.textPrimary : Theme.bgCream)
+            .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+            .opacity(enabled ? 1 : 0.4)
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .onHover { hovering = $0 }
+        .help("苏格拉底考核 — 测测你的理解")
+    }
+}
+```
+
+> 视觉验证时确认 `brain.head.profile` 读起来是"头像剖面剪影"。若它太偏"脑/科技感"，回退为本 app 既有头像母题——纯黑方块（`Rectangle().fill(Theme.textPrimary)`）叠一个 cream 问号。
+
+- [ ] **Step 6: 删除 ConceptCardView 的 quiz chip**
+
+In `Whetstone/Views/AIPane/ConceptCardView.swift`, 删掉 `LazyVGrid` 里的 quiz chip（line ~42-44）：
+
+```swift
+                    chip("考考我") {
                         onAsk(.quiz)
                     }
 ```
 
-- [ ] **Step 6: 构建 + 视觉验证（CLAUDE.md 协议）**
+保留其后的 `ForEach(concepts.prefix(3))` 类比 chips。删除后 `onAsk` 不再发 `.quiz`（入口已移到 header 按钮）；`onAsk` 仍用于 `.explain`，类型无需改。
+
+- [ ] **Step 7: Library 卡片分数移到右下角**
+
+In `Whetstone/Views/Library/LibraryGrid.swift` 的 `LibraryArticleCard.cardContent`：
+
+(a) **删除**顶部的 SCORE 区块（line ~168-179）：
+
+```swift
+            HStack {
+                if let score = article.latestScore {
+                    Text("SCORE \(score)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(0.5)
+                        .foregroundStyle(Theme.textSecondary)
+                } else {
+                    Text(" ").font(.system(size: 11))
+                }
+                Spacer()
+            }
+            .padding(.bottom, 8)
+```
+
+(b) 在底部 meta 行（作者 · 阅读时长，line ~198-211）的内层 `HStack(spacing: 6){...}` **之后**、外层 `HStack` 闭合 `}` 之前，加右对齐分数：
+
+```swift
+                Spacer()
+
+                if let score = article.latestScore {
+                    Text("SCORE \(score)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(0.5)
+                        .foregroundStyle(Theme.textSecondary)
+                }
+```
+
+> 分数本就持久化于 `article.latestScore`（gradeQuiz 写入），此步仅移动展示位置。出分卡（Task 8 落盘）→ Library 卡片右下角分数自动随 `@Query` 刷新。
+
+- [ ] **Step 8: 构建 + 视觉验证（CLAUDE.md 协议）**
 
 ```bash
 xcodebuild -project Whetstone.xcodeproj -scheme Whetstone -destination 'platform=macOS,arch=arm64' build 2>&1 | tail -5
@@ -1431,18 +1519,19 @@ xcodebuild -project Whetstone.xcodeproj -scheme Whetstone -destination 'platform
 Expected: `** BUILD SUCCEEDED **`。
 
 然后按 CLAUDE.md「视觉验证协议」：杀旧实例 → 重新 launch → 截图 → Read 截图对比 mockup。验证点：
-- 进度标签 `概念 N/M` 低调（灰、12px）、不破坏 sage 底色；输入框 placeholder 在 quiz 中变为「回答导师的问题…」；
+- header 右上角苏格拉底方形按钮：38px 正方、直角、1px 黑边、cream 底，hover 反色（黑底 cream 图标）；ConceptCard 内已无「考考我」chip；
+- 点按钮开 quiz：进度标签 `概念 N/M` 低调（灰、12px）；输入框 placeholder 变「回答导师的问题…」；
 - 一问一答中标记不外漏（界面无 `<<NEXT>>`/`<<DONE>>`）；
 - 出分卡：cream 底 + 1px 黑边 + 直角、无阴影、无强调色；大号总分 42px 常规字重；三维方块 ■/□ 对齐；单概念 note 为次级灰；底部总评一行；与 Concept hero card 视觉同族；
-- 复测后 chip 显示「再测一次」，点击清场开新局，旧分仍在库。
+- 出分后回 Library：卡片**右下角**显示 `SCORE N`（不在左上）；再点按钮可复测、清场开新局，旧分在新分出来前不变。
 
 测试文章用 CLAUDE.md 的 fixture：`https://en.wikipedia.org/wiki/Quantum_entanglement`。
 
-- [ ] **Step 7: 提交**
+- [ ] **Step 9: 提交**
 
 ```bash
-git add Whetstone/Views/AIPane/QuizResultCard.swift Whetstone/Views/AIPane/MessageListView.swift Whetstone/Views/AIPane/ConceptCardView.swift Whetstone/Views/AIPane.swift
-git commit -m "feat(ui): QuizResultCard 出分卡 + 进度 N/M + quizReply 路由 + 复测"
+git add Whetstone/Views/AIPane/QuizResultCard.swift Whetstone/Views/AIPane/MessageListView.swift Whetstone/Views/AIPane/ConceptCardView.swift Whetstone/Views/AIPane.swift Whetstone/Views/Library/LibraryGrid.swift
+git commit -m "feat(ui): 苏格拉底 header 入口 + 出分卡 + 进度 + Library 右下角分数"
 ```
 
 ---
