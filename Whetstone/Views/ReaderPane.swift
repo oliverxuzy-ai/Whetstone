@@ -15,6 +15,10 @@ struct ReaderPane: View {
     @State private var isTranslating: Bool = false
     @State private var translationError: String? = nil
 
+    /// Owns cache-or-call + persistence. Constructed from the app-level client for
+    /// now; P5.3 will formalize injection at the app root.
+    private let translationService = TranslationService(ai: AIClientProvider.shared)
+
     private enum ReaderTab { case article, concepts }
 
     private var articleHighlights: [Highlight] {
@@ -129,32 +133,20 @@ struct ReaderPane: View {
         .frame(width: 40, height: 40)
     }
 
-    /// 三个状态:
-    ///   - 已经在双语模式 → 切回纯原文
-    ///   - 有缓存翻译,在纯原文 → 切到双语
-    ///   - 没缓存翻译 → 调 OpenAI,持久化,然后切到双语
+    /// 三个状态 — UI 状态留在 View, cache/调 AI/持久化全交给 TranslationService:
+    ///   - 已经在双语模式 → 切回纯原文 (fast path)
+    ///   - 否则 → 让 service 决定 (有缓存用缓存, 没缓存调 OpenAI + 持久化), 然后切到双语
     private func toggleTranslation() {
         if showBilingual {
             showBilingual = false
             return
         }
-        if article.translatedParagraphs != nil {
-            showBilingual = true
-            return
-        }
         guard !isTranslating else { return }
-        let paragraphs = MarkdownToAttributed.paragraphs(from: article.content)
-        guard !paragraphs.isEmpty else {
-            translationError = "文章内容为空,没东西可翻译。"
-            return
-        }
         isTranslating = true
         Task { @MainActor in
             defer { isTranslating = false }
             do {
-                let zh = try await AIClientProvider.shared.translate(paragraphs: paragraphs)
-                article.setTranslatedParagraphs(zh)
-                try? modelContext.save()
+                _ = try await translationService.ensureTranslation(for: article, context: modelContext)
                 showBilingual = true
             } catch {
                 translationError = error.localizedDescription
