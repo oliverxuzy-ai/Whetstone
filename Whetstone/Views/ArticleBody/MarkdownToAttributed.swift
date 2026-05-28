@@ -24,12 +24,9 @@ enum MarkdownToAttributed {
 
     /// 段落切分: 跟翻译流水线共享的唯一切分入口。
     /// Bilingual 模式翻译数组按这个切分结果 1:1 对齐。
+    /// Pure splitting logic now lives in WhetstoneCore.ParagraphSplitter (unit-tested).
     static func paragraphs(from text: String) -> [String] {
-        let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
-        return splitOnBlankLines(normalized)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines)
-                     .replacingOccurrences(of: "\n", with: " ") }
-            .filter { !$0.isEmpty }
+        ParagraphSplitter.split(text)
     }
 
     static func attributedBody(from text: String,
@@ -65,6 +62,12 @@ enum MarkdownToAttributed {
         let enParas = paragraphs(from: text)
         let n = min(enParas.count, translation.count)
 
+        // 纯粹的 offset 映射 (EN-only → 双语渲染坐标) 交给 WhetstoneCore.BilingualMapper,
+        // 那边有单元测试覆盖。这里只负责把字符串拼成 NSAttributedString + 套字体/颜色。
+        // 关键: append 顺序必须跟 BilingualMapper.ranges 假设的布局一致
+        // (每段 EN + "\n", 配对段后接 ZH + "\n")。
+        let mapping = BilingualMapper.ranges(enParagraphs: enParas, translation: translation)
+
         let pairStyle = NSMutableParagraphStyle()
         pairStyle.lineSpacing = 6
         pairStyle.paragraphSpacing = 6        // EN→ZH 之间的小间距
@@ -74,9 +77,6 @@ enum MarkdownToAttributed {
         groupStyle.paragraphSpacing = 18      // 一组 (EN+ZH) 跟下一组之间的大间距
 
         let result = NSMutableAttributedString()
-        var enRangesInEnOnly: [NSRange] = []
-        var enRangesRendered: [NSRange] = []
-        var enOnlyCursor = 0
 
         for i in 0..<n {
             let en = enParas[i]
@@ -89,11 +89,7 @@ enum MarkdownToAttributed {
                 .foregroundColor: textColor,
                 .paragraphStyle: pairStyle
             ]
-            let enStart = result.length
             result.append(NSAttributedString(string: en + "\n", attributes: enAttr))
-            enRangesRendered.append(NSRange(location: enStart, length: (en as NSString).length))
-            enRangesInEnOnly.append(NSRange(location: enOnlyCursor, length: (en as NSString).length))
-            enOnlyCursor += (en as NSString).length + 1  // +1 = "\n" terminator in EN-only render
 
             // ZH: 最后一段用 pairStyle (页面尾不需要大间距);其他用 groupStyle (跟下组拉开)
             let zhStyle = isLast ? pairStyle : groupStyle
@@ -114,47 +110,32 @@ enum MarkdownToAttributed {
                 .foregroundColor: textColor,
                 .paragraphStyle: style
             ]
-            let enStart = result.length
             result.append(NSAttributedString(string: en + "\n", attributes: attrs))
-            enRangesRendered.append(NSRange(location: enStart, length: (en as NSString).length))
-            enRangesInEnOnly.append(NSRange(location: enOnlyCursor, length: (en as NSString).length))
-            enOnlyCursor += (en as NSString).length + 1
         }
 
-        applyBilingualHighlights(
-            highlights,
-            enRangesInEnOnly: enRangesInEnOnly,
-            enRangesRendered: enRangesRendered,
-            body: result
-        )
+        applyBilingualHighlights(highlights, mapping: mapping, body: result)
         return result
     }
 
     private static func applyBilingualHighlights(_ highlights: [Highlight],
-                                                 enRangesInEnOnly: [NSRange],
-                                                 enRangesRendered: [NSRange],
+                                                 mapping: BilingualMapper.Mapping,
                                                  body: NSMutableAttributedString) {
         for h in highlights {
-            let saved = NSRange(location: h.charStart, length: max(0, h.charEnd - h.charStart))
-            guard saved.length > 0 else { continue }
-            // 找包含整个 highlight 的 EN 段 (不跨段)
-            let paraIdx = enRangesInEnOnly.firstIndex { para in
-                saved.location >= para.location &&
-                (saved.location + saved.length) <= (para.location + para.length)
-            }
-            if let i = paraIdx {
-                let offsetInPara = saved.location - enRangesInEnOnly[i].location
-                let renderedLoc = enRangesRendered[i].location + offsetInPara
-                guard renderedLoc + saved.length <= body.length else { continue }
+            // 主路径: 纯映射 (定位段落 + 平移 offset)。WhetstoneCore.BilingualMapper 已单测。
+            if let renderedRange = BilingualMapper.mappedRange(charStart: h.charStart,
+                                                              charEnd: h.charEnd,
+                                                              mapping: mapping) {
+                // body.length 越界保护留在 app 层 (依赖已拼好的串长度)。
+                guard renderedRange.location + renderedRange.length <= body.length else { continue }
                 body.addAttributes([
                     .backgroundColor: highlightBG,
                     .foregroundColor: highlightFG
-                ], range: NSRange(location: renderedLoc, length: saved.length))
+                ], range: renderedRange)
                 continue
             }
             // 跨段 / 越界 → 在 EN 段范围内按 selectedText 兜底搜一下
             guard !h.selectedText.isEmpty else { continue }
-            for r in enRangesRendered {
+            for r in mapping.enRangesRendered {
                 let ns = body.string as NSString
                 let found = ns.range(of: h.selectedText, options: [], range: r)
                 if found.location != NSNotFound {
@@ -178,11 +159,8 @@ enum MarkdownToAttributed {
         // paragraphSpacing handles the gap. Joining with \n\n would create an
         // empty paragraph in between and double-apply paragraphSpacing → huge
         // visual gap.
-        let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
-        let paragraphs = splitOnBlankLines(normalized)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines)
-                     .replacingOccurrences(of: "\n", with: " ") }
-            .filter { !$0.isEmpty }
+        // Same splitting rules as ParagraphSplitter (trim + collapse internal \n).
+        let paragraphs = ParagraphSplitter.split(text)
 
         let para = NSMutableParagraphStyle()
         para.lineSpacing = 6
