@@ -28,8 +28,8 @@ public enum ScoreCalculator {
         let aAvg = Double(rows.reduce(0) { $0 + valid($1.apply) }) / n
         let anAvg = Double(rows.reduce(0) { $0 + valid($1.analyze) }) / n
         let dims: [(String, Double)] = [("复述", rAvg), ("举例", aAvg), ("辨析", anAvg)]
-        let weakest = dims.min { $0.1 < $1.1 }!
-        let strongest = dims.max { $0.1 < $1.1 }!
+        guard let weakest = dims.min(by: { $0.1 < $1.1 }),
+              let strongest = dims.max(by: { $0.1 < $1.1 }) else { return "" }
         if weakest.1 >= 1.5 { return "整体掌握扎实。" }
         if strongest.1 >= 1.5 { return "\(weakest.0)层偏弱，\(strongest.0)没问题。" }
         return "\(weakest.0)层偏弱，需要再过一遍。"
