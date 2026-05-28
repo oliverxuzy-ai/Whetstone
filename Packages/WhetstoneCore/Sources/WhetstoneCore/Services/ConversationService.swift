@@ -37,8 +37,8 @@ public final class ConversationService {
         public let conversation: Conversation
         public let userMessage: Message
         public let aiMessage: Message
-        public var quizCurrentConcept: Int? = nil   // <<NEXT concept=N>> 解析出的序号，驱动进度
-        public var quizDone: Bool = false           // 见到 <<DONE>>，调用方据此触发 gradeQuiz
+        public let quizCurrentConcept: Int?   // <<NEXT concept=N>> 解析出的序号，驱动进度
+        public let quizDone: Bool             // 见到 <<DONE>>，调用方据此触发 gradeQuiz
     }
 
     // MARK: - Concept extraction
@@ -73,11 +73,11 @@ public final class ConversationService {
     // MARK: - Ask (free / explain / quiz)
 
     /// Runs one conversational turn. Creates a `Conversation` if `conversation` is nil
-    /// (mode `.quiz` for quiz, else `.companion`). Inserts the user message (short
-    /// display form), assembles history, replaces the last user turn with the FULL
-    /// prompted content (article injection), calls the AI, appends the assistant
-    /// message, and — for quiz replies that contain a `SCORE:` line — writes the score
-    /// back onto the conversation and the article. Persists, throwing on failure.
+    /// (mode `.quiz` for quiz/quizReply, else `.companion`). Builds the system prompt +
+    /// message history, calls the AI, and — for quiz turns — strips `QuizControlMarks`
+    /// (`<<NEXT>>`/`<<DONE>>`) from the reply before storing it. Persists, throwing on
+    /// failure. Returns an `AskResult` whose `quizCurrentConcept` / `quizDone` signals
+    /// let the caller drive progress and trigger grading. Scoring itself lives in `gradeQuiz`.
     public func ask(
         _ kind: AskKind,
         in conversation: Conversation?,
@@ -152,6 +152,7 @@ public final class ConversationService {
 
         // 兜底：导师若一直不发 <<DONE>>，按导师轮数封顶（每概念上限 4 轮）。
         // 达 conceptCount×4 个导师(.ai)轮即强制收尾，防止永远问不完。
+        // tutorTurns 含本轮刚保存的 aiMsg；故 cap=conceptCount×4 时，第 4 个 .ai 轮即触发收尾（用 >=）。
         let tutorTurns = (conv.messages ?? []).filter { $0.role == .ai }.count
         let cap = max(1, conceptCount) * 4
         let forcedDone = kind.isQuiz && tutorTurns >= cap
