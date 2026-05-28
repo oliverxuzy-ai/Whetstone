@@ -54,7 +54,7 @@ public enum ResponseParser {
             throw AIClientError.decoding("conceptScores: 返回不是对象数组. 前 200 字符: \(cleaned.prefix(200))")
         }
         guard arr.count == expectedConcepts.count else {
-            Log.parse.error("conceptScores count mismatch: got \(arr.count, privacy: .public) expected \(expectedConcepts.count, privacy: .public)")
+            Log.parse.error("conceptScores count mismatch: got \(arr.count, privacy: .public) expected \(expectedConcepts.count, privacy: .public) prefix=\(String(cleaned.prefix(200)), privacy: .public)")
             throw AIClientError.decoding("conceptScores: 概念数对不齐 (got \(arr.count), expected \(expectedConcepts.count))")
         }
         return arr.enumerated().map { idx, d in
@@ -69,9 +69,7 @@ public enum ResponseParser {
     }
 
     private static func intField(_ any: Any?) -> Int {
-        if let i = any as? Int { return i }
-        if let n = any as? NSNumber { return n.intValue }
-        return 0
+        (any as? NSNumber)?.intValue ?? 0
     }
 
     private static func stripFence(_ text: String) -> String {

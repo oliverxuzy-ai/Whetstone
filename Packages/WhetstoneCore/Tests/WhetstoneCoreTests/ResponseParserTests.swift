@@ -76,4 +76,12 @@ final class ResponseParserTests: XCTestCase {
     func testConceptScoresBadJSONThrows() {
         XCTAssertThrowsError(try ResponseParser.conceptScores("not json", expectedConcepts: ["A"]))
     }
+
+    func testConceptScoresFloatDimTruncates() throws {
+        // 评分员若返回 2.0 这类浮点，按整数截断为 2
+        let json = #"[{"concept":"A","recall":2.0,"apply":1.0,"analyze":0,"note":"n"}]"#
+        let rows = try ResponseParser.conceptScores(json, expectedConcepts: ["A"])
+        XCTAssertEqual(rows[0].recall, 2)
+        XCTAssertEqual(rows[0].apply, 1)
+    }
 }
