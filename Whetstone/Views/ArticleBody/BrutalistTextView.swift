@@ -21,7 +21,7 @@ final class BrutalistTextView: NSTextView {
     private var popoverWindow: NSPanel?
     private var pendingPopoverWorkItem: DispatchWorkItem?
     /// One-shot: 下一次 showPopoverIfSelection 应该显示"取消高亮"动作集而不是
-    /// 默认的"高亮"动作集。Set by mouseUp 单击命中现有高亮时,read+reset 在 popover 弹出时。
+    /// 默认的"高亮"动作集。Set by mouseDown 单击命中现有高亮时,read+reset 在 popover 弹出时。
     private var pendingPopoverIsRemove: Bool = false
     /// Local NSEvent monitor used while the popover is shown — catches
     /// outside-panel clicks so we can dismiss without waiting for a
@@ -84,14 +84,18 @@ final class BrutalistTextView: NSTextView {
 
     // MARK: - Selection → popover
 
-    /// Mouse/key hooks keep the popover responsive, while selection-change
-    /// notifications below cover AppKit paths that do not reliably land here.
-    override func mouseUp(with event: NSEvent) {
-        super.mouseUp(with: event)
+    /// NSTextView handles mouse tracking inside `mouseDown`; relying on a
+    /// separate `mouseUp` override misses ordinary single-clicks. Capture the
+    /// clicked highlight before AppKit moves the insertion point, then react
+    /// after `super` finishes its tracking.
+    override func mouseDown(with event: NSEvent) {
+        let clickedHighlight = event.clickCount == 1 ? highlightRange(at: event) : nil
+        super.mouseDown(with: event)
+
         let sel = selectedRange()
         // 单击 (无选区) 命中已有高亮 → auto-select 整段高亮 + 标记下一次 popover
         // 为 "取消高亮" 模式。拖选 / 普通点击空白处都走默认路径。
-        if sel.length == 0, let h = highlightRange(containing: sel.location) {
+        if sel.length == 0, let h = clickedHighlight {
             pendingPopoverIsRemove = true
             setSelectedRange(h)
             schedulePopoverPresentation(after: 0.02)
@@ -99,6 +103,29 @@ final class BrutalistTextView: NSTextView {
         }
         pendingPopoverIsRemove = false
         schedulePopoverPresentation(after: 0.02)
+    }
+
+    private func highlightRange(at event: NSEvent) -> NSRange? {
+        guard let layout = layoutManager,
+              let container = textContainer,
+              let storage = textStorage,
+              storage.length > 0 else { return nil }
+
+        let viewPoint = convert(event.locationInWindow, from: nil)
+        let containerPoint = NSPoint(
+            x: viewPoint.x - textContainerOrigin.x,
+            y: viewPoint.y - textContainerOrigin.y
+        )
+
+        var lineRange = NSRange(location: 0, length: 0)
+        let glyphIndex = layout.glyphIndex(for: containerPoint, in: container)
+        guard glyphIndex < layout.numberOfGlyphs else { return nil }
+
+        let lineRect = layout.lineFragmentUsedRect(forGlyphAt: glyphIndex, effectiveRange: &lineRange)
+        guard lineRect.insetBy(dx: -4, dy: -4).contains(containerPoint) else { return nil }
+
+        let charIndex = layout.characterIndexForGlyph(at: glyphIndex)
+        return highlightRange(containing: charIndex)
     }
 
     /// 扫描 textStorage 找包含 charIdx 的高亮 backgroundColor 段。
