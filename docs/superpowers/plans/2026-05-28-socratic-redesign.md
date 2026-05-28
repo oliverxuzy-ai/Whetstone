@@ -255,18 +255,20 @@ import SwiftData
 @Model
 public final class ConceptScore {
     public var concept: String = ""
-    public var recall: Int = 0     // 0/1/2
-    public var apply: Int = 0      // 0/1/2
-    public var analyze: Int = 0    // 0/1/2
-    public var note: String = ""   // 单概念一句诊断
+    public var recall: Int = 0       // 0/1/2
+    public var apply: Int = 0        // 0/1/2
+    public var analyze: Int = 0      // 0/1/2
+    public var note: String = ""     // 单概念一句诊断
+    public var orderIndex: Int = 0   // 概念顺序，供 ForEach 稳定排序（SwiftData 关系数组无序）
     public var conversation: Conversation?
 
-    public init(concept: String, recall: Int, apply: Int, analyze: Int, note: String, conversation: Conversation? = nil) {
+    public init(concept: String, recall: Int, apply: Int, analyze: Int, note: String, orderIndex: Int = 0, conversation: Conversation? = nil) {
         self.concept = concept
         self.recall = recall
         self.apply = apply
         self.analyze = analyze
         self.note = note
+        self.orderIndex = orderIndex
         self.conversation = conversation
     }
 }
@@ -1183,13 +1185,14 @@ In `Packages/WhetstoneCore/Sources/WhetstoneCore/Services/ConversationService.sw
         let rows = try ResponseParser.conceptScores(reply, expectedConcepts: names)
 
         var percents: [Int] = []
-        for row in rows {
+        for (idx, row) in rows.enumerated() {
             let cs = ConceptScore(
                 concept: row.concept,
                 recall: row.recall,
                 apply: row.apply,
                 analyze: row.analyze,
                 note: row.note,
+                orderIndex: idx,
                 conversation: conversation
             )
             context.insert(cs)
@@ -1251,7 +1254,7 @@ struct QuizResultCard: View {
     let conversation: Conversation
 
     var body: some View {
-        let scores = (conversation.conceptScores ?? [])
+        let scores = (conversation.conceptScores ?? []).sorted { $0.orderIndex < $1.orderIndex }
         let total = conversation.score ?? 0
         VStack(alignment: .leading, spacing: 16) {
             HStack {
