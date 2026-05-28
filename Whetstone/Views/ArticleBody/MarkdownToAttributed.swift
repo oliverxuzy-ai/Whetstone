@@ -126,7 +126,15 @@ enum MarkdownToAttributed {
                                                  mapping: BilingualMapper.Mapping,
                                                  enOnlySource: String,
                                                  body: NSMutableAttributedString) {
-        for h in highlights {
+        // 主路径映射一次批量算完: 每个 highlight 在 mapping 里二分定位所属段落
+        // (O(log p)/highlight), 整体 O(m·log p) 而非旧的 O(m·p) 线扫。结果跟逐条
+        // BilingualMapper.mappedRange 完全一致 (parity 单测覆盖)。下面的 offset 校验 +
+        // selectedText 兜底逻辑不变 —— 只换了「有效 offset 怎么映射」这一步。
+        let mappedPrimary = BilingualMapper.mappedRanges(
+            for: highlights.map { (charStart: $0.charStart, charEnd: $0.charEnd) },
+            mapping: mapping)
+
+        for (idx, h) in highlights.enumerated() {
             // 先校验存的 offset 在当前 EN-only 源串里是否还指向 selectedText。
             // 内容漂移后 offset 会过期 (指向错误字符) —— 这时跳过映射路径, 直接走
             // selectedText 兜底搜索, 避免高亮错的 span (Bug #2)。
@@ -139,9 +147,7 @@ enum MarkdownToAttributed {
             // 主路径: 纯映射 (定位段落 + 平移 offset)。WhetstoneCore.BilingualMapper 已单测。
             // 仅在 offset 仍有效时信任它。
             if offsetsStillValid,
-               let renderedRange = BilingualMapper.mappedRange(charStart: h.charStart,
-                                                              charEnd: h.charEnd,
-                                                              mapping: mapping) {
+               let renderedRange = mappedPrimary[idx] {
                 // body.length 越界保护留在 app 层 (依赖已拼好的串长度)。
                 guard renderedRange.location + renderedRange.length <= body.length else { continue }
                 body.addAttributes([
