@@ -22,6 +22,8 @@ packages:
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
     from: "2.6.0"
+  WhetstoneCore:
+    path: Packages/WhetstoneCore
 
 targets:
   Whetstone:
@@ -36,6 +38,7 @@ targets:
     dependencies:
       - package: KeychainAccess
       - package: Sparkle
+      - package: WhetstoneCore
     # 用 xcodegen 显式生成 Info.plist (而不是 GENERATE_INFOPLIST_FILE),
     # 因为 Sparkle 的 SUFeedURL / SUPublicEDKey 是自定义 key,Xcode 的
     # INFOPLIST_KEY_* 机制只认 Apple 已知的 key,自定义会被静默丢弃 →

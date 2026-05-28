@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import Sparkle
+import WhetstoneCore
 
 @main
 struct WhetstoneApp: App {
