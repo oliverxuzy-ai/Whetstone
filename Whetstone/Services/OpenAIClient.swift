@@ -144,10 +144,19 @@ actor OpenAIClient {
               let arr = try? JSONSerialization.jsonObject(with: data) as? [String] else {
             throw OpenAIError.decoding("translation: 返回不是字符串数组. 前 200 字符: \(cleaned.prefix(200))")
         }
-        guard arr.count == expectedCount else {
-            throw OpenAIError.decoding("translation: 段落数不齐 (got \(arr.count), expected \(expectedCount))")
+        // 实战中 gpt-4o 经常少返 1-3 段或多返几段 (合并 / 拆分短段)。
+        // 严格相等的 strict mode 会让整篇翻译全失败,体验更差;改成容错:
+        //   多返 → trim 到 expectedCount
+        //   少返 → 后面 pad 空串,渲染时那些段只显示 EN (Bilingual 渲染本来就
+        //         支持 translation.count < EN 段数的情况)
+        // 仅当返回数组完全空时才视作不可救药。
+        guard !arr.isEmpty else {
+            throw OpenAIError.decoding("translation: 返回空数组,无可用译文。")
         }
-        return arr
+        if arr.count == expectedCount { return arr }
+        if arr.count > expectedCount { return Array(arr.prefix(expectedCount)) }
+        // arr.count < expectedCount → pad
+        return arr + Array(repeating: "", count: expectedCount - arr.count)
     }
 
     /// Layout enhancement: ask AI to reformat raw extracted text into clean markdown.

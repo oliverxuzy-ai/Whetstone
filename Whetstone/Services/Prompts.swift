@@ -97,8 +97,15 @@ enum Prompts {
         let json = (try? JSONSerialization.data(withJSONObject: paragraphs))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
         return """
-        把以下英文段落翻译成简体中文。返回相同长度的 JSON 数组,index 严格对应。
+        把以下 \(paragraphs.count) 个英文段落翻译成简体中文。
 
+        要求 (再强调一次):
+        - 返回 JSON 数组,长度必须严格等于 \(paragraphs.count)
+        - output[i] 必须是 input[i] 的中文翻译 (index 严格对齐)
+        - 不要合并段落,不要拆分段落,不要省略,即使原段很短也要给一段中文
+        - 只输出 JSON,无任何 markdown 包裹或解释
+
+        输入 (\(paragraphs.count) 段):
         \(json)
         """
     }
