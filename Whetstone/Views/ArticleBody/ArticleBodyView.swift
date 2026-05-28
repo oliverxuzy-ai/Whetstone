@@ -14,6 +14,17 @@ struct ArticleBodyView: NSViewRepresentable {
     let onAddHighlight: (NSRange, String) -> Void
     var onRemoveHighlights: ((NSRange, String) -> Void)? = nil
 
+    /// Holds the last memoization key so `updateNSView` can skip the O(n)
+    /// attributed-string rebuild when no rendering input changed. SwiftUI
+    /// invokes `updateNSView` very frequently (hover, scroll, unrelated state),
+    /// so this avoids a main-thread rebuild + full attributed-string compare on
+    /// every call.
+    final class Coordinator {
+        var lastKey: AttributedBodyKey?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
     func makeNSView(context: Context) -> BrutalistTextView {
         let storage = NSTextStorage()
         let layout = NSLayoutManager()
@@ -32,6 +43,28 @@ struct ArticleBodyView: NSViewRepresentable {
     }
 
     func updateNSView(_ tv: BrutalistTextView, context: Context) {
+        // Cheap key over everything that affects rendering. A highlight's
+        // signature is "charStart:charEnd:selectedText" (colorHex is excluded —
+        // MarkdownToAttributed uses hardcoded highlight colors).
+        let highlightSignatures = highlights.map { "\($0.charStart):\($0.charEnd):\($0.selectedText)" }
+        let key = AttributedBodyKey(
+            content: text,
+            isEnhanced: isLayoutEnhanced,
+            highlightSignatures: highlightSignatures,
+            translation: translation,
+            showBilingual: showBilingual
+        )
+
+        // Cache hit: skip the O(n) rebuild + the full attributed-string compare.
+        // Still refresh the lightweight closures — they're cheap and capture
+        // potentially-fresh SwiftUI state, and the textview already holds the
+        // matching rendered content.
+        if key == context.coordinator.lastKey {
+            tv.onAddHighlight = onAddHighlight
+            tv.onRemoveHighlights = onRemoveHighlights
+            return
+        }
+
         let attr = MarkdownToAttributed.attributedBody(
             from: text,
             isEnhanced: isLayoutEnhanced,
@@ -39,11 +72,10 @@ struct ArticleBodyView: NSViewRepresentable {
             translation: translation,
             showBilingual: showBilingual
         )
-        if tv.attributedString() != attr {
-            tv.textStorage?.setAttributedString(attr)
-        }
+        tv.textStorage?.setAttributedString(attr)
         tv.onAddHighlight = onAddHighlight
         tv.onRemoveHighlights = onRemoveHighlights
+        context.coordinator.lastKey = key
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: BrutalistTextView, context: Context) -> CGSize? {
