@@ -17,9 +17,12 @@
 		72C74C733C718473625455B7 /* Services.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9F8AA06F54F4F9D1C4BEAEE /* Services.swift */; };
 		7BB6F1F5C17227ECB764580F /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10FF3EEC047B25F697F250CE /* RootView.swift */; };
 		8206008CECFC04AE1AA68270 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5036684D5E118FEEB1D8AA7C /* Typography.swift */; };
+		8430D79BD47570F717C6441F /* MessageListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F4E875534DA1AAF4C36931F /* MessageListView.swift */; };
 		84E84F6A20A3FC317A8F4D8A /* MarkdownToAttributed.swift in Sources */ = {isa = PBXBuildFile; fileRef = F02CAA5836DBA916D520504A /* MarkdownToAttributed.swift */; };
 		94B319CFAF07316F4F31C180 /* ReaderPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6CCC7F8A3F2E459EA5048FD /* ReaderPane.swift */; };
+		9912A523A3B6F5E0FD3349EA /* ConceptCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24EFBBCCC763A2105F25576 /* ConceptCardView.swift */; };
 		A146E8BB58180A38BA30D07B /* WhetstoneCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0E37FC53A24048B0A0B14560 /* WhetstoneCore */; };
+		A2885CE61EE667C8653E0A90 /* ChatInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E4CF8D6E7A59A1FBC6BA9D0 /* ChatInputView.swift */; };
 		B1EA9AAFE79A70E1970D8C8A /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C575F7BAFF7C220F3D44F12E /* OnboardingView.swift */; };
 		B6093F5EEFD6CC01687AF318 /* ArticleExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C95592D92FC1EEECC22D6B6 /* ArticleExtractor.swift */; };
 		B69D2F7E3DEA973463D45553 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C4B6B1592DF8CC8F4838BD1 /* SettingsView.swift */; };
@@ -39,15 +42,18 @@
 		157C6D506EB122AEC79AC5D0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1C95592D92FC1EEECC22D6B6 /* ArticleExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleExtractor.swift; sourceTree = "<group>"; };
 		31D615F55DEA42C699B1652B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		3E4CF8D6E7A59A1FBC6BA9D0 /* ChatInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatInputView.swift; sourceTree = "<group>"; };
 		4E25C492806C814FA0DF0273 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		5036684D5E118FEEB1D8AA7C /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		55201CB2A7C87A616B775EBF /* BrutalistTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrutalistTextView.swift; sourceTree = "<group>"; };
 		572ED605203604B509234AB5 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		5C4B6B1592DF8CC8F4838BD1 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		5F4E875534DA1AAF4C36931F /* MessageListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageListView.swift; sourceTree = "<group>"; };
 		744CC4170B6ADA72588F05BD /* Readability.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Readability.js; sourceTree = "<group>"; };
 		75EAA13F1CEFC833316A3C43 /* WhetstoneApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhetstoneApp.swift; sourceTree = "<group>"; };
 		81F54D8F83E5FE56B7758BE4 /* ArticleBodyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleBodyView.swift; sourceTree = "<group>"; };
 		95D9E3C26BE04786148D427E /* WhetstoneCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = WhetstoneCore; path = Packages/WhetstoneCore; sourceTree = SOURCE_ROOT; };
+		A24EFBBCCC763A2105F25576 /* ConceptCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConceptCardView.swift; sourceTree = "<group>"; };
 		B9F8AA06F54F4F9D1C4BEAEE /* Services.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services.swift; sourceTree = "<group>"; };
 		BB791305B6ED41DBB4961CB1 /* SelectionActionPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionActionPopover.swift; sourceTree = "<group>"; };
 		C2642B310BE7538FB49979AE /* AIPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPane.swift; sourceTree = "<group>"; };
@@ -99,6 +105,7 @@
 		37C25196147A162A5803E237 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				95BB7BCFC6D63720A739CC1F /* AIPane */,
 				1844171A0F40F4683AF39AAE /* ArticleBody */,
 				C2642B310BE7538FB49979AE /* AIPane.swift */,
 				31D615F55DEA42C699B1652B /* ContentView.swift */,
@@ -132,6 +139,16 @@
 				3A957DBE30BD779140441751 /* Whetstone */,
 				F2F6481CEA8CE48EF99A962F /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		95BB7BCFC6D63720A739CC1F /* AIPane */ = {
+			isa = PBXGroup;
+			children = (
+				3E4CF8D6E7A59A1FBC6BA9D0 /* ChatInputView.swift */,
+				A24EFBBCCC763A2105F25576 /* ConceptCardView.swift */,
+				5F4E875534DA1AAF4C36931F /* MessageListView.swift */,
+			);
+			path = AIPane;
 			sourceTree = "<group>";
 		};
 		E3879238DE3CF30514ADE686 /* Resources */ = {
@@ -265,11 +282,14 @@
 				B6093F5EEFD6CC01687AF318 /* ArticleExtractor.swift in Sources */,
 				4F3A4743890093F1CE4420BC /* BrutalistTextView.swift in Sources */,
 				31707DEF6FE69074388BB400 /* Buttons.swift in Sources */,
+				A2885CE61EE667C8653E0A90 /* ChatInputView.swift in Sources */,
 				2D31503655A5CE949308E619 /* Colors.swift in Sources */,
+				9912A523A3B6F5E0FD3349EA /* ConceptCardView.swift in Sources */,
 				DF1FA309485EB9F1CE8BD7AF /* ContentView.swift in Sources */,
 				CCC238F406915232794D8E70 /* KeychainStore.swift in Sources */,
 				21ADCF5233BF01DEDACE7E8B /* LibraryView.swift in Sources */,
 				84E84F6A20A3FC317A8F4D8A /* MarkdownToAttributed.swift in Sources */,
+				8430D79BD47570F717C6441F /* MessageListView.swift in Sources */,
 				B1EA9AAFE79A70E1970D8C8A /* OnboardingView.swift in Sources */,
 				94B319CFAF07316F4F31C180 /* ReaderPane.swift in Sources */,
 				7BB6F1F5C17227ECB764580F /* RootView.swift in Sources */,
