@@ -24,6 +24,7 @@ public actor OpenAIClient: AIClient {
         systemPrompt: String,
         messages: [AIMessage],
         maxTokens: Int,
+        temperature: Double?,
         cacheArticleContent: String?
     ) async throws -> String {
         guard let apiKey = await apiKeyProvider(),
@@ -49,11 +50,14 @@ public actor OpenAIClient: AIClient {
             allMessages.append(["role": m.role, "content": m.content])
         }
 
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
             "messages": allMessages
         ]
+        if let temperature {
+            body["temperature"] = temperature
+        }
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -108,6 +112,7 @@ public actor OpenAIClient: AIClient {
             systemPrompt: Prompts.bilingualTranslationSystem,
             messages: [AIMessage(role: "user", content: Prompts.bilingualTranslationUser(paragraphs: paragraphs))],
             maxTokens: maxTokens,
+            temperature: nil,
             cacheArticleContent: nil
         )
         return try ResponseParser.translation(raw, expectedCount: paragraphs.count)
@@ -122,6 +127,7 @@ public actor OpenAIClient: AIClient {
             systemPrompt: Prompts.layoutEnhanceSystem,
             messages: [AIMessage(role: "user", content: Prompts.layoutEnhanceUser(rawText: rawText))],
             maxTokens: 4096,
+            temperature: nil,
             cacheArticleContent: nil
         )
     }

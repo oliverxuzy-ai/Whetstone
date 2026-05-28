@@ -5,7 +5,7 @@ final class AIClientTests: XCTestCase {
     func testMockSendReturnsConfiguredResult() async throws {
         let mock = MockAIClient()
         mock.sendResult = .success("hi")
-        let out = try await mock.send(systemPrompt: "s", messages: [AIMessage(role: "user", content: "q")], maxTokens: 10, cacheArticleContent: nil)
+        let out = try await mock.send(systemPrompt: "s", messages: [AIMessage(role: "user", content: "q")], maxTokens: 10, temperature: nil, cacheArticleContent: nil)
         XCTAssertEqual(out, "hi")
         XCTAssertEqual(mock.sendCallCount, 1)
     }

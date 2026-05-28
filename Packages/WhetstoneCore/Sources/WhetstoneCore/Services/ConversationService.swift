@@ -41,6 +41,7 @@ public final class ConversationService {
             systemPrompt: Prompts.personaSystem(personaPromptLine: personaPromptLine),
             messages: [AIMessage(role: "user", content: Prompts.conceptExtractionUser(articleContent: article.content))],
             maxTokens: 800,
+            temperature: nil,
             cacheArticleContent: article.content
         )
         let parsed = ResponseParser.concepts(text)
@@ -116,6 +117,7 @@ public final class ConversationService {
             systemPrompt: systemPrompt,
             messages: msgs,
             maxTokens: 1024,
+            temperature: nil,
             cacheArticleContent: article.content
         )
 

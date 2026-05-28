@@ -27,7 +27,7 @@ public enum AIClientError: LocalizedError, Equatable {
 }
 
 public protocol AIClient: Sendable {
-    func send(systemPrompt: String, messages: [AIMessage], maxTokens: Int, cacheArticleContent: String?) async throws -> String
+    func send(systemPrompt: String, messages: [AIMessage], maxTokens: Int, temperature: Double?, cacheArticleContent: String?) async throws -> String
     func translate(paragraphs: [String]) async throws -> [String]
     func enhanceLayout(rawText: String) async throws -> String
 }
