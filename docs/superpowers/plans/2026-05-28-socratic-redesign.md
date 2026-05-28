@@ -41,7 +41,10 @@
 | `Sources/WhetstoneCore/Prompts.swift` | 新增 tutor/grader prompt；删旧 quiz prompt | 改 |
 | `Sources/WhetstoneCore/Services/ConversationService.swift` | quizReply 路由、控制标记剥离、`gradeQuiz`；删 `parseScore` | 改 |
 | `Whetstone/App/WhetstoneApp.swift` | ModelContainer 注册 `ConceptScore.self` | 改 |
-| `Whetstone/Views/AIPane.swift` | quiz 路由、进度 N/M、触发 gradeQuiz、诊断展示 | 改 |
+| `Whetstone/Views/AIPane/QuizResultCard.swift` | 出分卡：大号总分 + 三维方块 + note + 总评 | 新建 |
+| `Whetstone/Views/AIPane/MessageListView.swift` | 末尾渲染 `QuizResultCard` | 改 |
+| `Whetstone/Views/AIPane/ConceptCardView.swift` | quiz chip 文案「考考我/再测一次」 | 改 |
+| `Whetstone/Views/AIPane.swift` | quiz 路由、进度 N/M、触发 gradeQuiz、placeholder、清场复测 | 改 |
 | `Tests/.../Support/MockAIClient.swift` | 新签名 + 顺序响应队列 + 记录 temperature | 改 |
 | `Tests/.../Support/InMemoryContext.swift` | 注册 `ConceptScore.self` | 改 |
 | `Tests/.../ScoreCalculatorTests.swift` | ScoreCalculator 单测 | 新建 |
@@ -98,6 +101,24 @@ final class ScoreCalculatorTests: XCTestCase {
     func testTotalSingleConcept() {
         XCTAssertEqual(ScoreCalculator.totalScore([47]), 47)
     }
+
+    // overallDiagnosis：底部一句总评（确定性模板，无 LLM）
+    func testDiagnosisAllStrong() {
+        let rows = [(recall: 2, apply: 2, analyze: 2), (recall: 2, apply: 2, analyze: 2)]
+        XCTAssertEqual(ScoreCalculator.overallDiagnosis(rows: rows), "整体掌握扎实。")
+    }
+    func testDiagnosisWeakAnalyzeStrongRecall() {
+        // 复述均 2（强），辨析均 0（弱），举例均 1
+        let rows = [(recall: 2, apply: 1, analyze: 0), (recall: 2, apply: 1, analyze: 0)]
+        XCTAssertEqual(ScoreCalculator.overallDiagnosis(rows: rows), "辨析层偏弱，复述没问题。")
+    }
+    func testDiagnosisAllWeak() {
+        let rows = [(recall: 1, apply: 0, analyze: 0)]
+        XCTAssertEqual(ScoreCalculator.overallDiagnosis(rows: rows), "举例层偏弱，需要再过一遍。")
+    }
+    func testDiagnosisEmptyIsEmptyString() {
+        XCTAssertEqual(ScoreCalculator.overallDiagnosis(rows: []), "")
+    }
 }
 ```
 
@@ -132,6 +153,22 @@ public enum ScoreCalculator {
         return Int(mean.rounded())
     }
 
+    /// 底部总评：根据三维各自的平均掌握度生成一句话。纯模板、确定性（不调 LLM，保持一致性）。
+    /// 维度均分 ≥1.5 视为"扎实"。
+    public static func overallDiagnosis(rows: [(recall: Int, apply: Int, analyze: Int)]) -> String {
+        guard !rows.isEmpty else { return "" }
+        let n = Double(rows.count)
+        let rAvg = Double(rows.reduce(0) { $0 + valid($1.recall) }) / n
+        let aAvg = Double(rows.reduce(0) { $0 + valid($1.apply) }) / n
+        let anAvg = Double(rows.reduce(0) { $0 + valid($1.analyze) }) / n
+        let dims: [(String, Double)] = [("复述", rAvg), ("举例", aAvg), ("辨析", anAvg)]
+        let weakest = dims.min { $0.1 < $1.1 }!
+        let strongest = dims.max { $0.1 < $1.1 }!
+        if weakest.1 >= 1.5 { return "整体掌握扎实。" }
+        if strongest.1 >= 1.5 { return "\(weakest.0)层偏弱，\(strongest.0)没问题。" }
+        return "\(weakest.0)层偏弱，需要再过一遍。"
+    }
+
     private static func valid(_ v: Int) -> Int { (0...2).contains(v) ? v : 0 }
 }
 ```
@@ -139,7 +176,7 @@ public enum ScoreCalculator {
 - [ ] **Step 4: 跑测试确认通过**
 
 Run: `cd Packages/WhetstoneCore && swift test --filter ScoreCalculatorTests 2>&1 | tail -20`
-Expected: `Executed 8 tests, with 0 failures`。
+Expected: `Executed 12 tests, with 0 failures`。
 
 - [ ] **Step 5: 提交**
 
@@ -1159,25 +1196,154 @@ git commit -m "feat(core): gradeQuiz 独立评分员调用 + 聚合 + ConceptSco
 
 ---
 
-## Task 9: AIPane —— quiz 路由 / 进度 N/M / 触发评分 / 诊断展示
+## Task 9: UI —— 进度 / quizReply 路由 / QuizResultCard 出分卡 / 复测
 
 **Files:**
-- Modify: `Whetstone/Views/AIPane.swift`
+- Create: `Whetstone/Views/AIPane/QuizResultCard.swift`
+- Modify: `Whetstone/Views/AIPane/MessageListView.swift`（末尾渲染出分卡）
+- Modify: `Whetstone/Views/AIPane/ConceptCardView.swift`（复测 chip 文案）
+- Modify: `Whetstone/Views/AIPane.swift`（状态、路由、触发评分、placeholder）
 
-> 这是 UI 任务，无单测；用 CLAUDE.md 的视觉验证协议把关。
+> 这是 UI 任务，无单测；用 CLAUDE.md 的视觉验证协议把关。出分卡 = 用户选定的「完整诊断卡」：大号总分 + 每概念三维方块（■/□，无强调色）+ 单概念 note + 底部总评。
 
-- [ ] **Step 1: 加 quiz 进度状态**
+- [ ] **Step 1: 建 QuizResultCard 组件**
 
-In `Whetstone/Views/AIPane.swift`, 在已有 `@State` 群（`messages`/`isThinking`/`error` 附近）加：
+Create `Whetstone/Views/AIPane/QuizResultCard.swift`:
+
+```swift
+import SwiftUI
+import WhetstoneCore
+
+/// 末尾出分结果卡：复刻 Concept hero card 构造（cream + 1px 黑边 + 直角）。
+/// 三维用黑/空心方块表达，不使用强调色（brutalist 约束）。
+struct QuizResultCard: View {
+    let conversation: Conversation
+
+    var body: some View {
+        let scores = (conversation.conceptScores ?? [])
+        let total = conversation.score ?? 0
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("COMPREHENSION")
+                    .font(.system(size: 11, weight: .medium))
+                    .tracking(0.5)
+                    .foregroundStyle(Theme.textPrimary.opacity(0.5))
+                Spacer()
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Theme.textPrimary)
+            }
+
+            Text("\(total)")
+                .font(.system(size: 42, weight: .regular))
+                .foregroundStyle(Theme.textPrimary)
+
+            Rectangle().fill(Theme.borderHeavy).frame(height: 1)
+
+            if !scores.isEmpty {
+                HStack {
+                    Spacer()
+                    Text("复 举 辨")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.textPrimary.opacity(0.5))
+                }
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(scores) { s in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(alignment: .top) {
+                                Text(s.concept)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(Theme.textPrimary)
+                                Spacer()
+                                Text("\(glyphs(s.recall)) \(glyphs(s.apply)) \(glyphs(s.analyze))")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(Theme.textPrimary)
+                            }
+                            if !s.note.isEmpty {
+                                Text(s.note)
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(Theme.textPrimary.opacity(0.7))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                }
+                Rectangle().fill(Theme.borderHeavy).frame(height: 1)
+            }
+
+            Text(ScoreCalculator.overallDiagnosis(rows: scores.map { (recall: $0.recall, apply: $0.apply, analyze: $0.analyze) }))
+                .font(.bodyChat)
+                .foregroundStyle(Theme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(20)
+        .background(Theme.bgCream)
+        .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+    }
+
+    private func glyphs(_ v: Int) -> String {
+        switch v {
+        case 2: return "■■"
+        case 1: return "■□"
+        default: return "□□"
+        }
+    }
+}
+```
+
+- [ ] **Step 2: MessageListView 末尾渲染出分卡**
+
+In `Whetstone/Views/AIPane/MessageListView.swift`:
+
+(a) 加一个属性（在 `let onAsk:` 之后）：
+
+```swift
+    let quizResult: Conversation?
+```
+
+(b) 在 `ForEach(messages) { ... }` 之后、`if isThinking` 之前插入：
+
+```swift
+                if let quizResult {
+                    QuizResultCard(conversation: quizResult)
+                }
+```
+
+- [ ] **Step 3: AIPane 状态 + AskKind 桥接 + placeholder**
+
+In `Whetstone/Views/AIPane.swift`:
+
+(a) 在已有 `@State` 群（`messages`/`isThinking`/`error` 附近）加：
 
 ```swift
     @State private var quizActive: Bool = false
-    @State private var quizCurrentConcept: Int = 0   // 0 = 未开始 / 已结束
+    @State private var quizCurrentConcept: Int = 0       // 0 = 未开始 / 已结束
+    @State private var quizResultConversation: Conversation? = nil
 ```
 
-- [ ] **Step 2: 输入框路由：quiz 进行中走 quizReply**
+(b) `enum AskKind`（line ~104-108）加 `case quizReply(answer: String)`。
 
-把 `submitFreeText()`（line ~97-102）改为：
+(c) `shortVersionForDisplay(kind:)`（line ~176-182）加 `case .quizReply(let answer): return answer`。
+
+(d) `serviceKind`（line ~186-191）加 `case .quizReply(let answer): return .quizReply(answer: answer)`。
+
+(e) `AskKind.==`（line ~196-201）加 `case (.quizReply(let a), .quizReply(let b)): return a == b`。
+
+(f) 找到把 `MessageListView(...)` 实例化的地方（在 AIPane.body 里），给它传新参数：
+
+```swift
+                quizResult: quizResultConversation
+```
+
+(g) 找到把输入框 `MessageListView`/`ChatInputView` 的 placeholder（"Ask about the article..."）。在 `ChatInputView` 调用处把 placeholder 改为按 quizActive 切换；若 placeholder 是 ChatInputView 内部硬编码，则给它加一个 `placeholder: String` 参数，AIPane 传：
+
+```swift
+                placeholder: quizActive ? "回答导师的问题…" : "Ask about the article..."
+```
+
+- [ ] **Step 4: 输入框路由 + 进度 + 触发评分**
+
+(a) 把 `submitFreeText()`（line ~97-102）改为：
 
 ```swift
     private func submitFreeText() {
@@ -1192,33 +1358,7 @@ In `Whetstone/Views/AIPane.swift`, 在已有 `@State` 群（`messages`/`isThinki
     }
 ```
 
-- [ ] **Step 3: 在 AskKind 桥接补 quizReply**
-
-In `Whetstone/Views/AIPane.swift`:
-
-(a) `enum AskKind`（line ~104-108）加 `case quizReply(answer: String)`。
-
-(b) `shortVersionForDisplay(kind:)`（line ~176-182）加：
-
-```swift
-        case .quizReply(let answer): return answer
-```
-
-(c) `serviceKind`（line ~186-191）加：
-
-```swift
-        case .quizReply(let answer): return .quizReply(answer: answer)
-```
-
-(d) `AskKind.==`（line ~196-201）加：
-
-```swift
-        case (.quizReply(let a), .quizReply(let b)): return a == b
-```
-
-- [ ] **Step 4: ask 里处理进度 + 触发评分**
-
-把 `ask(_:)` 成功分支（line ~162-168，从 `conversation = result.conversation` 到 `messages.append(result.aiMessage)`）改为：
+(b) 把 `ask(_:)` 成功分支（line ~162-168）改为：
 
 ```swift
             conversation = result.conversation
@@ -1227,7 +1367,6 @@ In `Whetstone/Views/AIPane.swift`:
             }
             messages.append(result.aiMessage)
 
-            // Quiz 进度与收尾
             if case .quiz = kind { quizActive = true; quizCurrentConcept = 1 }
             if let n = result.quizCurrentConcept { quizCurrentConcept = n }
             if result.quizDone {
@@ -1236,7 +1375,7 @@ In `Whetstone/Views/AIPane.swift`:
             }
 ```
 
-并在文件末尾（`shortVersionForDisplay` 之后、`}` 结束 struct 之前）加 `gradeQuiz`：
+(c) 在文件末尾（`shortVersionForDisplay` 之后、struct 结束 `}` 之前）加 `gradeQuiz`（注意：不再追加文本消息，改为驱动 `QuizResultCard`）：
 
 ```swift
     private func gradeQuiz(_ conv: Conversation) async {
@@ -1244,33 +1383,45 @@ In `Whetstone/Views/AIPane.swift`:
         defer { isThinking = false }
         do {
             _ = try await services.conversation.gradeQuiz(conv, article: article, context: modelContext)
-            // 用评分员落盘的 conceptScores 拼诊断，作为一条 AI 消息追加
-            let scores = (conv.conceptScores ?? [])
-            let lines = scores.map { "· \($0.concept): \($0.note)" }.joined(separator: "\n")
-            let summary = "本次测评得分：\(conv.score ?? 0)\n\n\(lines)"
-            let diag = Message(role: .ai, content: summary, conversation: conv)
-            modelContext.insert(diag)
-            try? modelContext.save()
-            messages.append(diag)
+            quizResultConversation = conv   // 触发 QuizResultCard 渲染
         } catch {
             self.error = error.localizedDescription
         }
     }
 ```
 
-- [ ] **Step 5: 进度指示器 UI**
-
-在 header（line ~80-93）的 `Text("Learning Guide")` 之后、`Spacer()` 之前，加一个低调进度标签（仅 quizActive 时显示）：
+(d) 处理「考考我 / 再测一次」入口：找到接收 `onAsk` 的闭包（把 chip 意图转给 `ask`），在处理 `.quiz` 时先清场再开新一局：
 
 ```swift
-                if quizActive, !article.concepts!.isEmpty {
-                    Text("概念 \(quizCurrentConcept)/\(article.concepts!.count)")
+            case .quiz:
+                messages = []
+                conversation = nil
+                quizResultConversation = nil
+                quizCurrentConcept = 0
+                Task { await ask(.quiz) }
+```
+
+> 说明：`ask(.quiz)` 内部 `in: conversation` 此时为 nil → service 新建一次 quiz `Conversation`，旧局的 score / ConceptScore 仍留档。
+
+- [ ] **Step 5: 进度指示器 + 复测 chip 文案**
+
+(a) header（`AIPane.swift` line ~80-93）的 `Text("Learning Guide")` 之后、`Spacer()` 之前加：
+
+```swift
+                if quizActive {
+                    Text("概念 \(quizCurrentConcept)/\(article.concepts?.count ?? 0)")
                         .font(.system(size: 12, weight: .regular))
                         .foregroundStyle(Theme.textPrimary.opacity(0.5))
                 }
 ```
 
-> 注意：`article.concepts!` 仅在 `quizActive` 为真时取（此时概念已提取，非 nil）。若 lint 介意强解包，用 `(article.concepts?.count ?? 0)` 替代。
+(b) `ConceptCardView.swift` 的 quiz chip（line ~42-44）文案按是否已有成绩切换：
+
+```swift
+                    chip(article.latestScore == nil ? "考考我" : "再测一次") {
+                        onAsk(.quiz)
+                    }
+```
 
 - [ ] **Step 6: 构建 + 视觉验证（CLAUDE.md 协议）**
 
@@ -1280,17 +1431,18 @@ xcodebuild -project Whetstone.xcodeproj -scheme Whetstone -destination 'platform
 Expected: `** BUILD SUCCEEDED **`。
 
 然后按 CLAUDE.md「视觉验证协议」：杀旧实例 → 重新 launch → 截图 → Read 截图对比 mockup。验证点：
-- 进度标签 `概念 N/M` 低调（灰、12px）、不破坏 sage 底色与 1px 边框；
-- 进入 quiz 后一问一答正常，标记不外漏（界面无 `<<NEXT>>`/`<<DONE>>` 字样）；
-- 末尾诊断作为 plain-text AI 消息显示（无背景气泡，符合「AI 在你身边说话」）。
+- 进度标签 `概念 N/M` 低调（灰、12px）、不破坏 sage 底色；输入框 placeholder 在 quiz 中变为「回答导师的问题…」；
+- 一问一答中标记不外漏（界面无 `<<NEXT>>`/`<<DONE>>`）；
+- 出分卡：cream 底 + 1px 黑边 + 直角、无阴影、无强调色；大号总分 42px 常规字重；三维方块 ■/□ 对齐；单概念 note 为次级灰；底部总评一行；与 Concept hero card 视觉同族；
+- 复测后 chip 显示「再测一次」，点击清场开新局，旧分仍在库。
 
 测试文章用 CLAUDE.md 的 fixture：`https://en.wikipedia.org/wiki/Quantum_entanglement`。
 
 - [ ] **Step 7: 提交**
 
 ```bash
-git add Whetstone/Views/AIPane.swift
-git commit -m "feat(ui): quiz 概念进度 N/M + quizReply 路由 + 末尾诊断展示"
+git add Whetstone/Views/AIPane/QuizResultCard.swift Whetstone/Views/AIPane/MessageListView.swift Whetstone/Views/AIPane/ConceptCardView.swift Whetstone/Views/AIPane.swift
+git commit -m "feat(ui): QuizResultCard 出分卡 + 进度 N/M + quizReply 路由 + 复测"
 ```
 
 ---
@@ -1429,7 +1581,7 @@ git commit -m "docs: 记录苏格拉底 quiz 重做的 P1 重测结果"
 - 第 2 节两层流程 + 控制标记 → Task 5（标记）+ Task 6（tutor prompt）+ Task 7（路由/进度）✓
 - 第 3 节独立评分员 temp 0 + 结构化 + 废弃 SCORE → Task 3（temperature）+ Task 6（graderSystem）+ Task 4（解析）+ Task 7（删 parseScore）+ Task 8（gradeQuiz）✓
 - 第 4 节 ConceptScore 模型 + 关系 → Task 2 ✓
-- 第 5 节文件清单（一次做完，含 View）→ Task 9 ✓
+- 第 5 节文件清单（一次做完，含 View）→ Task 9（出分用专用 `QuizResultCard` 组件，非纯文本消息；底部总评由 `ScoreCalculator.overallDiagnosis` 代码模板生成，不额外调 LLM）✓
 - 第 6 节错误处理 + 测试（纯函数/解析/标记/一致性回归/P1）→ Task 1/4/5/8/10/11 ✓
   - 控制标记缺失兜底（"概念数×4 轮强制 DONE"）：spec 第 6 节列出，但当前计划未在 service 层实现自动兜底——**已知缺口**：v0 依赖 tutor 守约发 `<<DONE>>`；若线上发现导师不收尾，再补一个轮次计数兜底（不阻塞主线，记为后续）。
 
