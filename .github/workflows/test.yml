@@ -1,0 +1,9 @@
+name: Test
+on: [push, pull_request]
+jobs:
+  core-tests:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run WhetstoneCore tests
+        run: cd Packages/WhetstoneCore && swift test
