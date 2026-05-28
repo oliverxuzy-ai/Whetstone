@@ -22,6 +22,10 @@ struct AIPane: View {
     private static let minWidth: Double = 320
     private static let maxWidth: Double = 600
 
+    /// Owns the three AI flows (concept extraction, ask, quiz). P5.3 formalizes
+    /// injection; for now it wraps the shared client.
+    private let conversationService = ConversationService(ai: AIClientProvider.shared)
+
     private var profile: UserProfile {
         profiles.first ?? UserProfile(profession: "知识工作者")
     }
@@ -289,105 +293,65 @@ struct AIPane: View {
         isThinking = true
         defer { isThinking = false }
         do {
-            let text = try await AIClientProvider.shared.send(
-                systemPrompt: Prompts.personaSystem(personaPromptLine: profile.personaPromptLine),
-                messages: [AIMessage(role: "user", content: Prompts.conceptExtractionUser(articleContent: article.content))],
-                maxTokens: 800,
-                cacheArticleContent: article.content
+            _ = try await conversationService.extractConcepts(
+                for: article,
+                personaPromptLine: profile.personaPromptLine,
+                context: modelContext
             )
-            let parsed = ResponseParser.concepts(text)
-            for (idx, c) in parsed.enumerated() {
-                let concept = Concept(name: c.name, explanation: c.explanation, orderIndex: idx, article: article)
-                modelContext.insert(concept)
-            }
-            try? modelContext.save()
         } catch {
             self.error = error.localizedDescription
         }
     }
 
     private func ask(_ kind: AskKind) async {
-        if conversation == nil {
-            let conv = Conversation(mode: kind == .quiz ? .quiz : .companion, article: article)
-            modelContext.insert(conv)
-            conversation = conv
-        }
-        guard let conv = conversation else { return }
-
-        let userContent: String
-        let systemPrompt: String
-        switch kind {
-        case .explain(let concept):
-            userContent = Prompts.explanationUser(concept: concept, articleContent: article.content)
-            systemPrompt = Prompts.personaSystem(personaPromptLine: profile.personaPromptLine)
-        case .free(let q):
-            userContent = Prompts.freeQuestionUser(question: q, articleContent: article.content)
-            systemPrompt = Prompts.personaSystem(personaPromptLine: profile.personaPromptLine)
-        case .quiz:
-            userContent = Prompts.socraticQuizUser(articleContent: article.content)
-            systemPrompt = Prompts.personaSystem(personaPromptLine: profile.personaPromptLine) + "\n\n" + Prompts.socraticQuizSystem()
-        }
-
-        let userMsg = Message(role: .user, content: shortVersionForDisplay(kind: kind, raw: userContent), conversation: conv)
-        modelContext.insert(userMsg)
+        // Optimistically show the user's turn before the AI replies, mirroring the
+        // previous inline behavior (insert user message + render immediately).
+        let userMsg = Message(
+            role: .user,
+            content: shortVersionForDisplay(kind: kind),
+            conversation: conversation
+        )
         messages.append(userMsg)
 
         isThinking = true
         defer { isThinking = false }
         do {
-            // Build message history from this conversation
-            let history: [AIMessage] = (conv.messages ?? [])
-                .sorted(by: { $0.timestamp < $1.timestamp })
-                .map { AIMessage(role: $0.role == .user ? "user" : "assistant", content: $0.content) }
-            var msgs = history
-            // Last user message: use FULL prompted content (with article injection)
-            if !msgs.isEmpty, msgs.last?.role == "user" {
-                msgs[msgs.count - 1] = AIMessage(role: "user", content: userContent)
-            } else {
-                msgs.append(AIMessage(role: "user", content: userContent))
-            }
-
-            let reply = try await AIClientProvider.shared.send(
-                systemPrompt: systemPrompt,
-                messages: msgs,
-                maxTokens: 1024,
-                cacheArticleContent: article.content
+            let result = try await conversationService.ask(
+                kind.serviceKind,
+                in: conversation,
+                article: article,
+                personaPromptLine: profile.personaPromptLine,
+                context: modelContext
             )
-
-            let aiMsg = Message(role: .ai, content: reply, conversation: conv)
-            modelContext.insert(aiMsg)
-            messages.append(aiMsg)
-
-            // 如果是 quiz 模式且 AI 输出包含 "SCORE:", 解析分数并写回 article
-            if case .quiz = kind {} // mode 信息保留
-            if let score = parseScore(from: reply) {
-                conv.score = score
-                conv.endedAt = Date()
-                article.latestScore = score
+            conversation = result.conversation
+            // The service inserted its own user message; swap our optimistic
+            // placeholder for the canonical one, then append the AI reply.
+            if let idx = messages.firstIndex(where: { $0 === userMsg }) {
+                messages[idx] = result.userMessage
             }
-            try? modelContext.save()
+            messages.append(result.aiMessage)
         } catch {
+            // Roll back the optimistic user bubble on failure.
+            messages.removeAll { $0 === userMsg }
             self.error = error.localizedDescription
         }
     }
 
-    private func parseScore(from text: String) -> Int? {
-        // 找类似 "SCORE: 73" 的行
-        let pattern = #"SCORE\s*[:：]\s*(\d{1,3})"#
-        if let regex = try? NSRegularExpression(pattern: pattern),
-           let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
-           let range = Range(match.range(at: 1), in: text),
-           let n = Int(text[range]), (0...100).contains(n) {
-            return n
-        }
-        return nil
-    }
-
-    private func shortVersionForDisplay(kind: AskKind, raw: String) -> String {
+    private func shortVersionForDisplay(kind: AskKind) -> String {
         switch kind {
         case .explain(let concept): return "用一个我能懂的类比解释「\(concept)」"
         case .free(let q): return q
         case .quiz: return "考考我吧。"
+        }
+    }
+}
+
+private extension AIPane.AskKind {
+    var serviceKind: ConversationService.AskKind {
+        switch self {
+        case .explain(let concept): return .explain(concept: concept)
+        case .free(let q): return .free(question: q)
+        case .quiz: return .quiz
         }
     }
 }
