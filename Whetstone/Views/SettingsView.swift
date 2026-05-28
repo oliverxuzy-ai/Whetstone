@@ -5,14 +5,18 @@ import WhetstoneCore
 struct SettingsView: View {
     let onClose: () -> Void
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var services: AppServices
     @Query private var profiles: [UserProfile]
     @AppStorage("aiEnhanceLayout") private var aiEnhanceLayout: Bool = false
+    @AppStorage(AppServices.translationProviderKey) private var translationProviderID: String = TranslationProvider.deepSeek.id
 
     @State private var apiKey: String = ""
+    @State private var deepSeekKey: String = ""
     @State private var profession: String = ""
     @State private var customContext: String = ""
     @State private var savedFlash: Bool = false
     @State private var hasStoredAPIKey: Bool = false
+    @State private var hasStoredDeepSeekKey: Bool = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -65,6 +69,8 @@ struct SettingsView: View {
                     }
                 }
             }
+
+            translationEngineSection
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Profession (persona)").font(.h3).foregroundStyle(Theme.textPrimary)
@@ -134,9 +140,98 @@ struct SettingsView: View {
         .onAppear(perform: loadValues)
     }
 
+    // MARK: - 翻译引擎 (可插拔 provider)
+
+    private var translationEngineSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("翻译引擎").font(.h3).foregroundStyle(Theme.textPrimary)
+            Text("整篇中英对照翻译用的后端。对话与概念提取始终用 OpenAI。")
+                .font(.metaText)
+                .foregroundStyle(Theme.textSecondary)
+
+            HStack(spacing: 8) {
+                ForEach(TranslationProvider.all, id: \.id) { provider in
+                    providerButton(provider)
+                }
+                Spacer()
+            }
+
+            // DeepSeek 选中时才显示其 key 输入 (OpenAI 复用上面的 OpenAI API Key)。
+            if translationProviderID == TranslationProvider.deepSeek.id {
+                deepSeekKeyField
+                    .padding(.top, 4)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func providerButton(_ provider: TranslationProvider) -> some View {
+        let selected = translationProviderID == provider.id
+        let action = {
+            translationProviderID = provider.id
+            services.reloadTranslationProvider()
+        }
+        // filled = 选中, raised = 未选 (与 AI 增强排版 toggle 同一套样式)。
+        if selected {
+            Button(action: action) {
+                Text(provider.displayName)
+                    .font(.pillBtn)
+                    .foregroundStyle(Theme.bgCream)
+                    .padding(.horizontal, 18)
+                    .frame(height: 42)
+            }
+            .buttonStyle(BrutalistFilledStyle())
+        } else {
+            Button(action: action) {
+                Text(provider.displayName)
+                    .font(.pillBtn)
+                    .foregroundStyle(Theme.textPrimary)
+                    .padding(.horizontal, 18)
+                    .frame(height: 42)
+            }
+            .buttonStyle(BrutalistRaisedStyle())
+        }
+    }
+
+    private var deepSeekKeyField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Text("DeepSeek API Key").font(.metaText).foregroundStyle(Theme.textPrimary)
+                if hasStoredDeepSeekKey {
+                    Text("✓ 已保存到 Keychain")
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(0.4)
+                        .foregroundStyle(Theme.textPrimary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                }
+                Spacer()
+            }
+            HStack(spacing: 8) {
+                SecureField(hasStoredDeepSeekKey ? "••••••••••••••••••••••••" : "sk-...", text: $deepSeekKey)
+                    .textFieldStyle(.plain)
+                    .padding(12)
+                    .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                if hasStoredDeepSeekKey {
+                    Button(action: clearDeepSeekKey) {
+                        Text("Clear")
+                            .font(.pillBtn)
+                            .foregroundStyle(Theme.textPrimary)
+                            .padding(.horizontal, 14)
+                            .frame(height: 42)
+                    }
+                    .buttonStyle(BrutalistRaisedStyle())
+                }
+            }
+        }
+    }
+
     private func loadValues() {
         apiKey = ""
+        deepSeekKey = ""
         hasStoredAPIKey = KeychainStore.shared.hasAPIKey
+        hasStoredDeepSeekKey = KeychainStore.shared.hasDeepSeekAPIKey
         profession = profile?.profession ?? ""
         customContext = profile?.customContext ?? ""
     }
@@ -146,8 +241,17 @@ struct SettingsView: View {
         if !trimmedAPIKey.isEmpty {
             KeychainStore.shared.openAIAPIKey = trimmedAPIKey
             apiKey = ""
-            hasStoredAPIKey = true
+            // Read back actual presence — don't claim "saved" if the write failed.
+            hasStoredAPIKey = KeychainStore.shared.hasAPIKey
         }
+        let trimmedDeepSeekKey = deepSeekKey.trimmingCharacters(in: .whitespaces)
+        if !trimmedDeepSeekKey.isEmpty {
+            KeychainStore.shared.deepSeekAPIKey = trimmedDeepSeekKey
+            deepSeekKey = ""
+            hasStoredDeepSeekKey = KeychainStore.shared.hasDeepSeekAPIKey
+        }
+        // 新 key 即时生效 (provider client 按当前选择重建)。
+        services.reloadTranslationProvider()
         if let profile {
             profile.profession = profession.trimmingCharacters(in: .whitespaces)
             profile.customContext = customContext.trimmingCharacters(in: .whitespaces)
@@ -178,5 +282,12 @@ struct SettingsView: View {
         KeychainStore.shared.openAIAPIKey = nil
         apiKey = ""
         hasStoredAPIKey = false
+    }
+
+    private func clearDeepSeekKey() {
+        KeychainStore.shared.deepSeekAPIKey = nil
+        deepSeekKey = ""
+        hasStoredDeepSeekKey = false
+        services.reloadTranslationProvider()
     }
 }

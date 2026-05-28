@@ -9,7 +9,7 @@ public struct AIMessage: Codable, Sendable, Equatable {
 }
 
 public enum AIClientError: LocalizedError, Equatable {
-    case missingAPIKey
+    case missingAPIKey(provider: String)
     case invalidResponse
     case http(Int, String)
     case decoding(String)
@@ -17,7 +17,7 @@ public enum AIClientError: LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .missingAPIKey: return "未设置 OpenAI API Key。打开 Settings 粘 key 进去。"
+        case .missingAPIKey(let provider): return "未设置 \(provider) API Key。打开 Settings 粘 key 进去。"
         case .invalidResponse: return "API 返回了无法解析的响应。"
         case .http(let code, let body): return "HTTP \(code): \(body)"
         case .decoding(let msg): return "解码失败: \(msg)"

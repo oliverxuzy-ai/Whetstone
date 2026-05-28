@@ -1,16 +1,27 @@
 import Foundation
 
-/// OpenAI Chat Completions API client (non-streaming, async/await).
-/// 直连 https://api.openai.com/v1/chat/completions
-/// 模型 default: gpt-4o  (用户可改; o-系列推理模型需用 max_completion_tokens 而不是 max_tokens)
-/// Prompt caching: OpenAI 对 prompt ≥1024 tokens 的部分自动 cache, 无需 header。
+/// OpenAI 兼容 Chat Completions API client (non-streaming, async/await)。
+/// endpoint / model 由 init 注入: 默认指向 OpenAI gpt-4o (对话/概念提取沿用),
+/// 翻译则注入 DeepSeek 等其它 OpenAI 兼容后端 (见 `TranslationProvider`)。
+/// o-系列推理模型需用 max_completion_tokens 而不是 max_tokens。
+/// Prompt caching: OpenAI 对 prompt ≥1024 tokens 的部分自动 cache; DeepSeek 默认
+/// 开启磁盘前缀缓存。两者都靠「稳定 system 前缀」自然命中, 无需 header。
 public actor OpenAIClient: AIClient {
-    private let endpoint = URL(string: "https://api.openai.com/v1/chat/completions")!
-    private let model = "gpt-4o"
+    private let endpoint: URL
+    private let model: String
+    private let providerLabel: String
     private let session: URLSession
     private let apiKeyProvider: @Sendable () async -> String?
 
-    public init(apiKeyProvider: @escaping @Sendable () async -> String?) {
+    public init(
+        endpoint: URL = URL(string: "https://api.openai.com/v1/chat/completions")!,
+        model: String = "gpt-4o",
+        providerLabel: String = "OpenAI",
+        apiKeyProvider: @escaping @Sendable () async -> String?
+    ) {
+        self.endpoint = endpoint
+        self.model = model
+        self.providerLabel = providerLabel
         self.apiKeyProvider = apiKeyProvider
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 120
@@ -28,7 +39,7 @@ public actor OpenAIClient: AIClient {
     ) async throws -> String {
         guard let apiKey = await apiKeyProvider(),
               !apiKey.isEmpty else {
-            throw AIClientError.missingAPIKey
+            throw AIClientError.missingAPIKey(provider: providerLabel)
         }
 
         var request = URLRequest(url: endpoint)
@@ -92,17 +103,24 @@ public actor OpenAIClient: AIClient {
         return content
     }
 
-    /// Bilingual translation: 一次性把所有段落传给 GPT-4o,返回与输入 1:1 对齐的中文数组。
-    /// 失败 (count 不齐 / JSON 损坏) → throw,调用方负责 alert + 不落盘。
-    /// 这是一次性大调用 (整篇文章),结果会持久化到 article.translatedParagraphsData,
-    /// 后续切换中英对照模式不会再次调用。
+    /// Bilingual translation: 把整篇文章分片并发翻译, 返回与输入 1:1 对齐的中文数组。
+    /// 失败 (任一片用尽重试仍 count 不齐 / JSON 损坏) → throw,调用方负责 alert + 不落盘。
+    /// 结果会持久化到 article.translatedParagraphsData, 后续切换对照模式不再调用。
+    ///
+    /// 取代旧的「整篇一次性大调用」: 分片并发既消除长文 16k 输出截断, 又把墙钟时间
+    /// 压到「最慢一片」量级 (见 `ChunkedTranslator` / `ParagraphChunker`)。
     public func translate(paragraphs: [String]) async throws -> [String] {
-        guard !paragraphs.isEmpty else { return [] }
+        try await ChunkedTranslator.translate(paragraphs: paragraphs) { [self] slice in
+            try await self.translateChunk(slice)
+        }
+    }
 
-        // gpt-4o completion 上限 16k。中文 token 密度高于英文,粗略 1 char ≈ 0.5 token,
-        // 保守按英文字符数 × 1.5 估计输出 token,再 + 缓冲。封顶 16k。
-        let estimatedTokens = paragraphs.reduce(0) { $0 + $1.count } * 3 / 2 + 1000
-        let maxTokens = min(16000, max(2048, estimatedTokens))
+    /// 单片翻译: 一次 LLM 请求 (不含重试; 重试由 ChunkedTranslator 统一负责)。
+    private func translateChunk(_ paragraphs: [String]) async throws -> [String] {
+        // 中文 token 密度高于英文,粗略 1 char ≈ 0.5 token,保守按英文字符数 × 1.5
+        // 估计输出 token,再 + 缓冲。封顶 8k (deepseek-chat 输出上限; gpt-4o-mini 更高)。
+        let estimatedTokens = paragraphs.reduce(0) { $0 + $1.count } * 3 / 2 + 500
+        let maxTokens = min(8000, max(1024, estimatedTokens))
 
         let raw = try await send(
             systemPrompt: Prompts.bilingualTranslationSystem,
