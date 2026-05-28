@@ -6,6 +6,7 @@ struct AIPane: View {
     let article: Article
 
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var services: AppServices
     @Query private var profiles: [UserProfile]
     @AppStorage("aiPaneWidth") private var aiPaneWidth: Double = 420
 
@@ -21,10 +22,6 @@ struct AIPane: View {
 
     private static let minWidth: Double = 320
     private static let maxWidth: Double = 600
-
-    /// Owns the three AI flows (concept extraction, ask, quiz). P5.3 formalizes
-    /// injection; for now it wraps the shared client.
-    private let conversationService = ConversationService(ai: AIClientProvider.shared)
 
     private var profile: UserProfile {
         profiles.first ?? UserProfile(profession: "知识工作者")
@@ -293,7 +290,7 @@ struct AIPane: View {
         isThinking = true
         defer { isThinking = false }
         do {
-            _ = try await conversationService.extractConcepts(
+            _ = try await services.conversation.extractConcepts(
                 for: article,
                 personaPromptLine: profile.personaPromptLine,
                 context: modelContext
@@ -316,7 +313,7 @@ struct AIPane: View {
         isThinking = true
         defer { isThinking = false }
         do {
-            let result = try await conversationService.ask(
+            let result = try await services.conversation.ask(
                 kind.serviceKind,
                 in: conversation,
                 article: article,

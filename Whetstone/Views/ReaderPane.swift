@@ -7,6 +7,7 @@ struct ReaderPane: View {
     let onBack: () -> Void
 
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var services: AppServices
     @Query(sort: \Highlight.createdAt, order: .reverse) private var allHighlights: [Highlight]
 
     @State private var hoveredConceptIdx: Int? = nil
@@ -14,10 +15,6 @@ struct ReaderPane: View {
     @State private var showBilingual: Bool = false
     @State private var isTranslating: Bool = false
     @State private var translationError: String? = nil
-
-    /// Owns cache-or-call + persistence. Constructed from the app-level client for
-    /// now; P5.3 will formalize injection at the app root.
-    private let translationService = TranslationService(ai: AIClientProvider.shared)
 
     private enum ReaderTab { case article, concepts }
 
@@ -146,7 +143,7 @@ struct ReaderPane: View {
         Task { @MainActor in
             defer { isTranslating = false }
             do {
-                _ = try await translationService.ensureTranslation(for: article, context: modelContext)
+                _ = try await services.translation.ensureTranslation(for: article, context: modelContext)
                 showBilingual = true
             } catch {
                 translationError = error.localizedDescription

@@ -4,6 +4,7 @@ import WhetstoneCore
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var services: AppServices
     @Query(sort: \Article.fetchedAt, order: .reverse) private var articles: [Article]
     @AppStorage("aiEnhanceLayout") private var aiEnhanceLayout: Bool = false
 
@@ -62,7 +63,7 @@ struct ContentView: View {
             // by re-adding the URL after fixing the underlying cause (API key etc.).
             if aiEnhanceLayout, KeychainStore.shared.hasAPIKey {
                 do {
-                    content = try await AIClientProvider.shared.enhanceLayout(rawText: content)
+                    content = try await services.ai.enhanceLayout(rawText: content)
                     enhanced = true
                 } catch {
                     // Intentionally silent — fall through with raw text.

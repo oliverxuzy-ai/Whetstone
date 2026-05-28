@@ -8,6 +8,10 @@ struct WhetstoneApp: App {
     let modelContainer: ModelContainer
     private let updaterController: SPUStandardUpdaterController
 
+    /// Single construction point for the AI client + the two services. Injected
+    /// into the view tree via `.environmentObject(_:)` below.
+    @StateObject private var services = AppServices()
+
     init() {
         do {
             modelContainer = try ModelContainer(
@@ -32,6 +36,7 @@ struct WhetstoneApp: App {
         WindowGroup {
             RootView()
                 .modelContainer(modelContainer)
+                .environmentObject(services)
                 .frame(minWidth: 1100, minHeight: 700)
                 .preferredColorScheme(.light)   // brutalist editorial is light-only by design
         }
