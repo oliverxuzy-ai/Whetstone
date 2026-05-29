@@ -2,9 +2,9 @@ import XCTest
 @testable import WhetstoneCore
 
 final class PromptsTests: XCTestCase {
-    func testConceptExtractionUserContainsRange() {
+    func testConceptExtractionUserForcesThree() {
         let out = Prompts.conceptExtractionUser(articleContent: "BODY")
-        XCTAssertTrue(out.contains("提取 2 到 7 个核心概念"))
+        XCTAssertTrue(out.contains("恰好 3 个"))
         XCTAssertTrue(out.contains("BODY"))
         XCTAssertTrue(out.contains("严格的 JSON 数组"))
     }
