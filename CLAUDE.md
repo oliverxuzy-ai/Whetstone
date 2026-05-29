@@ -39,12 +39,13 @@ Key visual locks (deviating without explicit user approval = a bug to flag):
 
 ### Prompt change log
 
-- **2026-05-28 — 苏格拉底 quiz 重做（concept-driven）.** The old `socraticQuizSystem`/`socraticQuizUser` (single "考考我" turn that emitted a `SCORE:` line) were **removed** and replaced by a two-layer flow in `Packages/WhetstoneCore/Sources/WhetstoneCore/Prompts.swift`:
-  - `socraticTutorSystem(conceptList:conceptCount:)` + `socraticTutorUser()` — concept-driven tutor; each concept probed ≥1×, ≤4 questions/concept; emits hidden `<<NEXT concept=N>>` / `<<DONE>>` control marks (stripped by `QuizControlMarks`).
-  - `graderSystem` + `graderUser(conceptList:transcript:)` — separate temperature-0 grader; emits structured per-concept JSON (recall/apply/analyze 0–2). Code aggregates via `ScoreCalculator` (rubric weights 1/2/3). `ResponseParser.conceptScores` parses; bad/misaligned JSON → no score persisted.
-  - Concept-extraction & explanation prompts UNCHANGED (still P1-validated).
+- **2026-05-28 — 苏格拉底 quiz 重做（concept-driven）+ 实测调优。** Shipped to `main`. The old `socraticQuizSystem`/`socraticQuizUser` (single "考考我" turn that emitted a `SCORE:` line) were **removed** and replaced, in `Packages/WhetstoneCore/Sources/WhetstoneCore/Prompts.swift`:
+  - `socraticTutorSystem(conceptList:conceptCount:)` + `socraticTutorUser()` — concept-driven tutor; emits hidden `<<NEXT concept=N>>` / `<<DONE>>` control marks (stripped by `QuizControlMarks`). Turn-cap backstop in `ConversationService.ask` = `conceptCount + 2`.
+  - `graderSystem` + `graderUser(conceptList:transcript:)` — separate temperature-0 grader; structured per-concept JSON (recall/apply/analyze 0–2). Code aggregates via `ScoreCalculator` (rubric weights 1/2/3). `ResponseParser.conceptScores` parses; bad/misaligned JSON → no score persisted.
+  - **`conceptExtractionUser` CHANGED**: was P1-validated 2-to-7; now **forced to exactly 3** (to bound quiz length). Explanation/persona prompts UNCHANGED (still P1-validated).
   - Spec/plan: `docs/superpowers/specs/2026-05-28-socratic-redesign-design.md`, `docs/superpowers/plans/2026-05-28-socratic-redesign.md`.
-  - **⚠️ P1 manual retest: PENDING.** Automated layer is green (package 106 tests / 0 failures incl. parser/scoring/control-mark/turn-cap units; app builds). The manual P1 protocol — load a fixture article (e.g. Quantum entanglement), run a full quiz via the new header Socrates button, and confirm (a) every concept probed, (b) ≤4 follow-ups/concept, (c) end-of-quiz score+diagnosis card, (d) **score consistency**: same article + similar answers across 2–3 runs lands in a tight band — requires a live OpenAI key and has NOT been run yet. There is also a gated consistency integration test: `WHETSTONE_TEST_API_KEY=sk-... swift test --filter GraderConsistencyTests` (asserts 5-run range ≤ 8). Record the manual scores here once run.
+  - **Manual testing outcome (user, voice answers):** the as-designed "≤4 follow-ups/concept" two-layer flow ran ~45 min (15 min for 2 of 7 concepts) — far too long. Tuned in two passes: (1) drop the second layer → **每概念恰好 1 题，不追问**; (2) make that single question **cover all three rubric facets in one prompt** — explain in own words (复述) + concrete example (举例) + why-it-matters / contrast / failure-mode (辨析); plus **forced-3 concepts** → **3 questions total**, ~3–7 min. User confirmed length acceptable. Final design is "3 concepts × 1 tri-facet question."
+  - **Full formal P1 (consistency-band measurement) still optional**: gated integration test `WHETSTONE_TEST_API_KEY=sk-... swift test --filter GraderConsistencyTests` (asserts 5-run range ≤ 8). Automated suite green (package 116 tests / 0 failures; app builds).
 
 ## Build & Run
 

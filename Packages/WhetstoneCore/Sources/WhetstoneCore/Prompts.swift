@@ -1,9 +1,10 @@
 import Foundation
 
 /// Prompt definitions. P1 manual-validation status:
-/// - Concept extraction & explanation/persona prompts: P1 PASS 2026-05-24.
-/// - Socratic quiz v2 (socraticTutorSystem/socraticTutorUser/graderSystem/graderUser),
-///   added 2026-05-28: automated tests green; P1 manual retest PENDING (see CLAUDE.md prompt change log).
+/// - Explanation/persona prompts: P1 PASS 2026-05-24 (unchanged).
+/// - Concept extraction: was P1-validated 2-to-7; changed 2026-05-28 to fixed-3 (bound quiz length).
+/// - Socratic quiz v2 (socraticTutorSystem/socraticTutorUser/graderSystem/graderUser), 2026-05-28:
+///   每概念 1 题、单题覆盖三面（解释/举例/辨析）。Manually tested via app (length OK); see CLAUDE.md change log.
 /// 改任何 prompt 前先重测 P1。
 public enum Prompts {
 

@@ -1711,3 +1711,14 @@ git commit -m "docs: 记录苏格拉底 quiz 重做的 P1 重测结果"
 **类型一致性：** `ScoreCalculator.conceptPercent/totalScore`、`ResponseParser.ConceptScoreRow`(concept/recall/apply/analyze/note)、`QuizControlMarks.Parsed`(cleaned/nextConcept/done)、`AskKind.quizReply`、`AskResult.quizCurrentConcept/quizDone`、`ConceptScore` 初始化器参数、`gradeQuiz` 签名 —— 跨 Task 引用一致。
 
 **已知取舍（非缺陷）：** 评分员按 index 对齐依赖导师保序输出（prompt 已要求保序）。
+
+---
+
+## 实测调优（实现完成后，已合并 main）
+
+11 个任务全部实现、两阶段 review + 终审通过、合并入 main（PR #1）后，用户语音实测发现 quiz 太长（≤4 追问 → 约 45 分钟），又做了两轮 prompt 调整（详见 spec 末尾「实测调优」+ CLAUDE.md prompt change log）：
+
+- Task 6/7 的导师 prompt：`每概念 ≤4 问` → **每概念恰好 1 题，单题覆盖三面（解释/举例/辨析）**；轮数封顶 `概念数×4` → `概念数+2`。
+- Task 1 的概念提取：`2~7` → **固定 3 个**。
+- 净效果：**3 概念 × 1 三面问题 = 3 题**，约 3~7 分钟。打分一致性机制不变。
+- 这些调整以增量 commit 直接落 main（非走完整 plan 流程，因为是已上线功能的小幅 prompt 调参）。
