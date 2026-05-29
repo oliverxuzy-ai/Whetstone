@@ -24,6 +24,7 @@ DerivedData/
 Pods/
 
 # Secrets
+.env
 *.env
 .env.local
 *.secret
@@ -31,3 +32,4 @@ secrets.plist
 
 # Claude Code local (worktrees + machine-local settings)
 .claude/
+.gstack/

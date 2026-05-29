@@ -20,13 +20,39 @@ final class AppServices: ObservableObject {
     let conversation: ConversationService
 
     init() {
-        // 对话/概念提取: 固定 OpenAI gpt-4o (P1 验证过的 prompt, 不改后端)。
-        let conversationClient = OpenAIClient(apiKeyProvider: {
-            await MainActor.run { KeychainStore.shared.openAIAPIKey }
-        })
+        // 对话/概念提取: 默认固定 OpenAI gpt-4o (P1 验证过的 prompt, 不改后端)。
+        //
+        // DEV-ONLY 后端覆盖 (不是用户功能): 设了 WHETSTONE_AI_* 环境变量就改走指定的
+        // OpenAI 兼容后端, 用于本地横评不同模型 (Anthropic / DeepSeek / ...)。
+        // 不设 env 时行为与线上完全一致。Anthropic 走官方 OpenAI 兼容层:
+        //   WHETSTONE_AI_ENDPOINT=https://api.anthropic.com/v1/chat/completions
+        //   WHETSTONE_AI_MODEL=claude-sonnet-4-6
+        //   WHETSTONE_AI_KEY=sk-ant-...
+        let conversationClient = Self.makeConversationClient()
         self.ai = conversationClient
         self.conversation = ConversationService(ai: conversationClient)
         self.translation = Self.makeTranslationService()
+    }
+
+    /// 构造对话/概念提取用的 client。默认 OpenAI gpt-4o + keychain;
+    /// 若设置了 DEV-ONLY 的 WHETSTONE_AI_* 环境变量则覆盖为指定的 OpenAI 兼容后端。
+    private static func makeConversationClient() -> OpenAIClient {
+        let env = ProcessInfo.processInfo.environment
+        if let raw = env["WHETSTONE_AI_ENDPOINT"]?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !raw.isEmpty, let url = URL(string: raw) {
+            let model = env["WHETSTONE_AI_MODEL"] ?? "gpt-4o"
+            let key = env["WHETSTONE_AI_KEY"]
+            let label = env["WHETSTONE_AI_LABEL"] ?? "DevOverride"
+            return OpenAIClient(
+                endpoint: url,
+                model: model,
+                providerLabel: label,
+                apiKeyProvider: { key }
+            )
+        }
+        return OpenAIClient(apiKeyProvider: {
+            await MainActor.run { KeychainStore.shared.openAIAPIKey }
+        })
     }
 
     /// 按当前选择的 provider 重建翻译服务。Settings 保存后调用以即时切换后端。
