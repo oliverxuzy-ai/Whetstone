@@ -15,7 +15,7 @@ struct WhetstoneApp: App {
     init() {
         do {
             modelContainer = try ModelContainer(
-                for: Article.self, Conversation.self, Message.self, Concept.self, UserProfile.self, Highlight.self,
+                for: Article.self, Conversation.self, Message.self, Concept.self, UserProfile.self, Highlight.self, ConceptScore.self,
                 configurations: ModelConfiguration(isStoredInMemoryOnly: false)
             )
         } catch {

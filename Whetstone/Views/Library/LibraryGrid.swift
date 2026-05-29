@@ -165,19 +165,6 @@ private struct LibraryArticleCard: View {
 
     private var cardContent: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                if let score = article.latestScore {
-                    Text("SCORE \(score)")
-                        .font(.system(size: 11, weight: .semibold))
-                        .tracking(0.5)
-                        .foregroundStyle(Theme.textSecondary)
-                } else {
-                    Text(" ").font(.system(size: 11))
-                }
-                Spacer()
-            }
-            .padding(.bottom, 8)
-
             Text(article.title.isEmpty ? article.url : article.title)
                 .font(.system(size: 20, weight: .medium))
                 .foregroundStyle(Theme.textPrimary)
@@ -208,6 +195,15 @@ private struct LibraryArticleCard: View {
                 }
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.textSecondary)
+
+                Spacer()
+
+                if let score = article.latestScore {
+                    Text("SCORE \(score)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(0.5)
+                        .foregroundStyle(Theme.textSecondary)
+                }
             }
         }
         .padding(24)

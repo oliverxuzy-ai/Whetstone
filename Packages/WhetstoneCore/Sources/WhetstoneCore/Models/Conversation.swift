@@ -18,6 +18,9 @@ public final class Conversation {
     @Relationship(deleteRule: .cascade, inverse: \Message.conversation)
     public var messages: [Message]? = []
 
+    @Relationship(deleteRule: .cascade, inverse: \ConceptScore.conversation)
+    public var conceptScores: [ConceptScore]? = []
+
     public var article: Article?
 
     public var mode: Mode {
@@ -32,5 +35,6 @@ public final class Conversation {
         self.score = nil
         self.article = article
         self.messages = []
+        self.conceptScores = []
     }
 }

@@ -1,7 +1,10 @@
 import Foundation
 
-/// Validated prompts (P1 PASS 2026-05-24).
-/// 这些 prompt 是用户手测通过的版本, 改它之前先重测 P1。
+/// Prompt definitions. P1 manual-validation status:
+/// - Concept extraction & explanation/persona prompts: P1 PASS 2026-05-24.
+/// - Socratic quiz v2 (socraticTutorSystem/socraticTutorUser/graderSystem/graderUser),
+///   added 2026-05-28: automated tests green; P1 manual retest PENDING (see CLAUDE.md prompt change log).
+/// 改任何 prompt 前先重测 P1。
 public enum Prompts {
 
     /// 系统级 persona, 注入到每次请求的 system message。
@@ -53,23 +56,56 @@ public enum Prompts {
         """
     }
 
-    /// 考考我 (用户主动点 chip): 触发苏格拉底评估对话
-    public static func socraticQuizSystem() -> String {
+    // MARK: - Socratic quiz v2 (concept-driven, one question per concept)
+
+    /// 导师 system：每概念 1 问（不追问）+ 控制标记契约。persona 由调用方拼在前面。
+    public static func socraticTutorSystem(conceptList: String, conceptCount: Int) -> String {
         return """
-        你现在是一位用费曼+苏格拉底法的导师。
-        针对用户刚才在读的这篇文章, 向用户提 3 个苏格拉底式问题, 一次一个, 等用户回答后再问下一个。
-        不要给答案。不要剧透。问题要暴露用户可能没意识到的理解盲区。
-        3 个问题问完后, 输出一行 SCORE: <0-100 的整数>,然后给一段简短的诊断说明。
+        你是一位用费曼+苏格拉底法的导师, 正在就用户刚读的这篇文章考核其理解。
+
+        考核的概念清单 (共 \(conceptCount) 个, 按顺序逐个考):
+        \(conceptList)
+
+        硬约束:
+        - 必须覆盖全部 \(conceptCount) 个概念, 每个概念只问 1 个问题, 问完立刻进下一个概念, 绝不在同一概念上追问或展开。
+        - 按清单顺序逐个考。一次只问一个问题。不要给答案, 不要剧透, 不要替用户总结。
+        - 每个问题让用户"用自己的话解释该概念, 并尽量举一个例子", 简短直接, 戳用户可能没意识到的理解盲区。
+
+        控制标记 (必须严格输出, 供程序解析, 不要解释也不要加别的字):
+        - 从一个概念转到下一个时, 在该条回复末尾单独一行: <<NEXT concept=N>> (N 是即将开始的概念序号, 从 1 起)。
+        - 全部概念考完时, 在最后一条回复末尾单独一行: <<DONE>>
         """
     }
 
-    /// 考考我开场 user message (注入文章 context)
-    public static func socraticQuizUser(articleContent: String) -> String {
-        return """
-        请开始第一个问题。
+    /// 导师开场 user message（文章正文已由 cacheArticleContent 注入 system 前缀, 概念清单在 system）。
+    public static func socraticTutorUser() -> String {
+        return "请开始第一个概念的第一个问题。"
+    }
 
-        文章正文:
-        \(articleContent)
+    /// 评分员 system：固定 rubric + 0/1/2 量表 + 边界规则 + 严格 JSON 输出。
+    public static let graderSystem: String = """
+    你是一位严格的评分员。根据给定的概念清单和一段师生问答记录, 为每个概念按固定量表打分。
+
+    对每个概念, 独立评三个维度, 每维只能取 0 / 1 / 2:
+    - recall (复述): 0=没说到或说错; 1=方向对但不完整/含糊; 2=准确说出定义
+    - apply (举例): 0=无法举例或举错; 1=例子勉强/不贴切; 2=能用自己的话或新例子正确迁移
+    - analyze (辨析): 0=无法辨析; 1=部分正确; 2=能纠错/说出为什么/辨别边界
+    边界规则: 若问答记录中没有足够证据支撑某一维度 (包括根本没问到), 该维度一律记 0。不要猜测, 不要脑补。
+
+    输出严格 JSON 数组, 长度必须等于概念数, 顺序与概念清单严格一致。每项字段:
+    {"concept": "<概念名>", "recall": <0-2>, "apply": <0-2>, "analyze": <0-2>, "note": "<一句中文诊断>"}
+    不要 markdown 代码块, 不要任何前后缀, 直接 JSON。
+    """
+
+    public static func graderUser(conceptList: String, transcript: String) -> String {
+        return """
+        概念清单:
+        \(conceptList)
+
+        师生问答记录:
+        \(transcript)
+
+        请按上述规则为每个概念打分, 返回严格 JSON 数组 (顺序与概念清单一致, 长度等于概念数)。
         """
     }
 

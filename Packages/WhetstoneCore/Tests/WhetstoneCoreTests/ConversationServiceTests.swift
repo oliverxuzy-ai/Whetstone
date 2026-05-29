@@ -102,49 +102,148 @@ final class ConversationServiceTests: XCTestCase {
         XCTAssertTrue(result.conversation === conv)
     }
 
-    // MARK: - ask (quiz) — score parsing
+    // MARK: - ask (quiz) — 控制标记 + 进度
 
-    func testAskQuizCreatesQuizConversationAndParsesScore() async throws {
+    func testAskQuizStartsQuizConversationAndStripsMark() async throws {
         let ctx = try makeInMemoryContext()
         let article = Article(url: "u", content: "body")
-        ctx.insert(article); try ctx.save()
+        ctx.insert(article)
+        ctx.insert(Concept(name: "A", explanation: "a", orderIndex: 0, article: article))
+        ctx.insert(Concept(name: "B", explanation: "b", orderIndex: 1, article: article))
+        try ctx.save()
 
         let mock = MockAIClient()
-        mock.sendResult = .success("不错的理解。\nSCORE: 73\n你还可以更深入。")
+        mock.sendResult = .success("先问第一个概念：你怎么理解 A？")
         let svc = ConversationService(ai: mock)
 
-        let result = try await svc.ask(
-            .quiz,
-            in: nil,
-            article: article,
-            personaPromptLine: "用户是工程师。",
-            context: ctx
-        )
+        let result = try await svc.ask(.quiz, in: nil, article: article, personaPromptLine: "", context: ctx)
 
         XCTAssertEqual(result.conversation.mode, .quiz)
-        XCTAssertEqual(result.conversation.score, 73)
-        XCTAssertNotNil(result.conversation.endedAt)
-        XCTAssertEqual(article.latestScore, 73)
+        XCTAssertFalse(result.quizDone)
+        XCTAssertTrue(mock.lastSystemPrompt.contains("A — a"))
+        XCTAssertEqual(result.aiMessage.content, "先问第一个概念：你怎么理解 A？")
     }
 
-    func testAskQuizWithoutScoreLeavesScoreNil() async throws {
+    func testAskQuizReplyStripsNextMarkAndReportsProgress() async throws {
         let ctx = try makeInMemoryContext()
         let article = Article(url: "u", content: "body")
-        ctx.insert(article); try ctx.save()
+        ctx.insert(article)
+        ctx.insert(Concept(name: "A", explanation: "a", orderIndex: 0, article: article))
+        try ctx.save()
+        let conv = Conversation(mode: .quiz, article: article)
+        ctx.insert(conv)
+        try ctx.save()
 
         let mock = MockAIClient()
-        mock.sendResult = .success("第一个问题是什么?")
+        mock.sendResult = .success("不错。\n<<NEXT concept=2>>")
         let svc = ConversationService(ai: mock)
 
-        let result = try await svc.ask(
-            .quiz,
-            in: nil,
-            article: article,
-            personaPromptLine: "用户是工程师。",
-            context: ctx
-        )
-        XCTAssertNil(result.conversation.score)
+        let result = try await svc.ask(.quizReply(answer: "我的回答"), in: conv, article: article, personaPromptLine: "", context: ctx)
+
+        XCTAssertEqual(result.aiMessage.content, "不错。")
+        XCTAssertEqual(result.quizCurrentConcept, 2)
+        XCTAssertEqual(result.userMessage.content, "我的回答")
+        XCTAssertFalse(result.quizDone)
+    }
+
+    func testAskQuizReplyDetectsDone() async throws {
+        let ctx = try makeInMemoryContext()
+        let article = Article(url: "u", content: "body")
+        ctx.insert(article)
+        ctx.insert(Concept(name: "A", explanation: "a", orderIndex: 0, article: article))
+        try ctx.save()
+        let conv = Conversation(mode: .quiz, article: article)
+        ctx.insert(conv)
+        try ctx.save()
+
+        let mock = MockAIClient()
+        mock.sendResult = .success("都问完了。\n<<DONE>>")
+        let svc = ConversationService(ai: mock)
+
+        let result = try await svc.ask(.quizReply(answer: "答"), in: conv, article: article, personaPromptLine: "", context: ctx)
+        XCTAssertTrue(result.quizDone)
+        XCTAssertEqual(result.aiMessage.content, "都问完了。")
+    }
+
+    func testAskQuizReplyForcesDoneAtTurnCap() async throws {
+        let ctx = try makeInMemoryContext()
+        let article = Article(url: "u", content: "body")
+        ctx.insert(article)
+        ctx.insert(Concept(name: "A", explanation: "a", orderIndex: 0, article: article))
+        try ctx.save()
+        let conv = Conversation(mode: .quiz, article: article)
+        ctx.insert(conv)
+        // 1 个概念 → cap = 1 + 2 = 3。预置 2 个 .ai 轮，本次 reply 产生第 3 个 → 达 cap 强制收尾。
+        ctx.insert(Message(role: .ai, content: "q1", conversation: conv))
+        ctx.insert(Message(role: .ai, content: "q2", conversation: conv))
+        try ctx.save()
+
+        let mock = MockAIClient()
+        mock.sendResult = .success("再追问一句，没有结束标记")
+        let svc = ConversationService(ai: mock)
+
+        let result = try await svc.ask(.quizReply(answer: "答"), in: conv, article: article, personaPromptLine: "", context: ctx)
+        XCTAssertTrue(result.quizDone)
+    }
+
+    // MARK: - gradeQuiz
+
+    func testGradeQuizAggregatesAndPersists() async throws {
+        let ctx = try makeInMemoryContext()
+        let article = Article(url: "u", content: "body")
+        ctx.insert(article)
+        ctx.insert(Concept(name: "A", explanation: "a", orderIndex: 0, article: article))
+        ctx.insert(Concept(name: "B", explanation: "b", orderIndex: 1, article: article))
+        try ctx.save()
+        let conv = Conversation(mode: .quiz, article: article)
+        ctx.insert(conv)
+        ctx.insert(Message(role: .ai, content: "问 A", conversation: conv))
+        ctx.insert(Message(role: .user, content: "答 A", conversation: conv))
+        try ctx.save()
+
+        let mock = MockAIClient()
+        mock.sendResult = .success(#"""
+        [
+          {"concept":"A","recall":2,"apply":2,"analyze":2,"note":"透彻"},
+          {"concept":"B","recall":2,"apply":1,"analyze":0,"note":"举例勉强"}
+        ]
+        """#)
+        let svc = ConversationService(ai: mock)
+
+        let total = try await svc.gradeQuiz(conv, article: article, context: ctx)
+
+        // A(2,2,2)=100；B(2,1,0)=(2×1+1×2+0×3)/12×100=33 -> mean(100,33)=66.5 -> 67
+        XCTAssertEqual(total, 67)
+        XCTAssertEqual(conv.score, 67)
+        XCTAssertEqual(article.latestScore, 67)
+        XCTAssertNotNil(conv.endedAt)
+        XCTAssertEqual(conv.conceptScores?.count, 2)
+        XCTAssertEqual(mock.temperatures.last, 0)   // 评分员 temp 0
+    }
+
+    func testGradeQuizThrowsOnBadJSONAndDoesNotPersistScore() async throws {
+        let ctx = try makeInMemoryContext()
+        let article = Article(url: "u", content: "body")
+        ctx.insert(article)
+        ctx.insert(Concept(name: "A", explanation: "a", orderIndex: 0, article: article))
+        try ctx.save()
+        let conv = Conversation(mode: .quiz, article: article)
+        ctx.insert(conv)
+        try ctx.save()
+
+        let mock = MockAIClient()
+        mock.sendResult = .success("这不是 JSON")
+        let svc = ConversationService(ai: mock)
+
+        do {
+            _ = try await svc.gradeQuiz(conv, article: article, context: ctx)
+            XCTFail("should throw")
+        } catch {
+            // ok
+        }
+        XCTAssertNil(conv.score)
         XCTAssertNil(article.latestScore)
+        XCTAssertEqual(conv.conceptScores?.count ?? 0, 0)
     }
 
     // MARK: - ask failure surfaces

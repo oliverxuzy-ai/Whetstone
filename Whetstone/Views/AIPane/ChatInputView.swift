@@ -7,6 +7,7 @@ import WhetstoneCore
 struct ChatInputView: View {
     @Binding var input: String
     let isThinking: Bool
+    let placeholder: String
     let onSubmit: () -> Void
 
     var body: some View {
@@ -16,7 +17,7 @@ struct ChatInputView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(Theme.textSecondary)
                     .padding(.leading, 16)
-                TextField("Ask about the article...", text: $input)
+                TextField(placeholder, text: $input)
                     .textFieldStyle(.plain)
                     .padding(16)
                     .onSubmit(onSubmit)

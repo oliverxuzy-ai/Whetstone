@@ -16,6 +16,9 @@ struct AIPane: View {
     @State private var isThinking: Bool = false
     @State private var error: String? = nil
     @State private var conceptsLoaded: Bool = false
+    @State private var quizActive: Bool = false
+    @State private var quizCurrentConcept: Int = 0       // 0 = 未开始 / 已结束
+    @State private var quizResultConversation: Conversation? = nil
     /// Width at the moment the drag started — used to compute deltas without
     /// jitter from re-reading @AppStorage mid-drag.
     @State private var dragStartWidth: Double? = nil
@@ -36,11 +39,17 @@ struct AIPane: View {
                 conceptsLoaded: conceptsLoaded,
                 messages: messages,
                 isThinking: isThinking,
-                error: error
+                error: error,
+                quizResult: quizResultConversation
             ) { kind in
                 Task { await ask(kind) }
             }
-            ChatInputView(input: $input, isThinking: isThinking, onSubmit: submitFreeText)
+            ChatInputView(
+                input: $input,
+                isThinking: isThinking,
+                placeholder: quizActive ? "回答导师的问题…" : "Ask about the article...",
+                onSubmit: submitFreeText
+            )
         }
         .frame(width: CGFloat(aiPaneWidth))
         .background(Theme.bgSage)
@@ -84,8 +93,17 @@ struct AIPane: View {
                 Text("Learning Guide")
                     .font(.system(size: 18, weight: .regular))
                     .foregroundStyle(Theme.textPrimary)
+                if quizActive {
+                    Text("概念 \(quizCurrentConcept)/\(article.concepts?.count ?? 0)")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundStyle(Theme.textPrimary.opacity(0.5))
+                }
             }
             Spacer()
+            QuizEntryButton(
+                enabled: !isThinking && !(article.concepts ?? []).isEmpty,
+                action: startQuiz
+            )
         }
         .padding(.horizontal, 32)
         .padding(.top, 16 + Theme.titlebarInset)
@@ -98,13 +116,28 @@ struct AIPane: View {
         let q = input.trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty, !isThinking else { return }
         input = ""
-        Task { await ask(.free(question: q)) }
+        if quizActive {
+            Task { await ask(.quizReply(answer: q)) }
+        } else {
+            Task { await ask(.free(question: q)) }
+        }
+    }
+
+    private func startQuiz() {
+        guard !isThinking, !(article.concepts ?? []).isEmpty else { return }
+        quizActive = false          // 清掉旧局，避免重测时 header 闪 "概念 0/N"
+        messages = []
+        conversation = nil
+        quizResultConversation = nil
+        quizCurrentConcept = 0
+        Task { await ask(.quiz) }
     }
 
     enum AskKind {
         case explain(concept: String)
         case free(question: String)
         case quiz
+        case quizReply(answer: String)
     }
 
     private func initializeIfNeeded() async {
@@ -166,6 +199,16 @@ struct AIPane: View {
                 messages[idx] = result.userMessage
             }
             messages.append(result.aiMessage)
+
+            if case .quiz = kind { quizActive = true; quizCurrentConcept = 1 }
+            if let n = result.quizCurrentConcept {
+                let total = article.concepts?.count ?? n
+                quizCurrentConcept = min(max(n, 1), max(total, 1))
+            }
+            if result.quizDone {
+                quizActive = false
+                await gradeQuiz(result.conversation)
+            }
         } catch {
             // Roll back the optimistic user bubble on failure.
             messages.removeAll { $0 === userMsg }
@@ -178,6 +221,20 @@ struct AIPane: View {
         case .explain(let concept): return "用一个我能懂的类比解释「\(concept)」"
         case .free(let q): return q
         case .quiz: return "考考我吧。"
+        case .quizReply(let answer): return answer
+        }
+    }
+
+    private func gradeQuiz(_ conv: Conversation) async {
+        isThinking = true
+        defer { isThinking = false }
+        do {
+            try await services.conversation.gradeQuiz(conv, article: article, context: modelContext)
+            quizResultConversation = conv   // 触发 QuizResultCard 渲染
+        } catch {
+            // 评分失败：仅提示错误，不出结果卡；quizActive 已在 ask() 置 false，
+            // 用户可点 header 苏格拉底按钮重测。
+            self.error = error.localizedDescription
         }
     }
 }
@@ -188,6 +245,7 @@ private extension AIPane.AskKind {
         case .explain(let concept): return .explain(concept: concept)
         case .free(let q): return .free(question: q)
         case .quiz: return .quiz
+        case .quizReply(let answer): return .quizReply(answer: answer)
         }
     }
 }
@@ -198,7 +256,37 @@ extension AIPane.AskKind: Equatable {
         case (.quiz, .quiz): return true
         case (.free(let a), .free(let b)): return a == b
         case (.explain(let a), .explain(let b)): return a == b
+        case (.quizReply(let a), .quizReply(let b)): return a == b
         default: return false
         }
+    }
+}
+
+/// AI pane header 右上角的苏格拉底考核入口。常驻，兼做"再测一次"。
+/// brutalist：正方形、1px 黑边、直角、无阴影、无强调色；hover → 黑底 cream 图标。
+private struct QuizEntryButton: View {
+    let enabled: Bool
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 18, weight: .regular))
+                Image(systemName: "questionmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .offset(x: 4, y: -3)
+            }
+            .foregroundStyle(hovering && enabled ? Theme.bgCream : Theme.textPrimary)
+            .frame(width: 38, height: 38)
+            .background(hovering && enabled ? Theme.textPrimary : Theme.bgCream)
+            .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+            .opacity(enabled ? 1 : 0.4)
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .onHover { hovering = $0 }
+        .help("苏格拉底考核 — 测测你的理解")
     }
 }
