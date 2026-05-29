@@ -26,6 +26,7 @@ final class ConceptScoreTests: XCTestCase {
 
         ctx.delete(conv)
         try ctx.save()
+        ctx.processPendingChanges()   // 旧版 SwiftData(macOS 14) 的 in-memory 级联删除会延后，强制应用后再 fetch
 
         let remaining = try ctx.fetch(FetchDescriptor<ConceptScore>())
         XCTAssertEqual(remaining.count, 0)
