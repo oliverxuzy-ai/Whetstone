@@ -23,19 +23,23 @@ struct WorkspaceView: View {
     @State private var isLoading: Bool = false
     @State private var loadError: String? = nil
 
-    private let leftWidth: CGFloat = 300
+    @AppStorage("leftSidebarWidth") private var leftWidth: Double = 300
+    @State private var leftDragStartWidth: Double? = nil
+    private static let leftMin: Double = 240
+    private static let leftMax: Double = 420
 
     var body: some View {
         HStack(spacing: 0) {
             leftContent
-                .frame(width: leftWidth)
+                .frame(width: CGFloat(leftWidth))
                 .frame(maxHeight: .infinity)
                 .background(Theme.bgSage)
                 .overlay(alignment: .trailing) {
                     Rectangle().fill(Theme.borderHeavy).frame(width: 1)
                 }
-                .frame(width: leftOpen ? leftWidth : 0, alignment: .leading)
+                .frame(width: leftOpen ? CGFloat(leftWidth) : 0, alignment: .leading)
                 .clipped()
+                .overlay(alignment: .trailing) { if leftOpen { leftResizeHandle } }
 
             centerRegion
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -53,8 +57,8 @@ struct WorkspaceView: View {
         .animation(Motion.drive, value: leftOpen)
         .animation(Motion.drive, value: rightOpen)
         .animation(Motion.drive, value: selectedArticle?.url)
-        .overlay(alignment: .topLeading) { reopenLeftButton }
-        .overlay(alignment: .topTrailing) { reopenRightButton }
+        .overlay(alignment: .leading) { reopenLeftButton }
+        .overlay(alignment: .trailing) { reopenRightButton }
         .overlay { modals }
         .background(sidebarCommands)
     }
@@ -106,14 +110,11 @@ struct WorkspaceView: View {
     private var reopenLeftButton: some View {
         if !leftOpen {
             Button { leftOpen = true } label: {
-                Image(systemName: "sidebar.left")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Theme.textPrimary)
-                    .frame(width: 30, height: 30)
+                Image(systemName: "chevron.right")
             }
-            .buttonStyle(BrutalistRaisedStyle())
-            .padding(.leading, 14)
-            .padding(.top, 12 + Theme.titlebarInset)
+            .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary, iconOnly: true))
+            .padding(.leading, 8)
+            .help("展开侧栏 (⌃⌘[)")
         }
     }
 
@@ -121,15 +122,35 @@ struct WorkspaceView: View {
     private var reopenRightButton: some View {
         if !rightOpen && selectedArticle != nil {
             Button { rightOpen = true } label: {
-                Image(systemName: "sidebar.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Theme.textPrimary)
-                    .frame(width: 30, height: 30)
+                Image(systemName: "chevron.left")
             }
-            .buttonStyle(BrutalistRaisedStyle())
-            .padding(.trailing, 14)
-            .padding(.top, 12 + Theme.titlebarInset)
+            .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary, iconOnly: true))
+            .padding(.trailing, 8)
+            .help("展开 AI 伙伴 (⌃⌘])")
         }
+    }
+
+    /// 左栏右缘的拖拽调宽手柄(对称于 AIPane 的 resize handle)。
+    private var leftResizeHandle: some View {
+        Color.clear
+            .frame(width: 8)
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .offset(x: 4)
+            .onHover { hovering in
+                if hovering { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
+            }
+            .gesture(
+                DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                    .onChanged { value in
+                        let start = leftDragStartWidth ?? leftWidth
+                        if leftDragStartWidth == nil { leftDragStartWidth = start }
+                        // 左栏在左侧:向右拖(translation.width 为正)= 变宽。
+                        let proposed = start + Double(value.translation.width)
+                        leftWidth = min(Self.leftMax, max(Self.leftMin, proposed))
+                    }
+                    .onEnded { _ in leftDragStartWidth = nil }
+            )
     }
 
     // MARK: - Keyboard toggles (⌃⌘[ / ⌃⌘])

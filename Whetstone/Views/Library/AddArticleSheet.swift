@@ -20,11 +20,8 @@ struct AddArticleSheet: View {
                 Spacer()
                 Button(action: onCancel) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Theme.textPrimary)
-                        .frame(width: 36, height: 36)
                 }
-                .buttonStyle(BrutalistRaisedStyle())
+                .buttonStyle(EditorialButtonStyle(size: .medium, variant: .secondary, iconOnly: true))
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -35,40 +32,31 @@ struct AddArticleSheet: View {
                     .font(.metaText)
                     .foregroundStyle(Theme.textSecondary)
 
-                HStack(spacing: 0) {
-                    Image(systemName: "link")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Theme.textSecondary)
-                        .padding(.leading, 16)
-                    TextField("https://...", text: $urlInput)
-                        .textFieldStyle(.plain)
-                        .padding(16)
-                        .onSubmit(submit)
-                        .disabled(isLoading)
+                HStack(spacing: 8) {
+                    HStack(spacing: 0) {
+                        Image(systemName: "link")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Theme.textSecondary)
+                            .padding(.leading, 16)
+                        TextField("https://...", text: $urlInput)
+                            .textFieldStyle(.plain)
+                            .padding(16)
+                            .onSubmit(submit)
+                            .disabled(isLoading)
+                    }
+                    .frame(height: 52)
+                    .hardShadow(fill: Theme.bgCream)
+
                     Button(action: submit) {
                         if isLoading {
-                            ProgressView().controlSize(.small).padding(.horizontal, 18)
+                            ProgressView().controlSize(.small)
                         } else {
                             Image(systemName: "arrow.right")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(Theme.textPrimary)
-                                .padding(.horizontal, 18)
                         }
                     }
-                    .buttonStyle(.plain)
-                    .frame(maxHeight: .infinity)
-                    .background(
-                        Rectangle().fill(Color.clear)
-                            .overlay(
-                                Rectangle().frame(width: 1).foregroundStyle(Theme.borderHeavy),
-                                alignment: .leading
-                            )
-                    )
+                    .buttonStyle(EditorialButtonStyle(size: .large, variant: .primary, iconOnly: true))
                     .disabled(urlInput.trimmingCharacters(in: .whitespaces).isEmpty || isLoading)
                 }
-                .frame(height: 52)
-                .background(Theme.bgCream)
-                .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
 
                 if let err = loadError {
                     Text(err)

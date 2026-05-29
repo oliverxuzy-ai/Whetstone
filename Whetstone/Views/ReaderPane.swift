@@ -73,9 +73,12 @@ struct ReaderPane: View {
             Spacer()
 
             HStack(spacing: 0) {
-                tabPill("Article", isActive: tab == .article) { tab = .article }
-                tabPill("Concepts", isActive: tab == .concepts) { tab = .concepts }
+                tabPill("原文", isActive: tab == .article) { tab = .article }
+                tabPill("概念", isActive: tab == .concepts) { tab = .concepts }
             }
+            .background(Theme.bgCream)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.radius))
+            .background(RoundedRectangle(cornerRadius: Theme.radius).fill(Theme.borderHeavy).offset(x: 2, y: 2))
             .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.borderHeavy, lineWidth: 1))
 
             Spacer()
@@ -83,14 +86,11 @@ struct ReaderPane: View {
             // 翻译按钮: 切换 EN ↔ 中英对照。第一次点会调 OpenAI 翻译,之后用缓存。
             translateButton
 
-            // Search button (placeholder — wires up in v1)
+            // Search button (placeholder — wires up later)
             Button(action: {}) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 16))
-                    .foregroundStyle(Theme.textPrimary)
-                    .frame(width: 40, height: 40)
             }
-            .buttonStyle(BrutalistRaisedStyle())
+            .buttonStyle(EditorialButtonStyle(size: .medium, variant: .secondary, iconOnly: true))
             .disabled(true)
             .opacity(0.45)
         }
@@ -104,30 +104,15 @@ struct ReaderPane: View {
         let hint: String = showBilingual
             ? "切回原文"
             : (article.translatedParagraphs != nil ? "中英对照" : "翻译成中文 (中英对照)")
-        if showBilingual {
-            Button(action: toggleTranslation) { translateButtonLabel }
-                .buttonStyle(BrutalistFilledStyle())
-                .disabled(isTranslating || article.content.isEmpty)
-                .help(hint)
-        } else {
-            Button(action: toggleTranslation) { translateButtonLabel }
-                .buttonStyle(BrutalistRaisedStyle())
-                .disabled(isTranslating || article.content.isEmpty)
-                .help(hint)
-        }
-    }
-
-    private var translateButtonLabel: some View {
-        ZStack {
-            Image(systemName: "character.bubble")
-                .font(.system(size: 16))
-                .foregroundStyle(showBilingual ? Theme.bgCream : Theme.textPrimary)
-                .opacity(isTranslating ? 0 : 1)
-            if isTranslating {
-                ProgressView().controlSize(.small)
+        Button(action: toggleTranslation) {
+            ZStack {
+                Image(systemName: "character.bubble").opacity(isTranslating ? 0 : 1)
+                if isTranslating { ProgressView().controlSize(.small) }
             }
         }
-        .frame(width: 40, height: 40)
+        .buttonStyle(EditorialButtonStyle(size: .medium, variant: showBilingual ? .solid : .secondary, iconOnly: true))
+        .disabled(isTranslating || article.content.isEmpty)
+        .help(hint)
     }
 
     /// 三个状态 — UI 状态留在 View, cache/调 AI/持久化全交给 TranslationService:
@@ -267,18 +252,19 @@ struct ReaderPane: View {
     private func relatedSection(concepts: [Concept]) -> some View {
         VStack(alignment: .leading, spacing: 20) {
             Divider().background(Theme.borderHeavy).padding(.top, 32)
-            Text("Concepts in this article")
+            Text("本文概念")
                 .font(.h2)
                 .foregroundStyle(Theme.textPrimary)
                 .padding(.top, 12)
-            VStack(spacing: 12) {
+            VStack(spacing: 14) {
                 ForEach(concepts) { c in
                     HStack(spacing: 16) {
                         Image(systemName: "lightbulb")
                             .font(.system(size: 16))
-                            .foregroundStyle(Theme.textPrimary)
+                            .foregroundStyle(Theme.rust)
                             .frame(width: 40, height: 40)
-                            .overlay(Rectangle().stroke(Theme.borderLight, lineWidth: 1))
+                            .background(Theme.bgCream, in: RoundedRectangle(cornerRadius: Theme.radius))
+                            .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.borderLight, lineWidth: 1))
                         VStack(alignment: .leading, spacing: 2) {
                             Text(c.name)
                                 .font(.h3)
@@ -291,7 +277,7 @@ struct ReaderPane: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 16)
-                    .overlay(Rectangle().stroke(Theme.borderLight, lineWidth: 1))
+                    .hardShadow(fill: Theme.bgCream)
                 }
             }
         }

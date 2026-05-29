@@ -23,12 +23,8 @@ struct ContinueReadingHero: View {
             Spacer(minLength: 12)
             Button(action: onResume) {
                 Text("继续 →")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Theme.bgCream)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 9)
             }
-            .buttonStyle(BrutalistFilledStyle())
+            .buttonStyle(EditorialButtonStyle(size: .medium, variant: .solid))
             .fixedSize()
         }
         .padding(.vertical, 18)

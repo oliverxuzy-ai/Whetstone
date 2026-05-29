@@ -18,12 +18,12 @@ struct QuizResultCard: View {
                 Spacer()
                 Image(systemName: "bolt.fill")
                     .font(.system(size: 14))
-                    .foregroundStyle(Theme.textPrimary)
+                    .foregroundStyle(Theme.rust)
             }
 
             Text("\(total)")
                 .font(.system(size: 42, weight: .regular))
-                .foregroundStyle(Theme.textPrimary)
+                .foregroundStyle(Theme.rust)
 
             Rectangle().fill(Theme.borderHeavy).frame(height: 1)
 
@@ -64,8 +64,7 @@ struct QuizResultCard: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(20)
-        .background(Theme.bgCream)
-        .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+        .hardShadow(fill: Theme.bgCream)
     }
 
     private func glyphs(_ v: Int) -> String {

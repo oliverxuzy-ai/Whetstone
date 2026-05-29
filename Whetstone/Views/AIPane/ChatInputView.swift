@@ -13,36 +13,28 @@ struct ChatInputView: View {
     var body: some View {
         VStack(spacing: 0) {
             Divider().background(Theme.borderHeavy)
-            HStack(spacing: 0) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(Theme.textSecondary)
-                    .padding(.leading, 16)
-                TextField(placeholder, text: $input)
-                    .textFieldStyle(.plain)
-                    .padding(16)
-                    .onSubmit(onSubmit)
-                    .disabled(isThinking)
-                Button(action: onSubmit) {
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Theme.textPrimary)
-                        .padding(.horizontal, 18)
+            HStack(spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(Theme.textSecondary)
+                    TextField(placeholder, text: $input)
+                        .textFieldStyle(.plain)
+                        .onSubmit(onSubmit)
+                        .disabled(isThinking)
                 }
-                .buttonStyle(.plain)
-                .frame(maxHeight: .infinity)
-                .background(
-                    Rectangle().fill(Color.clear)
-                        .overlay(
-                            Rectangle().frame(width: 1).foregroundStyle(Theme.borderHeavy),
-                            alignment: .leading
-                        )
-                )
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .hardShadow(fill: Theme.bgCream)
+                .frame(maxWidth: .infinity)
+
+                Button(action: onSubmit) {
+                    Image(systemName: "arrow.up")
+                }
+                .buttonStyle(EditorialButtonStyle(size: .medium, variant: .primary, iconOnly: true))
                 .disabled(input.trimmingCharacters(in: .whitespaces).isEmpty || isThinking)
             }
-            .frame(height: 52)
-            .background(Theme.bgCream)
-            .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
-            .padding(24)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
         }
     }
 }

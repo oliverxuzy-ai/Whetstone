@@ -50,6 +50,7 @@ struct ArticleListSidebar: View {
                     }
                 }
                 .padding(.horizontal, 12)
+                .padding(.top, 6)     // 否则 ScrollView 顶边会裁掉第一张卡的 1px 上边框/阴影
                 .padding(.bottom, 12)
             }
         }

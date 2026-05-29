@@ -35,7 +35,7 @@ struct MessageListView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Heads up")
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(Theme.textPrimary.opacity(0.5))
+                            .foregroundStyle(Theme.rust)
                             .textCase(.uppercase)
                             .tracking(0.5)
                         Text(err)
@@ -45,8 +45,7 @@ struct MessageListView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(14)
-                    .background(Theme.bgCream)
-                    .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                    .hardShadow(fill: Theme.bgCream)
                 }
             }
             .padding(32)
@@ -62,8 +61,7 @@ struct MessageListView: View {
                     .font(.bodyChat)
                     .foregroundStyle(Theme.textPrimary)
                     .padding(14)
-                    .background(Theme.bgCream, in: UserBubbleShape())
-                    .overlay(UserBubbleShape().stroke(Theme.borderLight, lineWidth: 1))
+                    .hardShadow(fill: Theme.bgCream)
                     .frame(maxWidth: 320, alignment: .trailing)
             }
         } else {
@@ -75,22 +73,5 @@ struct MessageListView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-    }
-}
-
-private struct UserBubbleShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        let radius: CGFloat = 4
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - radius))
-        path.addQuadCurve(
-            to: CGPoint(x: rect.maxX - radius, y: rect.maxY),
-            control: CGPoint(x: rect.maxX, y: rect.maxY)
-        )
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.closeSubpath()
-        return path
     }
 }

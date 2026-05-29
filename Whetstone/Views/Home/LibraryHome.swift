@@ -54,12 +54,8 @@ struct LibraryHome: View {
             Spacer()
             Button(action: onAddArticle) {
                 Text("+ 添加文章")
-                    .font(.system(size: 13.5, weight: .semibold))
-                    .foregroundStyle(Theme.bgCream)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 10)
             }
-            .buttonStyle(BrutalistFilledStyle(fill: Theme.rust))
+            .buttonStyle(EditorialButtonStyle(size: .large, variant: .primary))
             .fixedSize()
         }
         .padding(.top, 28 + Theme.titlebarInset)

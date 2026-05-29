@@ -19,11 +19,9 @@ struct SidebarNav: View {
                 Spacer()
                 Button(action: onCollapse) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(Theme.textPrimary)
-                        .frame(width: 26, height: 26)
                 }
-                .buttonStyle(BrutalistRaisedStyle())
+                .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary, iconOnly: true))
+                .help("收起侧栏 (⌃⌘[)")
             }
             .padding(.horizontal, 16)
             .padding(.top, 18 + Theme.titlebarInset)

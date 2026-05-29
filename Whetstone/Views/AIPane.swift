@@ -9,6 +9,7 @@ struct AIPane: View {
     @EnvironmentObject private var services: AppServices
     @Query private var profiles: [UserProfile]
     @AppStorage("aiPaneWidth") private var aiPaneWidth: Double = 420
+    @AppStorage("rightSidebarOpen") private var rightOpen: Bool = true
 
     @State private var conversation: Conversation?
     @State private var messages: [Message] = []
@@ -87,16 +88,23 @@ struct AIPane: View {
     }
 
     private var header: some View {
-        HStack {
-            HStack(spacing: 12) {
-                Circle().fill(Theme.textPrimary).frame(width: 12, height: 12)
-                Text("Learning Guide")
-                    .font(.system(size: 18, weight: .regular))
-                    .foregroundStyle(Theme.textPrimary)
+        HStack(spacing: 12) {
+            Button { rightOpen = false } label: {
+                Image(systemName: "chevron.right")
+            }
+            .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary, iconOnly: true))
+            .help("收起 AI 伙伴 (⌃⌘])")
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("AI 伙伴")
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(0.5)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Theme.textSecondary)
                 if quizActive {
                     Text("概念 \(quizCurrentConcept)/\(article.concepts?.count ?? 0)")
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundStyle(Theme.textPrimary.opacity(0.5))
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.rust)
                 }
             }
             Spacer()
@@ -105,7 +113,7 @@ struct AIPane: View {
                 action: startQuiz
             )
         }
-        .padding(.horizontal, 32)
+        .padding(.horizontal, 20)
         .padding(.top, 16 + Theme.titlebarInset)
         .padding(.bottom, 16)
     }
@@ -263,30 +271,27 @@ extension AIPane.AskKind: Equatable {
 }
 
 /// AI pane header 右上角的苏格拉底考核入口。常驻，兼做"再测一次"。
-/// brutalist：正方形、1px 黑边、直角、无阴影、无强调色；hover → 黑底 cream 图标。
+/// V1.0：cream raised 方钮(5px 圆角 + 2px 硬阴影,hover 反色)+ 锈红问号角标。
 private struct QuizEntryButton: View {
     let enabled: Bool
     let action: () -> Void
-    @State private var hovering = false
 
     var body: some View {
         Button(action: action) {
-            ZStack(alignment: .topTrailing) {
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 18, weight: .regular))
-                Image(systemName: "questionmark")
-                    .font(.system(size: 9, weight: .bold))
-                    .offset(x: 4, y: -3)
-            }
-            .foregroundStyle(hovering && enabled ? Theme.bgCream : Theme.textPrimary)
-            .frame(width: 38, height: 38)
-            .background(hovering && enabled ? Theme.textPrimary : Theme.bgCream)
-            .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
-            .opacity(enabled ? 1 : 0.4)
+            Image(systemName: "brain.head.profile")
         }
-        .buttonStyle(.plain)
+        .buttonStyle(EditorialButtonStyle(size: .medium, variant: .secondary, iconOnly: true))
+        .overlay(alignment: .topTrailing) {
+            Image(systemName: "questionmark")
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(Theme.bgCream)
+                .frame(width: 14, height: 14)
+                .background(Theme.rust, in: Circle())
+                .overlay(Circle().stroke(Theme.borderHeavy, lineWidth: 1))
+                .offset(x: 4, y: -4)
+        }
+        .opacity(enabled ? 1 : 0.4)
         .disabled(!enabled)
-        .onHover { hovering = $0 }
         .help("苏格拉底考核 — 测测你的理解")
     }
 }

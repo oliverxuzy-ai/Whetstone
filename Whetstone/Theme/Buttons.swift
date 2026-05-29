@@ -1,57 +1,146 @@
 import SwiftUI
 
-/// V1.0 raised button: 1px 边 + 5px 圆角 + 2px 硬阴影。按下时平移盖住自己的阴影
-/// (press-into-page)。用于图标键、次级文字键、折叠键、苏格拉底键。
-struct BrutalistRaisedStyle: ButtonStyle {
-    var fill: Color = Theme.bgCream
+// MARK: - 统一按钮尺寸 / 变体
 
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .modifier(HardShadow(pressed: configuration.isPressed, fill: fill))
-            .animation(Motion.flip, value: configuration.isPressed)
+enum ButtonSize {
+    case small, medium, large
+
+    var height: CGFloat {
+        switch self {
+        case .small: return 28
+        case .medium: return 36
+        case .large: return 44
+        }
+    }
+    var font: Font {
+        switch self {
+        case .small: return .system(size: 12, weight: .medium)
+        case .medium: return .system(size: 13, weight: .medium)
+        case .large: return .system(size: 14, weight: .semibold)
+        }
+    }
+    var iconSize: CGFloat {
+        switch self {
+        case .small: return 13
+        case .medium: return 16
+        case .large: return 18
+        }
+    }
+    var hPadding: CGFloat {
+        switch self {
+        case .small: return 10
+        case .medium: return 14
+        case .large: return 18
+        }
     }
 }
 
-/// Flat button(无阴影),用于密集区(下拉、面板内控件)。hover = 轻微底色叠加。
-struct BrutalistFlatStyle: ButtonStyle {
-    var fill: Color = Theme.bgCream
+enum ButtonVariant {
+    /// 锈红强调(添加文章、发送等主操作)
+    case primary
+    /// 墨色实心(强中性 CTA,如「继续」、激活标签)
+    case solid
+    /// cream raised,hover 反色 cream↔ink(默认次级 / 图标键)
+    case secondary
+    /// 扁平无阴影(密集区)
+    case ghost
+}
+
+/// V1.0 统一按钮:size(small/medium/large)+ variant。
+/// hover:secondary 前景/背景反转(cream↔ink);primary/solid 略深。press:平移盖阴影。
+/// **调用方只给 label 内容(Text/Image),不要自己 .foregroundStyle —— 颜色由 style 控制,否则反色失效。**
+struct EditorialButtonStyle: ButtonStyle {
+    var size: ButtonSize = .medium
+    var variant: ButtonVariant = .secondary
+    var iconOnly: Bool = false
 
     func makeBody(configuration: Configuration) -> some View {
-        BrutalistFlatContent(configuration: configuration, fill: fill)
+        EditorialButtonBody(configuration: configuration, size: size, variant: variant, iconOnly: iconOnly)
     }
 }
 
-private struct BrutalistFlatContent: View {
+private struct EditorialButtonBody: View {
     let configuration: ButtonStyleConfiguration
-    let fill: Color
+    let size: ButtonSize
+    let variant: ButtonVariant
+    let iconOnly: Bool
     @State private var hovering = false
 
     var body: some View {
+        let pressed = configuration.isPressed
+        let hot = hovering && !pressed
         configuration.label
-            .background(
-                hovering
-                ? Theme.textPrimary.opacity(configuration.isPressed ? 0.12 : 0.06)
-                : fill,
-                in: RoundedRectangle(cornerRadius: Theme.radius)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: Theme.radius)
-                    .stroke(Color.black, lineWidth: 1)
-            )
+            .font(iconOnly ? .system(size: size.iconSize) : size.font)
+            .foregroundStyle(foreground(hot: hot))
+            .frame(height: size.height)
+            .frame(minWidth: iconOnly ? size.height : nil)
+            .padding(.horizontal, iconOnly ? 0 : size.hPadding)
+            .modifier(ButtonFace(variant: variant, fill: fill(hot: hot), pressed: pressed))
+            .contentShape(Rectangle())
             .onHover { hovering = $0 }
             .animation(Motion.flip, value: hovering)
-            .animation(Motion.flip, value: configuration.isPressed)
+            .animation(Motion.flip, value: pressed)
+    }
+
+    private func foreground(hot: Bool) -> Color {
+        switch variant {
+        case .primary, .solid: return Theme.bgCream
+        case .secondary: return hot ? Theme.bgCream : Theme.textPrimary
+        case .ghost: return Theme.textPrimary
+        }
+    }
+
+    private func fill(hot: Bool) -> Color {
+        switch variant {
+        case .primary: return hot ? Theme.rust.opacity(0.82) : Theme.rust
+        case .solid: return hot ? Theme.textPrimary.opacity(0.82) : Theme.textPrimary
+        case .secondary: return hot ? Theme.textPrimary : Theme.bgCream
+        case .ghost: return hot ? Theme.hoverOverlay : .clear
+        }
     }
 }
 
-/// Filled CTA(如「继续」「开始测验」)。`fill: Theme.rust` 做主强调,默认墨色。
-/// 调用方把 label 文字设为 cream。按下平移盖阴影。
-struct BrutalistFilledStyle: ButtonStyle {
-    var fill: Color = Theme.textPrimary
+private struct ButtonFace: ViewModifier {
+    let variant: ButtonVariant
+    let fill: Color
+    let pressed: Bool
 
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        switch variant {
+        case .ghost:
+            content.background(fill, in: RoundedRectangle(cornerRadius: Theme.radius))
+        default:
+            content.modifier(HardShadow(pressed: pressed, fill: fill))
+        }
+    }
+}
+
+// MARK: - 旧风格兼容垫片(modal 内按钮等尚未迁移的调用点;新代码请用 EditorialButtonStyle)
+
+struct BrutalistRaisedStyle: ButtonStyle {
+    var fill: Color = Theme.bgCream
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .modifier(HardShadow(pressed: configuration.isPressed, fill: fill))
             .animation(Motion.flip, value: configuration.isPressed)
+    }
+}
+
+struct BrutalistFilledStyle: ButtonStyle {
+    var fill: Color = Theme.textPrimary
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .modifier(HardShadow(pressed: configuration.isPressed, fill: fill))
+            .animation(Motion.flip, value: configuration.isPressed)
+    }
+}
+
+struct BrutalistFlatStyle: ButtonStyle {
+    var fill: Color = Theme.bgCream
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(fill, in: RoundedRectangle(cornerRadius: Theme.radius))
+            .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Color.black, lineWidth: 1))
     }
 }

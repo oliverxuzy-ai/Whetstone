@@ -27,11 +27,8 @@ struct SettingsView: View {
                 Spacer()
                 Button(action: { onClose() }) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Theme.textPrimary)
-                        .frame(width: 36, height: 36)
                 }
-                .buttonStyle(BrutalistRaisedStyle())
+                .buttonStyle(EditorialButtonStyle(size: .medium, variant: .secondary, iconOnly: true))
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -41,10 +38,10 @@ struct SettingsView: View {
                         Text("✓ 已保存到 Keychain")
                             .font(.system(size: 11, weight: .semibold))
                             .tracking(0.4)
-                            .foregroundStyle(Theme.textPrimary)
+                            .foregroundStyle(Theme.rust)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
-                            .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                            .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.borderHeavy, lineWidth: 1))
                     }
                     Spacer()
                 }
@@ -56,16 +53,12 @@ struct SettingsView: View {
                     SecureField(hasStoredAPIKey ? "••••••••••••••••••••••••" : "sk-...", text: $apiKey)
                         .textFieldStyle(.plain)
                         .padding(12)
-                        .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                        .hardShadow(fill: Theme.bgCream)
                     if hasStoredAPIKey {
                         Button(action: clearAPIKey) {
                             Text("Clear")
-                                .font(.pillBtn)
-                                .foregroundStyle(Theme.textPrimary)
-                                .padding(.horizontal, 14)
-                                .frame(height: 42)
                         }
-                        .buttonStyle(BrutalistRaisedStyle())
+                        .buttonStyle(EditorialButtonStyle(size: .medium, variant: .secondary))
                     }
                 }
             }
@@ -77,7 +70,7 @@ struct SettingsView: View {
                 TextField("Engineer / Designer / ...", text: $profession)
                     .textFieldStyle(.plain)
                     .padding(12)
-                    .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                    .hardShadow(fill: Theme.bgCream)
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -86,7 +79,7 @@ struct SettingsView: View {
                     .lineLimit(2...4)
                     .textFieldStyle(.plain)
                     .padding(12)
-                    .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                    .hardShadow(fill: Theme.bgCream)
             }
 
             // AI 增强排版 toggle —— 一次性, 结果保存到 article.content
@@ -126,12 +119,8 @@ struct SettingsView: View {
                 Spacer()
                 Button(action: save) {
                     Text("Save")
-                        .font(.pillBtn)
-                        .foregroundStyle(Theme.bgCream)
-                        .padding(.horizontal, 28)
-                        .padding(.vertical, 12)
                 }
-                .buttonStyle(BrutalistFilledStyle())
+                .buttonStyle(EditorialButtonStyle(size: .large, variant: .primary))
             }
         }
         .padding(40)
@@ -150,9 +139,14 @@ struct SettingsView: View {
                 .foregroundStyle(Theme.textSecondary)
 
             HStack(spacing: 8) {
-                ForEach(TranslationProvider.all, id: \.id) { provider in
-                    providerButton(provider)
+                HStack(spacing: 0) {
+                    ForEach(TranslationProvider.all, id: \.id) { provider in
+                        providerButton(provider)
+                    }
                 }
+                .clipShape(RoundedRectangle(cornerRadius: Theme.radius))
+                .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.borderHeavy, lineWidth: 1))
+                .background(RoundedRectangle(cornerRadius: Theme.radius).fill(Theme.borderHeavy).offset(x: 2, y: 2))
                 Spacer()
             }
 
@@ -171,26 +165,17 @@ struct SettingsView: View {
             translationProviderID = provider.id
             services.reloadTranslationProvider()
         }
-        // filled = 选中, raised = 未选 (与 AI 增强排版 toggle 同一套样式)。
-        if selected {
-            Button(action: action) {
-                Text(provider.displayName)
-                    .font(.pillBtn)
-                    .foregroundStyle(Theme.bgCream)
-                    .padding(.horizontal, 18)
-                    .frame(height: 42)
-            }
-            .buttonStyle(BrutalistFilledStyle())
-        } else {
-            Button(action: action) {
-                Text(provider.displayName)
-                    .font(.pillBtn)
-                    .foregroundStyle(Theme.textPrimary)
-                    .padding(.horizontal, 18)
-                    .frame(height: 42)
-            }
-            .buttonStyle(BrutalistRaisedStyle())
+        // 分段控件单元:选中 = 墨色填充 + cream 字, 未选 = 透明 + 墨色字。
+        Button(action: action) {
+            Text(provider.displayName)
+                .font(.pillBtn)
+                .foregroundStyle(selected ? Theme.bgCream : Theme.textPrimary)
+                .padding(.horizontal, 18)
+                .frame(height: 42)
+                .background(selected ? Theme.textPrimary : Color.clear)
+                .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 
     private var deepSeekKeyField: some View {
@@ -201,10 +186,10 @@ struct SettingsView: View {
                     Text("✓ 已保存到 Keychain")
                         .font(.system(size: 11, weight: .semibold))
                         .tracking(0.4)
-                        .foregroundStyle(Theme.textPrimary)
+                        .foregroundStyle(Theme.rust)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.borderHeavy, lineWidth: 1))
                 }
                 Spacer()
             }
@@ -212,16 +197,12 @@ struct SettingsView: View {
                 SecureField(hasStoredDeepSeekKey ? "••••••••••••••••••••••••" : "sk-...", text: $deepSeekKey)
                     .textFieldStyle(.plain)
                     .padding(12)
-                    .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+                    .hardShadow(fill: Theme.bgCream)
                 if hasStoredDeepSeekKey {
                     Button(action: clearDeepSeekKey) {
                         Text("Clear")
-                            .font(.pillBtn)
-                            .foregroundStyle(Theme.textPrimary)
-                            .padding(.horizontal, 14)
-                            .frame(height: 42)
                     }
-                    .buttonStyle(BrutalistRaisedStyle())
+                    .buttonStyle(EditorialButtonStyle(size: .medium, variant: .secondary))
                 }
             }
         }

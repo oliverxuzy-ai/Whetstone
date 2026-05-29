@@ -14,12 +14,14 @@ struct ConceptCardView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Text("Concepts Extracted")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(Theme.textPrimary)
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(0.5)
+                        .textCase(.uppercase)
+                        .foregroundStyle(Theme.rust)
                     Spacer()
                     Image(systemName: "bolt.fill")
                         .font(.system(size: 14))
-                        .foregroundStyle(Theme.textPrimary)
+                        .foregroundStyle(Theme.rust)
                 }
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(concepts) { c in
@@ -47,8 +49,7 @@ struct ConceptCardView: View {
                 }
             }
             .padding(20)
-            .background(Theme.bgCream)
-            .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+            .hardShadow(fill: Theme.bgCream)
         } else if !conceptsLoaded {
             HStack {
                 ProgressView().controlSize(.small)
@@ -62,13 +63,9 @@ struct ConceptCardView: View {
     private func chip(_ label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
-                .font(.chipText)
-                .foregroundStyle(Theme.textPrimary)
                 .lineLimit(1)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
         }
-        .buttonStyle(BrutalistRaisedStyle())
+        .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary))
     }
 
     private func truncated(_ s: String, max: Int) -> String {
