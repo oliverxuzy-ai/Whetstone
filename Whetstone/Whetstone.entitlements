@@ -14,5 +14,15 @@
 	     可以删掉。 -->
 	<key>com.apple.security.cs.disable-library-validation</key>
 	<true/>
+	<!-- 沙盒下 Sparkle 必需: 放行 app → Sparkle Installer/Status XPC 服务的
+	     mach-lookup。这两个服务以 <bundleid>-spks / -spki 注册;缺这两个
+	     例外则沙盒拦截 mach-lookup,更新安装时报
+	     "An error occurred while launching the installer."
+	     见 https://sparkle-project.org/documentation/sandboxing/ -->
+	<key>com.apple.security.temporary-exception.mach-lookup.global-name</key>
+	<array>
+		<string>com.zhengyangxu.whetstone-spks</string>
+		<string>com.zhengyangxu.whetstone-spki</string>
+	</array>
 </dict>
 </plist>

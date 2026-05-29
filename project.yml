@@ -56,6 +56,10 @@ targets:
         # 公钥用于校验下载的 DMG 没被中间人改过;私钥仅在 GH Actions secret。
         SUFeedURL: https://github.com/oliverxuzy-ai/Whetstone/releases/latest/download/appcast.xml
         SUPublicEDKey: YD2eyoshST6Rpttk+WhHAglopfGEk/If/Di92omJhhc=
+        # 沙盒应用必需 — 让 Sparkle 通过 Installer Launcher XPC 服务安装更新。
+        # 配合 entitlements 里的 mach-lookup 例外(<bundleid>-spks/-spki);
+        # 缺这一项,沙盒下更新会报 "launching the installer" 失败。
+        SUEnableInstallerLauncherService: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.zhengyangxu.whetstone

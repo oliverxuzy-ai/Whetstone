@@ -103,6 +103,13 @@
 			path = Packages;
 			sourceTree = "<group>";
 		};
+		0782E7D50C8A75086CEBECB1 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		0D5B2A3586251AEF2C1611D1 /* Sidebar */ = {
 			isa = PBXGroup;
 			children = (
@@ -147,6 +154,7 @@
 			isa = PBXGroup;
 			children = (
 				F77E47E39D3603FC4A6CF316 /* App */,
+				0782E7D50C8A75086CEBECB1 /* Models */,
 				E3879238DE3CF30514ADE686 /* Resources */,
 				FD8EBF9F1BDE3D18DB7C4724 /* Services */,
 				EB3D30CD9919A07C0293C4C7 /* Theme */,
