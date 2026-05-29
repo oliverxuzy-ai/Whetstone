@@ -278,7 +278,11 @@ private struct QuizEntryButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "brain.head.profile")
+            Image("Socrates")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 20, height: 20)
         }
         .buttonStyle(EditorialButtonStyle(size: .medium, variant: .secondary, iconOnly: true))
         .overlay(alignment: .topTrailing) {

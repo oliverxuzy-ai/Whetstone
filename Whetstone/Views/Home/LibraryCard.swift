@@ -13,12 +13,14 @@ struct LibraryCard: View {
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 8) {
+                // 标题固定预留 2 行高 → 1 行/2 行标题之间下方元素仍对齐
                 Text(article.title.isEmpty ? article.url : article.title)
                     .font(.system(size: 16, weight: .semibold))
                     .tracking(-0.01)
                     .foregroundStyle(Theme.textPrimary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, minHeight: 42, alignment: .topLeading)
 
                 Text(cardExcerpt)
                     .font(.system(size: 12.5))
@@ -26,7 +28,9 @@ struct LibraryCard: View {
                     .foregroundStyle(Theme.textSecondary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+
+                Spacer(minLength: 8)   // 把页脚钉到卡片底部 → 所有卡来源/时间同高
 
                 HStack(spacing: 6) {
                     Text("\(article.sourceHost) · \(article.relativeAdded)")
@@ -47,10 +51,9 @@ struct LibraryCard: View {
                             .foregroundStyle(Theme.rust)
                     }
                 }
-                .padding(.top, 4)
             }
             .padding(16)
-            .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 160, maxHeight: 160, alignment: .topLeading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

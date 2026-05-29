@@ -57,7 +57,7 @@ struct WorkspaceView: View {
         .animation(Motion.drive, value: leftOpen)
         .animation(Motion.drive, value: rightOpen)
         .animation(Motion.drive, value: selectedArticle?.url)
-        .overlay(alignment: .leading) { reopenLeftButton }
+        .overlay(alignment: .topLeading) { reopenLeftButton }
         .overlay(alignment: .trailing) { reopenRightButton }
         .overlay { modals }
         .background(sidebarCommands)
@@ -113,7 +113,8 @@ struct WorkspaceView: View {
                 Image(systemName: "chevron.right")
             }
             .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary, iconOnly: true))
-            .padding(.leading, 8)
+            .padding(.leading, 16)
+            .padding(.top, 20 + Theme.titlebarInset)   // 对齐 header 行(reader 的 原文/概念 同高)
             .help("展开侧栏 (⌃⌘[)")
         }
     }

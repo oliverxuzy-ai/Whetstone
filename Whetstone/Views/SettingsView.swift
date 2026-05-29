@@ -21,6 +21,7 @@ struct SettingsView: View {
     private var profile: UserProfile? { profiles.first }
 
     var body: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 24) {
             HStack {
                 Text("Settings").font(.h1).foregroundStyle(Theme.textPrimary)
@@ -110,8 +111,6 @@ struct SettingsView: View {
                 }
             }
 
-            Spacer()
-
             HStack {
                 if savedFlash {
                     Text("Saved.").font(.metaText).foregroundStyle(Theme.textSecondary)
@@ -123,8 +122,9 @@ struct SettingsView: View {
                 .buttonStyle(EditorialButtonStyle(size: .large, variant: .primary))
             }
         }
-        .padding(40)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(32)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
         .background(Theme.bgCream)
         .onAppear(perform: loadValues)
     }
