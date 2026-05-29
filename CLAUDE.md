@@ -1,6 +1,6 @@
 # Whetstone
 
-macOS native SwiftUI app · AI-assisted article comprehension · Feynman + Socratic methods · companion mode locked in v0.
+macOS native SwiftUI app · AI-assisted article comprehension · Feynman + Socratic methods · companion mode locked in v0 · **UI V1.0** (single-window three-region + 安静版 neobrutalism 编辑风) shipped 2026-05-29.
 
 GitHub: `git@github.com:oliverxuzy-ai/Whetstone.git` · branch `main`
 Local dir: `/Users/zhengyangxu/Desktop/side_project/learning-mate/` (outer folder name predates rename — harmless)
@@ -9,24 +9,39 @@ Local dir: `/Users/zhengyangxu/Desktop/side_project/learning-mate/` (outer folde
 
 **Always read these before touching `Whetstone/Views/` or `Whetstone/Theme/`:**
 
-1. **Mockup HTML** (visual ground truth):
+1. **V1.0 design spec** (current visual + structure source of truth):
+   `docs/superpowers/specs/2026-05-29-ui-v1-redesign-design.md`
+2. **v0 mockup HTML** (original brutalist-editorial — **superseded on radius/shadow/accent** by V1.0; still useful for layout/typography feel):
    `/Users/zhengyangxu/Downloads/design-2d6e08f6-2fdf-4f78-9fd4-f05cf7c198d2.html`
-2. **Design doc** (product + premises + GO/NO-GO gates):
+3. **Design doc** (product premises + GO/NO-GO gates):
    `~/.gstack/projects/learning-mate/zhengyangxu-design-20260524-212909.md`
 
-Key visual locks (deviating without explicit user approval = a bug to flag):
-- Aesthetic: **brutalist editorial** — independent magazine, not SaaS
-- Bg cream: `#EFECE5` (main pane)
-- Bg sage: `#C5D2D3` (AI pane)
-- Text primary: `#1A1A1A`
-- Borders: `1px solid #1A1A1A` (heavy) or `rgba(0,0,0,0.2)` (light)
-- **All `border-radius: 0`** (except circular buttons and pill capsules — those are full pill)
-- **No shadows anywhere**
-- **No accent colors** (no green/red/yellow as accents — all transparent in the mockup)
-- Font: Helvetica Neue / system sans-serif
-- Article title 42px / weight regular / tight tracking (-0.02em)
-- AI msg bubbles have **no background** (plain text — "AI speaks beside you, not over you")
-- User msg bubbles have light bg + 1px border + 4px bottom-right radius (tail)
+### Architecture (V1.0 — shipped 2026-05-29)
+
+Single window, **three collapsible regions** in `WorkspaceView` (replaces the v0 two-screen Library↔Reader swap):
+- **LEFT** (sage) — `SidebarNav` + (reading mode only) `ArticleListSidebar` / `ArticleRowCard`. Drag-resizable 240–420 (`leftSidebarWidth`), collapsible.
+- **CENTER** (cream) — **dual-mode**: `LibraryHome` (browse: stats + `ContinueReadingHero` + `LibraryCard` grid) when no article selected; `ReaderPane` when reading.
+- **RIGHT** (sage) — `AIPane` (concept card + messages + Socrates quiz button + chat input). Collapsible; own drag-resize.
+- Collapse mechanism: hand-rolled `HStack` + animated `.frame(width:)` + `.clipped()`, `Motion.drive` (NOT NavigationSplitView). Toggles: ⌃⌘[ / ⌃⌘] + header reopen buttons; open/closed persisted (`@AppStorage`).
+- **Retired:** `ContentView`, `LibraryView`, `LibraryGrid`, `LibrarySidebar`.
+- Testable selectors live in core: `WhetstoneCore.LibrarySelectors` (`filtered` / `stats` / `continueReading` / `isUnread`).
+
+### Key visual locks — V1.0 (deviating without explicit user approval = a bug to flag)
+
+- Aesthetic: **安静版 neobrutalism 编辑风** (quiet neobrutalism editorial) — independent magazine, not SaaS
+- Bg cream `#EFECE5` (center) · Bg sage `#C5D2D3` (left + right rails)
+- Text/border `#1A1A1A`; borders **1px** (`#1A1A1A` heavy / `rgba(0,0,0,0.2)` light) — **not** neobrutalism's 2px
+- **Corner radius `5px` (`Theme.radius`)** on objects (buttons / cards / inputs / pills / modals / message bubbles); **square** on full-bleed panes + 1px dividers
+- **Hard offset shadow `2px 2px 0 #1A1A1A`** (no blur) on raised objects — use `.hardShadow()` modifier (`Theme/HardShadow.swift`)
+- **One accent: 陶土锈红 `#C04A2B` (`Theme.rust`)** — ONLY for active / selected / progress / score / unread. No other accent colors.
+- Font: Helvetica Neue / system sans · Article title 42px / regular / tracking -0.02em
+- Interaction: hover → cream↔ink color invert (`Motion.flip`); press → translate +2px to cover shadow; selected/focus → black stroke or **rust left bar**
+- Buttons: unified `EditorialButtonStyle(size: .small/.medium/.large, variant: .primary/.solid/.secondary/.ghost)` — **label must NOT hardcode `.foregroundStyle`** (the style controls color + hover inversion)
+- AI msg = plain text, no bubble ("AI speaks beside you, not over you"); user msg = `.hardShadow()` cream bubble
+- Motion (`Theme/Motion.swift`): `Motion.flip` (linear 50ms, state reversal) · `Motion.drive` (timingCurve(0.2,0,0,1) ~180ms, rigid displacement); flap (split-flap) reserved for hero reveals (e.g. score)
+- Socrates quiz button: `Assets.xcassets/Socrates` (template, tints with fg) + rust `?` badge, top-right of AI pane
+
+> **v0 locks (`border-radius:0`, no shadows, no accent colors) are SUPERSEDED** by the above as of 2026-05-29 (user-approved evolution). Do not treat the new radius/shadow/rust as drift.
 
 ## Validated Prompts
 
@@ -112,17 +127,18 @@ echo "screenshot: $SHOT"
 ```
 (macOS requires Screen Recording permission for the terminal running this. If the screenshot is black/empty, grant it in System Settings → Privacy & Security → Screen Recording → enable for Terminal/iTerm.)
 
-### Step 4 — Read & compare to mockup
+### Step 4 — Read & compare to the V1.0 locks
 
-Use the `Read` tool on `$SHOT` (it's a PNG — Claude reads images). Compare against the mockup HTML's visual spec:
-- Bg colors match (cream main, sage AI pane)
-- All corners are square (0 border-radius), except circular buttons / pills
-- 1px black border separators present (header, panes, cards, input box)
-- No shadows visible
-- Typography: Helvetica Neue family, sizes per spec
-- AI msg bubble = plain text (no bg), user msg bubble = bordered with tail
-- Concept Extracted hero card present in AI pane (if article loaded)
-- Suggestion chips are pill-shaped with bg-cream + 1px border
+Use the `Read` tool on `$SHOT` (it's a PNG — Claude reads images). Compare against the **V1.0** locks (see Design Source of Truth):
+- Bg: cream center, sage left + right rails
+- Objects (buttons / cards / inputs / bubbles) have **5px** corners + **2px hard offset shadow**; full-bleed panes + 1px dividers stay square
+- 1px black borders/separators present
+- Accent 陶土锈红 `#C04A2B` ONLY on active / selected / progress / score / unread — nowhere else
+- Typography: Helvetica Neue; article title 42px
+- AI msg = plain text (no bubble); user msg = bordered cream bubble with shadow
+- Concept card (rust eyebrow + bolt) + Socrates quiz button (top-right of AI pane) + chat input with rust send button
+- Buttons show hover **color inversion** (cream↔ink); pressed = translate-to-cover-shadow
+- Three regions collapse smoothly (drive curve, no overshoot, no edge bleed); reopen buttons on the top header row
 
 ### Step 5 — Report
 
@@ -159,8 +175,10 @@ When in doubt, run the protocol. The cost is ~15s; the cost of a visual regressi
 
 ## Project artifacts
 
-- Design doc: `~/.gstack/projects/learning-mate/zhengyangxu-design-20260524-212909.md`
-- Mockup HTML: `/Users/zhengyangxu/Downloads/design-2d6e08f6-2fdf-4f78-9fd4-f05cf7c198d2.html`
+- **V1.0 UI spec** (current visual + structure SoT): `docs/superpowers/specs/2026-05-29-ui-v1-redesign-design.md`
+- **V1.0 UI plan**: `docs/superpowers/plans/2026-05-29-ui-v1-redesign.md`
+- Design doc (product premises): `~/.gstack/projects/learning-mate/zhengyangxu-design-20260524-212909.md`
+- v0 mockup HTML (superseded on radius/shadow/accent — see Design Source of Truth): `/Users/zhengyangxu/Downloads/design-2d6e08f6-2fdf-4f78-9fd4-f05cf7c198d2.html`
 - Validated prompts: `Whetstone/Services/Prompts.swift`
 - Builder profile timeline: `~/.gstack/builder-profile.jsonl`
 

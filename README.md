@@ -74,7 +74,7 @@ Existing tools (Pocket, Readwise, Recall) optimize for **capture** and surface-l
 - **macOS Keychain** (data-protection keychain via the Security framework) for API-key storage — scoped to the app, read without password prompts, no third-party dependency
 - **[Sparkle 2](https://sparkle-project.org/)** for auto-update (EdDSA-signed appcast served from GH Releases)
 - **`WhetstoneCore`** — a local SPM package holding the data models, AI client, and prompt templates, kept separate from the SwiftUI app target
-- **Brutalist editorial aesthetic** — warm cream `#EFECE5` + sage `#C5D2D3`, 0 border-radius, no shadows, no accent colors
+- **Quiet neobrutalism editorial aesthetic** (UI V1.0) — single-window three-region layout (collapsible nav/list · reader · AI pane); warm cream `#EFECE5` + sage `#C5D2D3`, 1px borders, 5px corners + hard 2px offset shadows, one rust accent `#C04A2B`, Helvetica Neue
 
 Project is generated from `project.yml` via [xcodegen](https://github.com/yonaskolb/XcodeGen).
 
