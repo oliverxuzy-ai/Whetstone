@@ -58,7 +58,7 @@ struct WorkspaceView: View {
         .animation(Motion.drive, value: rightOpen)
         .animation(Motion.drive, value: selectedArticle?.url)
         .overlay(alignment: .topLeading) { reopenLeftButton }
-        .overlay(alignment: .trailing) { reopenRightButton }
+        .overlay(alignment: .topTrailing) { reopenRightButton }
         .overlay { modals }
         .background(sidebarCommands)
     }
@@ -114,7 +114,7 @@ struct WorkspaceView: View {
             }
             .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary, iconOnly: true))
             .padding(.leading, 16)
-            .padding(.top, 20 + Theme.titlebarInset)   // 对齐 header 行(reader 的 原文/概念 同高)
+            .padding(.top, 14)   // overlay 原点已在安全区下方 → 小值即对齐 header 行(原文/概念 同高)
             .help("展开侧栏 (⌃⌘[)")
         }
     }
@@ -127,6 +127,7 @@ struct WorkspaceView: View {
             }
             .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary, iconOnly: true))
             .padding(.trailing, 8)
+            .padding(.top, 14)   // 与左侧重开键同行(顶部 header 行)
             .help("展开 AI 伙伴 (⌃⌘])")
         }
     }
