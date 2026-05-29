@@ -37,10 +37,10 @@ struct WhetstoneApp: App {
             RootView()
                 .modelContainer(modelContainer)
                 .environmentObject(services)
-                .frame(minWidth: 1100, minHeight: 700)
+                .frame(minWidth: 1280, minHeight: 700)
                 .preferredColorScheme(.light)   // brutalist editorial is light-only by design
         }
-        .windowResizability(.contentMinSize)     // user can drag to resize freely above 1100x700
+        .windowResizability(.contentMinSize)     // user can drag to resize freely above 1280x700
         .windowStyle(.hiddenTitleBar)            // traffic lights float on bgCream, no chrome strip
         .commands {
             CommandGroup(after: .appInfo) {

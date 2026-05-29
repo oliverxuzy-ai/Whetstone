@@ -1,40 +1,18 @@
 import SwiftUI
 
-/// Brutalist raised button: hard-offset shadow, lifts toward upper-left on hover,
-/// settles back to flush on press. Used for icon and text buttons.
+/// V1.0 raised button: 1px 边 + 5px 圆角 + 2px 硬阴影。按下时平移盖住自己的阴影
+/// (press-into-page)。用于图标键、次级文字键、折叠键、苏格拉底键。
 struct BrutalistRaisedStyle: ButtonStyle {
     var fill: Color = Theme.bgCream
 
     func makeBody(configuration: Configuration) -> some View {
-        BrutalistRaisedContent(configuration: configuration, fill: fill)
-    }
-}
-
-private struct BrutalistRaisedContent: View {
-    let configuration: ButtonStyleConfiguration
-    let fill: Color
-    @State private var hovering = false
-
-    var body: some View {
-        let lift: CGFloat = (hovering && !configuration.isPressed) ? 2 : 0
-
         configuration.label
-            .background(fill)
-            .overlay(Rectangle().stroke(Color.black, lineWidth: 1))
-            .background(
-                Rectangle()
-                    .fill(Color.black)
-                    .offset(x: 3 + lift, y: 3 + lift)
-            )
-            .offset(x: -lift, y: -lift)
-            .onHover { hovering = $0 }
-            .animation(.easeOut(duration: 0.10), value: hovering)
-            .animation(.easeOut(duration: 0.06), value: configuration.isPressed)
+            .modifier(HardShadow(pressed: configuration.isPressed, fill: fill))
+            .animation(Motion.flip, value: configuration.isPressed)
     }
 }
 
-/// Flat brutalist button (no shadow). For dense UI areas (suggestion chips, dropdowns,
-/// in-pane controls where many shadows would feel noisy). Hover = subtle bg tint.
+/// Flat button(无阴影),用于密集区(下拉、面板内控件)。hover = 轻微底色叠加。
 struct BrutalistFlatStyle: ButtonStyle {
     var fill: Color = Theme.bgCream
 
@@ -53,40 +31,27 @@ private struct BrutalistFlatContent: View {
             .background(
                 hovering
                 ? Theme.textPrimary.opacity(configuration.isPressed ? 0.12 : 0.06)
-                : fill
+                : fill,
+                in: RoundedRectangle(cornerRadius: Theme.radius)
             )
-            .overlay(Rectangle().stroke(Color.black, lineWidth: 1))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.radius)
+                    .stroke(Color.black, lineWidth: 1)
+            )
             .onHover { hovering = $0 }
-            .animation(.easeOut(duration: 0.10), value: hovering)
-            .animation(.easeOut(duration: 0.06), value: configuration.isPressed)
+            .animation(Motion.flip, value: hovering)
+            .animation(Motion.flip, value: configuration.isPressed)
     }
 }
 
-/// Filled CTA button (e.g. Continue, Save). Black bg, cream text; raised shadow + hover lift.
+/// Filled CTA(如「继续」「开始测验」)。`fill: Theme.rust` 做主强调,默认墨色。
+/// 调用方把 label 文字设为 cream。按下平移盖阴影。
 struct BrutalistFilledStyle: ButtonStyle {
+    var fill: Color = Theme.textPrimary
+
     func makeBody(configuration: Configuration) -> some View {
-        BrutalistFilledContent(configuration: configuration)
-    }
-}
-
-private struct BrutalistFilledContent: View {
-    let configuration: ButtonStyleConfiguration
-    @State private var hovering = false
-
-    var body: some View {
-        let lift: CGFloat = (hovering && !configuration.isPressed) ? 2 : 0
-
         configuration.label
-            .background(Theme.textPrimary)
-            .overlay(Rectangle().stroke(Color.black, lineWidth: 1))
-            .background(
-                Rectangle()
-                    .fill(Color.black.opacity(0.5))
-                    .offset(x: 3 + lift, y: 3 + lift)
-            )
-            .offset(x: -lift, y: -lift)
-            .onHover { hovering = $0 }
-            .animation(.easeOut(duration: 0.10), value: hovering)
-            .animation(.easeOut(duration: 0.06), value: configuration.isPressed)
+            .modifier(HardShadow(pressed: configuration.isPressed, fill: fill))
+            .animation(Motion.flip, value: configuration.isPressed)
     }
 }

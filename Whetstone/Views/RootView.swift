@@ -23,7 +23,7 @@ struct RootView: View {
                     }
                 })
             } else {
-                ContentView()
+                WorkspaceView()
             }
         }
         .background(Theme.bgCream)

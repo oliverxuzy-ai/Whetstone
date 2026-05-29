@@ -4,7 +4,6 @@ import WhetstoneCore
 
 struct ReaderPane: View {
     let article: Article
-    let onBack: () -> Void
 
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var services: AppServices
@@ -71,21 +70,13 @@ struct ReaderPane: View {
 
     private var header: some View {
         HStack {
-            Button(action: onBack) {
-                Image(systemName: "arrow.left")
-                    .font(.system(size: 16))
-                    .foregroundStyle(Theme.textPrimary)
-                    .frame(width: 40, height: 40)
-            }
-            .buttonStyle(BrutalistRaisedStyle())
-
             Spacer()
 
             HStack(spacing: 0) {
                 tabPill("Article", isActive: tab == .article) { tab = .article }
                 tabPill("Concepts", isActive: tab == .concepts) { tab = .concepts }
             }
-            .overlay(Rectangle().stroke(Theme.borderHeavy, lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.borderHeavy, lineWidth: 1))
 
             Spacer()
 

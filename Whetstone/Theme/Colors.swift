@@ -11,6 +11,14 @@ enum Theme {
     static let borderLight = Color.black.opacity(0.2)
     static let hoverOverlay = Color.black.opacity(0.05)
     static let titlebarInset: CGFloat = 28
+
+    // MARK: - V1.0 (安静版 neobrutalism 编辑风) — 推翻 v0 的「无强调色 / 无阴影 / 0 圆角」
+    /// 唯一功能强调色:陶土锈红。仅用于 active / 选中 / 进度 / 出分 / 未读。
+    static let rust = Color(hex: 0xC04A2B)
+    /// 物件圆角(按钮/卡片/输入框/胶囊/弹窗/气泡)。满铺面板与分隔线不用。
+    static let radius: CGFloat = 5
+    /// 硬阴影偏移(无模糊)。配 1px 发丝边的平衡值。
+    static let shadowOffset: CGFloat = 2
 }
 
 extension Color {
