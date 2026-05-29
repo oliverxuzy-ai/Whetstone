@@ -16,9 +16,6 @@ settings:
     CODE_SIGN_IDENTITY: "-"
 
 packages:
-  KeychainAccess:
-    url: https://github.com/kishikawakatsumi/KeychainAccess
-    from: "4.2.2"
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
     from: "2.6.0"
@@ -36,7 +33,6 @@ targets:
           - "**/*.entitlements"
           - "**/Info.plist"     # xcodegen 生成的 Info.plist 不当 source 编进 bundle
     dependencies:
-      - package: KeychainAccess
       - package: Sparkle
       - package: WhetstoneCore
     # 用 xcodegen 显式生成 Info.plist (而不是 GENERATE_INFOPLIST_FILE),

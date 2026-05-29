@@ -71,7 +71,7 @@ Existing tools (Pocket, Readwise, Recall) optimize for **capture** and surface-l
 - **OpenAI Chat Completions API** — `gpt-4o`, with automatic prompt caching on the article-context prefix
 - **WKWebView + [Mozilla Readability.js](https://github.com/mozilla/readability)** for article extraction
 - **NSTextView body** with custom selection color + floating selection popover for highlights
-- **[KeychainAccess](https://github.com/kishikawakatsumi/KeychainAccess)** for API-key storage
+- **macOS Keychain** (data-protection keychain via the Security framework) for API-key storage — scoped to the app, read without password prompts, no third-party dependency
 - **[Sparkle 2](https://sparkle-project.org/)** for auto-update (EdDSA-signed appcast served from GH Releases)
 - **`WhetstoneCore`** — a local SPM package holding the data models, AI client, and prompt templates, kept separate from the SwiftUI app target
 - **Brutalist editorial aesthetic** — warm cream `#EFECE5` + sage `#C5D2D3`, 0 border-radius, no shadows, no accent colors
@@ -129,5 +129,4 @@ Licensed under the [Apache License 2.0](./LICENSE).
 
 - Icon hand-illustrated by [@oliverxuzy](https://github.com/oliverxuzy-ai).
 - Mozilla Readability.js (Apache 2.0) — see `Whetstone/Resources/Readability.js`.
-- KeychainAccess by [kishikawakatsumi](https://github.com/kishikawakatsumi/KeychainAccess) (MIT).
 - Auto-update powered by [Sparkle](https://sparkle-project.org/) (MIT).
