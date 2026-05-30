@@ -4,6 +4,9 @@ import WhetstoneCore
 
 struct ReaderPane: View {
     let article: Article
+    /// 右侧 AI 栏折叠时,workspace 会在右上叠一个「展开」键。给 header 右侧留出
+    /// 这个键的空间,避免翻译/搜索键跟它重叠(见 WorkspaceView.reopenRightButton)。
+    var headerTrailingInset: CGFloat = 0
 
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var services: AppServices
@@ -72,14 +75,7 @@ struct ReaderPane: View {
         HStack {
             Spacer()
 
-            HStack(spacing: 0) {
-                tabPill("原文", isActive: tab == .article) { tab = .article }
-                tabPill("概念", isActive: tab == .concepts) { tab = .concepts }
-            }
-            .background(Theme.bgCream)
-            .clipShape(RoundedRectangle(cornerRadius: Theme.radius))
-            .background(RoundedRectangle(cornerRadius: Theme.radius).fill(Theme.borderHeavy).offset(x: 2, y: 2))
-            .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.borderHeavy, lineWidth: 1))
+            tabSwitch
 
             Spacer()
 
@@ -94,9 +90,42 @@ struct ReaderPane: View {
             .disabled(true)
             .opacity(0.45)
         }
-        .padding(.horizontal, 32)
+        .padding(.leading, 32)
+        .padding(.trailing, 32 + headerTrailingInset)
         .padding(.top, 16 + Theme.titlebarInset)
         .padding(.bottom, 16)
+    }
+
+    /// 原文 / 概念 切换 — 滑动开关(neobrutalism switch 触感):cream 轨道 + 1px 边 +
+    /// 硬阴影,墨色滑块在两段之间滑动(drive 曲线),激活段文字转 cream。
+    private var tabSwitch: some View {
+        let segW: CGFloat = 84
+        let segH: CGFloat = 34
+        return ZStack(alignment: .leading) {
+            RoundedRectangle(cornerRadius: Theme.radius)
+                .fill(Theme.textPrimary)
+                .frame(width: segW, height: segH)
+                .offset(x: tab == .article ? 0 : segW)
+            HStack(spacing: 0) {
+                switchSegment("原文", isActive: tab == .article, width: segW, height: segH) { tab = .article }
+                switchSegment("概念", isActive: tab == .concepts, width: segW, height: segH) { tab = .concepts }
+            }
+        }
+        .padding(3)
+        .background(Theme.bgCream, in: RoundedRectangle(cornerRadius: Theme.radius + 2))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius + 2).stroke(Theme.borderHeavy, lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: Theme.radius + 2).fill(Theme.borderHeavy).offset(x: 2, y: 2))
+        .animation(Motion.drive, value: tab)
+    }
+
+    @ViewBuilder
+    private func switchSegment(_ label: String, isActive: Bool, width: CGFloat, height: CGFloat, action: @escaping () -> Void) -> some View {
+        Text(label)
+            .font(.pillBtn)
+            .foregroundStyle(isActive ? Theme.bgCream : Theme.textPrimary)
+            .frame(width: width, height: height)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: action)
     }
 
     @ViewBuilder
@@ -190,21 +219,6 @@ struct ReaderPane: View {
             }
         }
         .frame(width: bodyWidth, alignment: .leading)
-    }
-
-    @ViewBuilder
-    private func tabPill(_ label: String, isActive: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(label)
-                .font(.pillBtn)
-                .foregroundStyle(isActive ? Theme.bgCream : Theme.textPrimary)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 10)
-                .frame(minWidth: 110)
-                .background(isActive ? Theme.textPrimary : Color.clear)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     private func addHighlight(range: NSRange, text: String) {

@@ -6,6 +6,8 @@ struct ContinueReadingHero: View {
     let article: Article
     let onResume: () -> Void
 
+    @State private var resumeHovering = false
+
     var body: some View {
         HStack(alignment: .center, spacing: 20) {
             VStack(alignment: .leading, spacing: 6) {
@@ -22,10 +24,16 @@ struct ContinueReadingHero: View {
             }
             Spacer(minLength: 12)
             Button(action: onResume) {
-                Text("继续 →")
+                HStack(spacing: 7) {
+                    Text("继续")
+                    Image(systemName: "arrow.right")
+                        .offset(x: resumeHovering ? 4 : 0)   // hover 时箭头向右探一下(本卡专属)
+                }
             }
-            .buttonStyle(EditorialButtonStyle(size: .medium, variant: .solid))
+            .buttonStyle(EditorialButtonStyle(size: .medium, variant: .solid))   // 抬起已烤进 solid
             .fixedSize()
+            .onHover { resumeHovering = $0 }
+            .animation(Motion.flip, value: resumeHovering)
         }
         .padding(.vertical, 18)
         .padding(.leading, 20)

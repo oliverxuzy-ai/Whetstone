@@ -69,13 +69,17 @@ private struct EditorialButtonBody: View {
     var body: some View {
         let pressed = configuration.isPressed
         let hot = hovering && !pressed
+        // 实心键(锈红 / 墨黑)本身已是满色,cream↔ink 反色提示不出 hover →
+        // 改用「抬起」(上浮 + 阴影加深);press 仍是按下盖阴影。
+        // secondary/ghost 保留各自的反色 / 淡底 hover。
+        let lifts = (variant == .primary || variant == .solid) && hot
         configuration.label
             .font(iconOnly ? .system(size: size.iconSize) : size.font)
             .foregroundStyle(foreground(hot: hot))
             .frame(height: size.height)
             .frame(minWidth: iconOnly ? size.height : nil)
             .padding(.horizontal, iconOnly ? 0 : size.hPadding)
-            .modifier(ButtonFace(variant: variant, fill: fill(hot: hot), pressed: pressed))
+            .modifier(ButtonFace(variant: variant, fill: fill(hot: hot), pressed: pressed, lifted: lifts))
             .contentShape(Rectangle())
             .onHover { hovering = $0 }
             .animation(Motion.flip, value: hovering)
@@ -92,8 +96,9 @@ private struct EditorialButtonBody: View {
 
     private func fill(hot: Bool) -> Color {
         switch variant {
-        case .primary: return hot ? Theme.rust.opacity(0.82) : Theme.rust
-        case .solid: return hot ? Theme.textPrimary.opacity(0.82) : Theme.textPrimary
+        // primary/solid: hover 不再压深,改用抬起(见上)→ 满色不变。
+        case .primary: return Theme.rust
+        case .solid: return Theme.textPrimary
         case .secondary: return hot ? Theme.textPrimary : Theme.bgCream
         case .ghost: return hot ? Theme.hoverOverlay : .clear
         }
@@ -104,6 +109,7 @@ private struct ButtonFace: ViewModifier {
     let variant: ButtonVariant
     let fill: Color
     let pressed: Bool
+    var lifted: Bool = false
 
     @ViewBuilder
     func body(content: Content) -> some View {
@@ -111,7 +117,7 @@ private struct ButtonFace: ViewModifier {
         case .ghost:
             content.background(fill, in: RoundedRectangle(cornerRadius: Theme.radius))
         default:
-            content.modifier(HardShadow(pressed: pressed, fill: fill))
+            content.modifier(HardShadow(pressed: pressed, lifted: lifted, fill: fill))
         }
     }
 }
@@ -127,12 +133,27 @@ struct BrutalistRaisedStyle: ButtonStyle {
     }
 }
 
+/// 墨黑实心垫片 — 跟 EditorialButtonStyle 的 solid 同款 hover「抬起」。
 struct BrutalistFilledStyle: ButtonStyle {
     var fill: Color = Theme.textPrimary
     func makeBody(configuration: Configuration) -> some View {
+        BrutalistFilledBody(configuration: configuration, fill: fill)
+    }
+}
+
+private struct BrutalistFilledBody: View {
+    let configuration: ButtonStyleConfiguration
+    let fill: Color
+    @State private var hovering = false
+
+    var body: some View {
+        let pressed = configuration.isPressed
         configuration.label
-            .modifier(HardShadow(pressed: configuration.isPressed, fill: fill))
-            .animation(Motion.flip, value: configuration.isPressed)
+            .modifier(HardShadow(pressed: pressed, lifted: hovering && !pressed, fill: fill))
+            .contentShape(Rectangle())
+            .onHover { hovering = $0 }
+            .animation(Motion.flip, value: hovering)
+            .animation(Motion.flip, value: pressed)
     }
 }
 

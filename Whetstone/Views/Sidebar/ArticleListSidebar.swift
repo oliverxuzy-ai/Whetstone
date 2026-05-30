@@ -10,6 +10,8 @@ struct ArticleListSidebar: View {
     let onSelect: (Article) -> Void
     let onDelete: (Article) -> Void
 
+    @FocusState private var searchFocused: Bool
+
     private var shown: [Article] {
         LibrarySelectors.filtered(articles, query: searchQuery, filter: filter)
     }
@@ -23,10 +25,12 @@ struct ArticleListSidebar: View {
                 TextField("搜索文章…", text: $searchQuery)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12.5))
+                    .focused($searchFocused)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .hardShadow(fill: Theme.bgCream)
+            .hardShadow(fill: Theme.bgCream, borderColor: searchFocused ? Theme.rust : Theme.borderHeavy)
+            .animation(Motion.flip, value: searchFocused)
             .padding(.horizontal, 12)
             .padding(.top, 12)
 

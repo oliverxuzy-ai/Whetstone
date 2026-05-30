@@ -92,7 +92,8 @@ struct WorkspaceView: View {
     @ViewBuilder
     private var centerRegion: some View {
         if let article = selectedArticle {
-            ReaderPane(article: article)
+            // AI 栏折叠时右上会出现展开键 → 给 header 右侧让出空间,避免按钮重叠。
+            ReaderPane(article: article, headerTrailingInset: rightOpen ? 0 : 44)
                 .id(article.url)
         } else {
             LibraryHome(

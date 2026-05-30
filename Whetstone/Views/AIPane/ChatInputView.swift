@@ -10,6 +10,8 @@ struct ChatInputView: View {
     let placeholder: String
     let onSubmit: () -> Void
 
+    @FocusState private var inputFocused: Bool
+
     var body: some View {
         VStack(spacing: 0) {
             Divider().background(Theme.borderHeavy)
@@ -21,10 +23,12 @@ struct ChatInputView: View {
                         .textFieldStyle(.plain)
                         .onSubmit(onSubmit)
                         .disabled(isThinking)
+                        .focused($inputFocused)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 9)
-                .hardShadow(fill: Theme.bgCream)
+                .hardShadow(fill: Theme.bgCream, borderColor: inputFocused ? Theme.rust : Theme.borderHeavy)
+                .animation(Motion.flip, value: inputFocused)
                 .frame(maxWidth: .infinity)
 
                 Button(action: onSubmit) {
