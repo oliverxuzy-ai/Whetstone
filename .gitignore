@@ -33,3 +33,6 @@ secrets.plist
 # Claude Code local (worktrees + machine-local settings)
 .claude/
 .gstack/
+
+# Visual brainstorm companion scratch
+.superpowers/
