@@ -17,5 +17,12 @@ final class InlineConversationModelTests: XCTestCase {
         XCTAssertEqual(conv.anchorStart, 13)
         XCTAssertEqual(conv.anchorEnd, 26)
         XCTAssertEqual(conv.anchorText, "This matters.")
+
+        let fetched = try ctx.fetch(FetchDescriptor<Conversation>())
+        let saved = try XCTUnwrap(fetched.first)
+        XCTAssertEqual(saved.mode, .inline)
+        XCTAssertEqual(saved.anchorStart, 13)
+        XCTAssertEqual(saved.anchorEnd, 26)
+        XCTAssertEqual(saved.anchorText, "This matters.")
     }
 }

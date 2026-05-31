@@ -17,7 +17,7 @@ public final class Conversation {
     public var score: Int? = nil   // 仅 .quiz 模式结束时由 AI 评估生成
 
     // 文中 Ask 锚点 (仅 .inline 用)。article-relative 字符范围 + 选中句快照,
-    // 与 Highlight 同坐标系;anchorText 作锚点失效时的兜底重定位依据。
+    // 与 Highlight 同坐标系;anchorText 作锚点失效时的兜底重定位依据。约定 anchorStart <= anchorEnd,0-based。
     public var anchorStart: Int? = nil
     public var anchorEnd: Int? = nil
     public var anchorText: String? = nil
@@ -43,5 +43,8 @@ public final class Conversation {
         self.article = article
         self.messages = []
         self.conceptScores = []
+        self.anchorStart = nil
+        self.anchorEnd = nil
+        self.anchorText = nil
     }
 }
