@@ -82,7 +82,7 @@ public final class ConversationService {
     // MARK: - Ask (free / explain / quiz)
 
     /// Runs one conversational turn. Creates a `Conversation` if `conversation` is nil
-    /// (mode `.quiz` for quiz/quizReply, else `.companion`). Builds the system prompt +
+    /// (mode = `kind.defaultMode`: `.quiz` for quiz/quizReply, `.inline` for inline, else `.companion`). Builds the system prompt +
     /// message history, calls the AI, and — for quiz turns — strips `QuizControlMarks`
     /// (`<<NEXT>>`/`<<DONE>>`) from the reply before storing it. Persists, throwing on
     /// failure. Returns an `AskResult` whose `quizCurrentConcept` / `quizDone` signals
