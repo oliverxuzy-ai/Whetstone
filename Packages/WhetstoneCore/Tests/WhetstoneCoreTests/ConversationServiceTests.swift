@@ -314,6 +314,8 @@ final class ConversationServiceTests: XCTestCase {
         XCTAssertTrue(body.contains("ideas compound"))
         XCTAssertTrue(body.contains("什么意思?"))
         XCTAssertTrue(body.contains("复利。"))
+        XCTAssertTrue(body.contains("问："))
+        XCTAssertTrue(body.contains("答："))
         XCTAssertEqual((article.conversations ?? []).filter { $0.mode == .inline }.count, 1)
     }
 
@@ -331,6 +333,8 @@ final class ConversationServiceTests: XCTestCase {
         try svc.importInlineThread(thread, into: article, context: ctx)
 
         XCTAssertEqual((article.conversations ?? []).filter { $0.mode == .companion }.count, 1)
+        // 消息落在既有 companion 上,而不是别处
+        XCTAssertEqual((existing.messages ?? []).filter { $0.role == .user }.count, 1)
     }
 
     // MARK: - ask failure surfaces
