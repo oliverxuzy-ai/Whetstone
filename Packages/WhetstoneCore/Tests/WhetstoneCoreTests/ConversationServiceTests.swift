@@ -291,6 +291,48 @@ final class ConversationServiceTests: XCTestCase {
         XCTAssertEqual(result.conversation.mode, .inline)
     }
 
+    // MARK: - importInlineThread
+
+    func testImportInlineThreadCreatesCompanionMessageWithQuoteAndTranscript() async throws {
+        let ctx = try makeInMemoryContext()
+        let article = Article(url: "u", content: "body")
+        let thread = Conversation(mode: .inline, article: article)
+        thread.anchorText = "ideas compound"
+        ctx.insert(article); ctx.insert(thread)
+        ctx.insert(Message(role: .user, content: "什么意思?", conversation: thread))
+        ctx.insert(Message(role: .ai, content: "复利。", conversation: thread))
+        try ctx.save()
+
+        let svc = ConversationService(ai: MockAIClient())
+        try svc.importInlineThread(thread, into: article, context: ctx)
+
+        let companions = (article.conversations ?? []).filter { $0.mode == .companion }
+        XCTAssertEqual(companions.count, 1)
+        let msgs = (companions.first?.messages ?? []).filter { $0.role == .user }
+        XCTAssertEqual(msgs.count, 1)
+        let body = msgs.first!.content
+        XCTAssertTrue(body.contains("ideas compound"))
+        XCTAssertTrue(body.contains("什么意思?"))
+        XCTAssertTrue(body.contains("复利。"))
+        XCTAssertEqual((article.conversations ?? []).filter { $0.mode == .inline }.count, 1)
+    }
+
+    func testImportInlineThreadReusesLatestCompanion() async throws {
+        let ctx = try makeInMemoryContext()
+        let article = Article(url: "u", content: "body")
+        let existing = Conversation(mode: .companion, article: article)
+        let thread = Conversation(mode: .inline, article: article)
+        thread.anchorText = "x"
+        ctx.insert(article); ctx.insert(existing); ctx.insert(thread)
+        ctx.insert(Message(role: .user, content: "q", conversation: thread))
+        try ctx.save()
+
+        let svc = ConversationService(ai: MockAIClient())
+        try svc.importInlineThread(thread, into: article, context: ctx)
+
+        XCTAssertEqual((article.conversations ?? []).filter { $0.mode == .companion }.count, 1)
+    }
+
     // MARK: - ask failure surfaces
 
     func testAskAIFailureSurfaces() async throws {

@@ -240,6 +240,46 @@ public final class ConversationService {
         return total ?? 0
     }
 
+    // MARK: - 带入主对话
+
+    /// 把一个 inline thread 的锚定句 + 完整问答整理成一条 user message,
+    /// 注入该文章的(最新)companion 主对话;没有则新建。inline thread 本身保留。
+    public func importInlineThread(_ thread: Conversation, into article: Article, context: ModelContext) throws {
+        let main: Conversation
+        if let existing = (article.conversations ?? [])
+            .filter({ $0.mode == .companion })
+            .sorted(by: { $0.startedAt > $1.startedAt })
+            .first {
+            main = existing
+        } else {
+            let created = Conversation(mode: .companion, article: article)
+            context.insert(created)
+            main = created
+        }
+
+        let sentence = thread.anchorText ?? ""
+        let transcript = (thread.messages ?? [])
+            .sorted { $0.timestamp < $1.timestamp }
+            .compactMap { m -> String? in
+                switch m.role {
+                case .user:   return "问：" + m.content
+                case .ai:     return "答：" + m.content
+                case .system: return nil
+                }
+            }
+            .joined(separator: "\n")
+
+        let block = "关于原文这句：「\(sentence)」\n我们聊过：\n\(transcript)"
+        context.insert(Message(role: .user, content: block, conversation: main))
+
+        do {
+            try context.save()
+        } catch {
+            Log.persistence.error("importInlineThread save failed: \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
+    }
+
     /// 概念清单文本: "1. 名 — 解释" 每行一个，按 orderIndex 排序。
     static func conceptListText(_ article: Article) -> String {
         let concepts = (article.concepts ?? []).sorted { $0.orderIndex < $1.orderIndex }
