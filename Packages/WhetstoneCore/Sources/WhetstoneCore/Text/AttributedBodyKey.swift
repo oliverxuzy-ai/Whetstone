@@ -26,12 +26,14 @@ public struct AttributedBodyKey: Equatable, Hashable {
     public let highlightsHash: Int
     public let translationHash: Int
     public let showBilingual: Bool
+    public let inlineAnchorSignatures: [String]
 
     public init(content: String,
                 isEnhanced: Bool,
                 highlightSignatures: [String],
                 translation: [String]?,
-                showBilingual: Bool) {
+                showBilingual: Bool,
+                inlineAnchorSignatures: [String] = []) {
         var ch = Hasher()
         ch.combine(content)
         self.contentHash = ch.finalize()
@@ -52,5 +54,6 @@ public struct AttributedBodyKey: Equatable, Hashable {
         self.translationHash = th.finalize()
 
         self.showBilingual = showBilingual
+        self.inlineAnchorSignatures = inlineAnchorSignatures
     }
 }

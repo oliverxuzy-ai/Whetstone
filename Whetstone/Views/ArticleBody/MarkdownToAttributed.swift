@@ -33,16 +33,30 @@ enum MarkdownToAttributed {
                                isEnhanced: Bool,
                                highlights: [Highlight],
                                translation: [String]? = nil,
-                               showBilingual: Bool = false) -> NSAttributedString {
+                               showBilingual: Bool = false,
+                               inlineAnchors: [NSRange] = []) -> NSAttributedString {
         // 双语模式: 只在有对齐翻译时启用; 否则降级到原文渲染。
         // Enhanced (markdown) 模式下也走 plain 双语渲染 —— v0 不在双语里维持标题层级,
         // 主要为了对齐简单 + 高亮 char 映射可控。
+        let base: NSMutableAttributedString
         if showBilingual, let translation, !translation.isEmpty {
-            return bilingual(text: text, translation: translation, highlights: highlights)
+            base = NSMutableAttributedString(attributedString: bilingual(text: text, translation: translation, highlights: highlights))
+        } else {
+            let body = isEnhanced ? enhanced(text) : plain(text)
+            apply(highlights: highlights, to: body, originalText: text)
+            base = body
         }
-        let body = isEnhanced ? enhanced(text) : plain(text)
-        apply(highlights: highlights, to: body, originalText: text)
-        return body
+
+        // 文中 Ask 锚定句:锈红单下划线(不改背景,与高亮区分)。
+        let rustNS = NSColor(srgbRed: 0xC0/255.0, green: 0x4A/255.0, blue: 0x2B/255.0, alpha: 1)
+        for r in inlineAnchors {
+            guard r.location >= 0, NSMaxRange(r) <= base.length else { continue }
+            base.addAttributes([
+                .underlineStyle: NSUnderlineStyle.single.rawValue,
+                .underlineColor: rustNS
+            ], range: r)
+        }
+        return base
     }
 
     // MARK: - Bilingual path

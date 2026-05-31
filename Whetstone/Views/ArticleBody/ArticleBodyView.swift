@@ -11,6 +11,7 @@ struct ArticleBodyView: NSViewRepresentable {
     let highlights: [Highlight]
     var translation: [String]? = nil
     var showBilingual: Bool = false
+    var inlineAnchors: [NSRange] = []
     let onAddHighlight: (NSRange, String) -> Void
     var onRemoveHighlights: ((NSRange, String) -> Void)? = nil
 
@@ -47,12 +48,14 @@ struct ArticleBodyView: NSViewRepresentable {
         // signature is "charStart:charEnd:selectedText" (colorHex is excluded —
         // MarkdownToAttributed uses hardcoded highlight colors).
         let highlightSignatures = highlights.map { "\($0.charStart):\($0.charEnd):\($0.selectedText)" }
+        let anchorSigs = inlineAnchors.map { "\($0.location):\($0.length)" }
         let key = AttributedBodyKey(
             content: text,
             isEnhanced: isLayoutEnhanced,
             highlightSignatures: highlightSignatures,
             translation: translation,
-            showBilingual: showBilingual
+            showBilingual: showBilingual,
+            inlineAnchorSignatures: anchorSigs
         )
 
         // Cache hit: skip the O(n) rebuild + the full attributed-string compare.
@@ -70,7 +73,8 @@ struct ArticleBodyView: NSViewRepresentable {
             isEnhanced: isLayoutEnhanced,
             highlights: highlights,
             translation: translation,
-            showBilingual: showBilingual
+            showBilingual: showBilingual,
+            inlineAnchors: inlineAnchors
         )
         tv.textStorage?.setAttributedString(attr)
         tv.onAddHighlight = onAddHighlight
