@@ -232,13 +232,13 @@ struct ReaderPane: View {
                 onAsk: { range, text in createThread(range: range, text: text) },
                 onAnchorRects: { rects in anchorRects = rects }
             )
-            .overlay(alignment: .topLeading) { inlineOverlayLayer }
+            .overlay(alignment: .topLeading) { inlineOverlayLayer(bodyWidth: bodyWidth) }
         }
         .frame(width: bodyWidth, alignment: .leading)
     }
 
     @ViewBuilder
-    private var inlineOverlayLayer: some View {
+    private func inlineOverlayLayer(bodyWidth: CGFloat) -> some View {
         ZStack(alignment: .topLeading) {
             if expandedThreadID != nil {
                 Color.clear
@@ -250,6 +250,8 @@ struct ReaderPane: View {
                 let id = threadID(thread)
                 if let rects = anchorRects[id] {
                     if expandedThreadID == id {
+                        let cardWidth = min(460, max(320, bodyWidth - 24))
+                        let cardX = min(max(rects.minX, 0), max(0, bodyWidth - cardWidth))
                         InlineThreadCard(
                             sentence: thread.anchorText ?? "",
                             messages: threadMessages,
@@ -261,13 +263,15 @@ struct ReaderPane: View {
                             onDelete: { deleteThread(thread) },
                             onImport: { importThread(thread) }
                         )
-                        .frame(maxWidth: 460, alignment: .leading)
-                        .offset(x: rects.minX, y: rects.bottom + 6)
+                        .frame(width: cardWidth, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .offset(x: cardX, y: rects.bottom + 6)
                     } else {
+                        let bubbleX = min(max(rects.lineEnd.x + 6, 0), max(0, bodyWidth - 72))
                         InlineThreadBubble(rounds: InlineThreadSelectors.roundCount(thread)) {
                             expandThread(thread)
                         }
-                        .offset(x: rects.lineEnd.x + 6, y: rects.lineEnd.y)
+                        .offset(x: bubbleX, y: rects.lineEnd.y)
                     }
                 }
             }

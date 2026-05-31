@@ -284,7 +284,7 @@ final class BrutalistTextView: NSTextView {
         )
         let panel = NSPanel(
             contentRect: NSRect(origin: panelOrigin, size: size),
-            styleMask: [.borderless, .nonactivatingPanel],
+            styleMask: [.borderless],
             backing: .buffered,
             defer: false
         )
@@ -309,11 +309,26 @@ final class BrutalistTextView: NSTextView {
         stopClickMonitor()
         clickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             guard let self = self else { return event }
-            if event.window !== self.popoverWindow {
-                DispatchQueue.main.async { self.dismissPopover() }
+            if !self.eventHitsPopover(event) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+                    self?.dismissPopover()
+                }
             }
             return event
         }
+    }
+
+    private func eventHitsPopover(_ event: NSEvent) -> Bool {
+        guard let panel = popoverWindow else { return false }
+        if event.window === panel { return true }
+
+        let screenPoint: NSPoint
+        if let eventWindow = event.window {
+            screenPoint = eventWindow.convertPoint(toScreen: event.locationInWindow)
+        } else {
+            screenPoint = NSEvent.mouseLocation
+        }
+        return panel.frame.insetBy(dx: -4, dy: -4).contains(screenPoint)
     }
 
     private func stopClickMonitor() {

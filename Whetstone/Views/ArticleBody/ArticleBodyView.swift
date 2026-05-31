@@ -105,6 +105,9 @@ struct ArticleBodyView: NSViewRepresentable {
             return CGSize(width: width, height: 0)
         }
         layout.ensureLayout(for: container)
+        DispatchQueue.main.async {
+            nsView.reportAnchorRectsPublic()
+        }
         let used = layout.usedRect(for: container).size
         return CGSize(width: width, height: ceil(used.height))
     }
