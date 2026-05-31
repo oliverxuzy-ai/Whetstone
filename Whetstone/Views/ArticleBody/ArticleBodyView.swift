@@ -11,9 +11,15 @@ struct ArticleBodyView: NSViewRepresentable {
     let highlights: [Highlight]
     var translation: [String]? = nil
     var showBilingual: Bool = false
-    var inlineAnchors: [NSRange] = []
+    /// 文中 Ask 锚点:id(线程 persistentModelID 字符串)→ 当前正文里的 range。
+    /// 下划线只用 range;rect 上报需要 id。
+    var inlineAnchorRanges: [(id: String, range: NSRange)] = []
     let onAddHighlight: (NSRange, String) -> Void
     var onRemoveHighlights: ((NSRange, String) -> Void)? = nil
+    /// 选区弹窗 Ask:把选区交回上层(ReaderPane)新建 thread。
+    var onAsk: ((NSRange, String) -> Void)? = nil
+    /// 锚点屏幕位置上报给上层画气泡/卡片。
+    var onAnchorRects: (([String: BrutalistTextView.AnchorRects]) -> Void)? = nil
 
     /// Holds the last memoization key so `updateNSView` can skip the O(n)
     /// attributed-string rebuild when no rendering input changed. SwiftUI
@@ -47,8 +53,9 @@ struct ArticleBodyView: NSViewRepresentable {
         // Cheap key over everything that affects rendering. A highlight's
         // signature is "charStart:charEnd:selectedText" (colorHex is excluded —
         // MarkdownToAttributed uses hardcoded highlight colors).
+        let anchorRanges = inlineAnchorRanges.map(\.range)
         let highlightSignatures = highlights.map { "\($0.charStart):\($0.charEnd):\($0.selectedText)" }
-        let anchorSigs = inlineAnchors.map { "\($0.location):\($0.length)" }
+        let anchorSigs = anchorRanges.map { "\($0.location):\($0.length)" }
         let key = AttributedBodyKey(
             content: text,
             isEnhanced: isLayoutEnhanced,
@@ -65,6 +72,10 @@ struct ArticleBodyView: NSViewRepresentable {
         if key == context.coordinator.lastKey {
             tv.onAddHighlight = onAddHighlight
             tv.onRemoveHighlights = onRemoveHighlights
+            tv.onAsk = onAsk
+            tv.onAnchorRects = onAnchorRects
+            tv.inlineAnchors = inlineAnchorRanges   // didSet 触发一次 rect 上报
+            tv.reportAnchorRectsPublic()
             return
         }
 
@@ -74,11 +85,15 @@ struct ArticleBodyView: NSViewRepresentable {
             highlights: highlights,
             translation: translation,
             showBilingual: showBilingual,
-            inlineAnchors: inlineAnchors
+            inlineAnchors: anchorRanges
         )
         tv.textStorage?.setAttributedString(attr)
         tv.onAddHighlight = onAddHighlight
         tv.onRemoveHighlights = onRemoveHighlights
+        tv.onAsk = onAsk
+        tv.onAnchorRects = onAnchorRects
+        tv.inlineAnchors = inlineAnchorRanges   // didSet 触发一次 rect 上报
+        tv.reportAnchorRectsPublic()
         context.coordinator.lastKey = key
     }
 
