@@ -59,8 +59,8 @@ public enum Prompts {
 
     // MARK: - Inline Ask (文中就这句对话)
 
-    /// 文中 Ask 的 system:锚定句固化在这里,持续整段对话。persona 由调用方拼前缀,
-    /// 文章正文由 cacheArticleContent 走缓存,不重复进 prompt 文本。
+    /// 文中 Ask 的 system:锚定句固化在这里,持续整段对话。persona 由调用方拼前缀。
+    /// 文章正文走 user message(见 inlineAskUser)+ cacheArticleContent 缓存,与 free 问答一致。
     public static func inlineAskSystem(sentence: String) -> String {
         return """
         用户正在阅读这篇文章, 选中了其中这句话想就它向你发问:

@@ -46,6 +46,9 @@ final class BrutalistTextView: NSTextView {
             let r = a.range
             guard r.location >= 0, NSMaxRange(r) <= total, r.length > 0 else { continue }
             let glyphRange = layout.glyphRange(forCharacterRange: r, actualCharacterRange: nil)
+            // 字符范围合法但还没排版出 glyph(layout 未跑)时 glyphRange 可能为空;
+            // 此时 NSMaxRange-1 会回绕成越界 glyph 索引,跳过本锚点等下次重算。
+            guard glyphRange.length > 0 else { continue }
             let box = layout.boundingRect(forGlyphRange: glyphRange, in: container)
                 .offsetBy(dx: textContainerOrigin.x, dy: textContainerOrigin.y)
             var lastLine = NSRange(location: 0, length: 0)

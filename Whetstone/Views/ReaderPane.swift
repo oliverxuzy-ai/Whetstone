@@ -363,12 +363,15 @@ struct ReaderPane: View {
         expandedThreadID = nil
         threadMessages = []
         threadInput = ""
+        threadThinking = false   // 收起时清掉在途态,避免重开时卡在 thinking / 被 guard 挡住提交
     }
 
     private func submitThreadFollowup(_ thread: Conversation) {
         let q = threadInput.trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty, !threadThinking else { return }
         threadInput = ""
+        threadError = nil   // 清掉上一次的错误提示
+
         let userMsg = Message(role: .user, content: q, conversation: thread)
         threadMessages.append(userMsg)
         threadThinking = true
