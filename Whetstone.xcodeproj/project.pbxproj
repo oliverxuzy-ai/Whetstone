@@ -10,6 +10,7 @@
 		0D372F83BAD57D06DC7E7609 /* SidebarNav.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1C2432C0D4D141177E924 /* SidebarNav.swift */; };
 		12390E8A58154F18DD7F2651 /* AddArticleSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A75BDB9C227E6F1AD69B1E58 /* AddArticleSheet.swift */; };
 		2D31503655A5CE949308E619 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FFC365912AAB6D21D57E62B /* Colors.swift */; };
+		2DA4FCB8D97445A6F3F0C548 /* InlineThreadCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F806AF2E283CF9A26D10D70B /* InlineThreadCard.swift */; };
 		30E830D81A664CEE3CFD6D19 /* WhetstoneCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0E37FC53A24048B0A0B14560 /* WhetstoneCore */; };
 		31707DEF6FE69074388BB400 /* Buttons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10F4CCB783DA27E190848B5B /* Buttons.swift */; };
 		31F18074795C279A8C86EE9E /* Motion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9554E034EC7FD0F443B42C0D /* Motion.swift */; };
@@ -28,6 +29,7 @@
 		8C55B2D317EDA9270D1E970D /* HardShadow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA755D8A265908A7651F2A7 /* HardShadow.swift */; };
 		94B319CFAF07316F4F31C180 /* ReaderPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6CCC7F8A3F2E459EA5048FD /* ReaderPane.swift */; };
 		9912A523A3B6F5E0FD3349EA /* ConceptCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24EFBBCCC763A2105F25576 /* ConceptCardView.swift */; };
+		9D1A16DA6FCB841B579E45B7 /* InlineThreadBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B8AA153373E5A5C2147BB25 /* InlineThreadBubble.swift */; };
 		A13F3CB5752F6C5CA02D5059 /* QuizResultCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA71EDDB7303E49BE36905E /* QuizResultCard.swift */; };
 		A2885CE61EE667C8653E0A90 /* ChatInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E4CF8D6E7A59A1FBC6BA9D0 /* ChatInputView.swift */; };
 		B1EA9AAFE79A70E1970D8C8A /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C575F7BAFF7C220F3D44F12E /* OnboardingView.swift */; };
@@ -40,6 +42,7 @@
 		CCC238F406915232794D8E70 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E25C492806C814FA0DF0273 /* KeychainStore.swift */; };
 		D82C61805132EB222BB78BE2 /* ArticleBodyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81F54D8F83E5FE56B7758BE4 /* ArticleBodyView.swift */; };
 		E0172CDFE56ECB354669C4EC /* AIPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2642B310BE7538FB49979AE /* AIPane.swift */; };
+		E0274EBD7CD13FE2761A8F43 /* InlineThreadBus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76524BC13DFB13C5EB3608FE /* InlineThreadBus.swift */; };
 		E170B4B4430A1933E7A06A88 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 157C6D506EB122AEC79AC5D0 /* Assets.xcassets */; };
 		F9FFF72575C4D91C873C650E /* ArticleDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4807F160E0E6AC1EF64CEEAB /* ArticleDisplay.swift */; };
 /* End PBXBuildFile section */
@@ -65,9 +68,11 @@
 		6AEF7352CD0043511C9DA2CC /* ArticleListSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleListSidebar.swift; sourceTree = "<group>"; };
 		744CC4170B6ADA72588F05BD /* Readability.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Readability.js; sourceTree = "<group>"; };
 		75EAA13F1CEFC833316A3C43 /* WhetstoneApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhetstoneApp.swift; sourceTree = "<group>"; };
+		76524BC13DFB13C5EB3608FE /* InlineThreadBus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineThreadBus.swift; sourceTree = "<group>"; };
 		81F54D8F83E5FE56B7758BE4 /* ArticleBodyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleBodyView.swift; sourceTree = "<group>"; };
 		9554E034EC7FD0F443B42C0D /* Motion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Motion.swift; sourceTree = "<group>"; };
 		95D9E3C26BE04786148D427E /* WhetstoneCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = WhetstoneCore; path = Packages/WhetstoneCore; sourceTree = SOURCE_ROOT; };
+		9B8AA153373E5A5C2147BB25 /* InlineThreadBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineThreadBubble.swift; sourceTree = "<group>"; };
 		A24EFBBCCC763A2105F25576 /* ConceptCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConceptCardView.swift; sourceTree = "<group>"; };
 		A75BDB9C227E6F1AD69B1E58 /* AddArticleSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddArticleSheet.swift; sourceTree = "<group>"; };
 		B9C5048488C27B254FD5F209 /* LibraryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryCard.swift; sourceTree = "<group>"; };
@@ -79,6 +84,7 @@
 		DEBED77120E4C0DFFCC0DDA4 /* Whetstone.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Whetstone.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F02CAA5836DBA916D520504A /* MarkdownToAttributed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownToAttributed.swift; sourceTree = "<group>"; };
 		F222D02E7F56695050A760FD /* ArticleRowCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleRowCard.swift; sourceTree = "<group>"; };
+		F806AF2E283CF9A26D10D70B /* InlineThreadCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineThreadCard.swift; sourceTree = "<group>"; };
 		FBA755D8A265908A7651F2A7 /* HardShadow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardShadow.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -125,6 +131,8 @@
 			children = (
 				81F54D8F83E5FE56B7758BE4 /* ArticleBodyView.swift */,
 				55201CB2A7C87A616B775EBF /* BrutalistTextView.swift */,
+				9B8AA153373E5A5C2147BB25 /* InlineThreadBubble.swift */,
+				F806AF2E283CF9A26D10D70B /* InlineThreadCard.swift */,
 				F02CAA5836DBA916D520504A /* MarkdownToAttributed.swift */,
 			);
 			path = ArticleBody;
@@ -233,6 +241,7 @@
 		F77E47E39D3603FC4A6CF316 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				76524BC13DFB13C5EB3608FE /* InlineThreadBus.swift */,
 				75EAA13F1CEFC833316A3C43 /* WhetstoneApp.swift */,
 			);
 			path = App;
@@ -341,6 +350,9 @@
 				9912A523A3B6F5E0FD3349EA /* ConceptCardView.swift in Sources */,
 				4877C0192306744EFA031EA8 /* ContinueReadingHero.swift in Sources */,
 				8C55B2D317EDA9270D1E970D /* HardShadow.swift in Sources */,
+				9D1A16DA6FCB841B579E45B7 /* InlineThreadBubble.swift in Sources */,
+				E0274EBD7CD13FE2761A8F43 /* InlineThreadBus.swift in Sources */,
+				2DA4FCB8D97445A6F3F0C548 /* InlineThreadCard.swift in Sources */,
 				CCC238F406915232794D8E70 /* KeychainStore.swift in Sources */,
 				C814958B9BE9B868CD43A0E4 /* LibraryCard.swift in Sources */,
 				7A660042089A82CFD1AC4B81 /* LibraryHome.swift in Sources */,

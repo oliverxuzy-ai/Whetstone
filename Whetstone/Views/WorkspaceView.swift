@@ -14,6 +14,8 @@ struct WorkspaceView: View {
     @AppStorage("rightSidebarOpen") private var rightOpen: Bool = true
     @AppStorage("aiPaneWidth") private var aiPaneWidth: Double = 420
 
+    @StateObject private var inlineBus = InlineThreadBus()
+
     @State private var selectedArticle: Article? = nil
     @State private var searchQuery: String = ""
     @State private var filter: LibraryFilter = .recent
@@ -52,6 +54,7 @@ struct WorkspaceView: View {
                     .clipped()
             }
         }
+        .environmentObject(inlineBus)
         .background(Theme.bgCream)
         .ignoresSafeArea(.container, edges: .top)
         .animation(Motion.drive, value: leftOpen)

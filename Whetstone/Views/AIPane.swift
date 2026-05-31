@@ -7,6 +7,7 @@ struct AIPane: View {
 
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var services: AppServices
+    @EnvironmentObject private var inlineBus: InlineThreadBus
     @Query private var profiles: [UserProfile]
     @AppStorage("aiPaneWidth") private var aiPaneWidth: Double = 420
     @AppStorage("rightSidebarOpen") private var rightOpen: Bool = true
@@ -60,6 +61,9 @@ struct AIPane: View {
         }
         .overlay(alignment: .leading) { resizeHandle }
         .task { await initializeIfNeeded() }
+        .onChange(of: inlineBus.mainChatReloadToken) { _, _ in
+            loadLatestConversation()
+        }
     }
 
     /// 8pt invisible drag zone centered on the 1px separator. Hover swaps in

@@ -10,7 +10,10 @@ struct ReaderPane: View {
 
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var services: AppServices
+    @EnvironmentObject private var inlineBus: InlineThreadBus
     @Query(sort: \Highlight.createdAt, order: .reverse) private var allHighlights: [Highlight]
+    @Query private var profiles: [UserProfile]
+    @AppStorage("rightSidebarOpen") private var rightOpen: Bool = true
 
     @State private var hoveredConceptIdx: Int? = nil
     @State private var tab: ReaderTab = .article
@@ -19,11 +22,36 @@ struct ReaderPane: View {
     @State private var translationError: String? = nil
     @State private var saveError: String? = nil
 
+    @State private var anchorRects: [String: BrutalistTextView.AnchorRects] = [:]
+    @State private var expandedThreadID: String? = nil
+    @State private var threadInput: String = ""
+    @State private var threadMessages: [Message] = []
+    @State private var threadThinking: Bool = false
+    @State private var threadError: String? = nil
+
     private enum ReaderTab { case article, concepts }
 
     private var articleHighlights: [Highlight] {
         allHighlights.filter { $0.articleID == article.url }
     }
+
+    private var profile: UserProfile { profiles.first ?? UserProfile(profession: "知识工作者") }
+
+    private var inlineThreads: [Conversation] {
+        InlineThreadSelectors.threads(for: article)
+    }
+
+    /// id → 当前正文里的有效 range(锚点重定位;nil = 孤立,不画)。
+    private func anchorRange(for thread: Conversation) -> NSRange? {
+        guard let s = thread.anchorText else { return nil }
+        return InlineThreadSelectors.resolveAnchorRange(
+            content: article.content,
+            charStart: thread.anchorStart ?? 0,
+            charEnd: thread.anchorEnd ?? 0,
+            anchorText: s)
+    }
+
+    private func threadID(_ c: Conversation) -> String { "\(c.persistentModelID)" }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -196,11 +224,54 @@ struct ReaderPane: View {
                 highlights: articleHighlights,
                 translation: article.translatedParagraphs,
                 showBilingual: showBilingual,
+                inlineAnchorRanges: inlineThreads.compactMap { t in
+                    anchorRange(for: t).map { (id: threadID(t), range: $0) }
+                },
                 onAddHighlight: { range, text in addHighlight(range: range, text: text) },
-                onRemoveHighlights: { range, text in removeHighlights(in: range, selectedText: text) }
+                onRemoveHighlights: { range, text in removeHighlights(in: range, selectedText: text) },
+                onAsk: { range, text in createThread(range: range, text: text) },
+                onAnchorRects: { rects in anchorRects = rects }
             )
+            .overlay(alignment: .topLeading) { inlineOverlayLayer }
         }
         .frame(width: bodyWidth, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var inlineOverlayLayer: some View {
+        ZStack(alignment: .topLeading) {
+            if expandedThreadID != nil {
+                Color.clear
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
+                    .onTapGesture { collapseThread() }
+            }
+            ForEach(inlineThreads, id: \.persistentModelID) { thread in
+                let id = threadID(thread)
+                if let rects = anchorRects[id] {
+                    if expandedThreadID == id {
+                        InlineThreadCard(
+                            sentence: thread.anchorText ?? "",
+                            messages: threadMessages,
+                            isThinking: threadThinking,
+                            error: threadError,
+                            input: $threadInput,
+                            onSubmit: { submitThreadFollowup(thread) },
+                            onCollapse: { collapseThread() },
+                            onDelete: { deleteThread(thread) },
+                            onImport: { importThread(thread) }
+                        )
+                        .frame(maxWidth: 460, alignment: .leading)
+                        .offset(x: rects.minX, y: rects.bottom + 6)
+                    } else {
+                        InlineThreadBubble(rounds: InlineThreadSelectors.roundCount(thread)) {
+                            expandThread(thread)
+                        }
+                        .offset(x: rects.lineEnd.x + 6, y: rects.lineEnd.y)
+                    }
+                }
+            }
+        }
     }
 
     private func conceptsBody(bodyWidth: CGFloat) -> some View {
@@ -260,6 +331,81 @@ struct ReaderPane: View {
         } catch {
             Log.persistence.error("removeHighlights save failed: \(error.localizedDescription, privacy: .public)")
             saveError = "取消高亮没能保存: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Inline threads
+
+    /// 选区 Ask → 建一个 inline thread(写锚点),立即展开,首问由用户输入。
+    private func createThread(range: NSRange, text: String) {
+        let conv = Conversation(mode: .inline, article: article)
+        conv.anchorStart = range.location
+        conv.anchorEnd = range.location + range.length
+        conv.anchorText = text
+        modelContext.insert(conv)
+        do { try modelContext.save() } catch {
+            Log.persistence.error("createThread save failed: \(error.localizedDescription, privacy: .public)")
+            saveError = "无法创建对话: \(error.localizedDescription)"; return
+        }
+        expandThread(conv)
+    }
+
+    private func expandThread(_ thread: Conversation) {
+        expandedThreadID = threadID(thread)
+        threadInput = ""
+        threadError = nil
+        threadMessages = (thread.messages ?? [])
+            .filter { $0.role != .system }
+            .sorted { $0.timestamp < $1.timestamp }
+    }
+
+    private func collapseThread() {
+        expandedThreadID = nil
+        threadMessages = []
+        threadInput = ""
+    }
+
+    private func submitThreadFollowup(_ thread: Conversation) {
+        let q = threadInput.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty, !threadThinking else { return }
+        threadInput = ""
+        let userMsg = Message(role: .user, content: q, conversation: thread)
+        threadMessages.append(userMsg)
+        threadThinking = true
+        Task { @MainActor in
+            defer { threadThinking = false }
+            do {
+                let result = try await services.conversation.ask(
+                    .inline(question: q), in: thread, article: article,
+                    personaPromptLine: profile.personaPromptLine, context: modelContext)
+                if let idx = threadMessages.firstIndex(where: { $0 === userMsg }) {
+                    threadMessages[idx] = result.userMessage
+                }
+                threadMessages.append(result.aiMessage)
+            } catch {
+                threadMessages.removeAll { $0 === userMsg }
+                threadError = error.localizedDescription
+            }
+        }
+    }
+
+    private func deleteThread(_ thread: Conversation) {
+        if expandedThreadID == threadID(thread) { collapseThread() }
+        modelContext.delete(thread)
+        do { try modelContext.save() } catch {
+            Log.persistence.error("deleteThread save failed: \(error.localizedDescription, privacy: .public)")
+            saveError = "删除失败: \(error.localizedDescription)"
+        }
+    }
+
+    private func importThread(_ thread: Conversation) {
+        do {
+            try services.conversation.importInlineThread(thread, into: article, context: modelContext)
+            rightOpen = true
+            inlineBus.notifyMainChatChanged()
+            collapseThread()
+        } catch {
+            saveError = "带入主对话失败: \(error.localizedDescription)"
         }
     }
 
