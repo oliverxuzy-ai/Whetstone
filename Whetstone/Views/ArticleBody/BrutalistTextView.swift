@@ -18,6 +18,52 @@ final class BrutalistTextView: NSTextView {
     /// text content (兜底用). Caller deletes the matching Highlight rows.
     var onRemoveHighlights: ((NSRange, String) -> Void)?
 
+    /// 选区弹窗选「Ask」时调用:range 是选区,text 是选中文本。调用方据此新建 inline thread。
+    var onAsk: ((NSRange, String) -> Void)?
+
+    // MARK: - Inline anchor rect reporting
+
+    /// 需要上报屏幕位置的锚点:外部(ArticleBodyView)设入。id = 线程标识字符串。
+    var inlineAnchors: [(id: String, range: NSRange)] = [] {
+        didSet { reportAnchorRects() }
+    }
+
+    /// 上报每个锚点最后一行的「行尾点」(气泡锚点)与「整段底边/左缘」(卡片锚点),
+    /// 坐标 = text container 坐标(= 本 NSView 内容坐标,inset/padding 均为 0)。
+    var onAnchorRects: (([String: AnchorRects]) -> Void)?
+
+    struct AnchorRects: Equatable {
+        var lineEnd: CGPoint   // 锚定句最后一行右端(气泡贴这里)
+        var bottom: CGFloat    // 锚定句底边 y(卡片从这条线下方展开)
+        var minX: CGFloat      // 锚定句左缘 x(卡片左对齐)
+    }
+
+    private func reportAnchorRects() {
+        guard let layout = layoutManager, let container = textContainer, let storage = textStorage else { return }
+        var out: [String: AnchorRects] = [:]
+        let total = storage.length
+        for a in inlineAnchors {
+            let r = a.range
+            guard r.location >= 0, NSMaxRange(r) <= total, r.length > 0 else { continue }
+            let glyphRange = layout.glyphRange(forCharacterRange: r, actualCharacterRange: nil)
+            let box = layout.boundingRect(forGlyphRange: glyphRange, in: container)
+                .offsetBy(dx: textContainerOrigin.x, dy: textContainerOrigin.y)
+            var lastLine = NSRange(location: 0, length: 0)
+            let lastGlyph = max(glyphRange.location, NSMaxRange(glyphRange) - 1)
+            let lineRect = layout.lineFragmentUsedRect(forGlyphAt: lastGlyph, effectiveRange: &lastLine)
+                .offsetBy(dx: textContainerOrigin.x, dy: textContainerOrigin.y)
+            out[a.id] = AnchorRects(
+                lineEnd: CGPoint(x: lineRect.maxX, y: lineRect.minY),
+                bottom: box.maxY,
+                minX: box.minX
+            )
+        }
+        onAnchorRects?(out)
+    }
+
+    /// 供 ArticleBodyView 在布局/尺寸变化后手动触发重算。
+    func reportAnchorRectsPublic() { reportAnchorRects() }
+
     private var popoverWindow: NSPanel?
     private var pendingPopoverWorkItem: DispatchWorkItem?
     /// One-shot: 下一次 showPopoverIfSelection 应该显示"取消高亮"动作集而不是
@@ -218,7 +264,7 @@ final class BrutalistTextView: NSTextView {
                 case .removeHighlight:
                     self.onRemoveHighlights?(sel, selectedText)
                 case .ask:
-                    break
+                    self.onAsk?(sel, selectedText)
                 }
                 self.dismissPopover()
             }
