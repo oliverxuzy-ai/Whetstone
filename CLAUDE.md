@@ -26,6 +26,16 @@ Single window, **three collapsible regions** in `WorkspaceView` (replaces the v0
 - **Retired:** `ContentView`, `LibraryView`, `LibraryGrid`, `LibrarySidebar`.
 - Testable selectors live in core: `WhetstoneCore.LibrarySelectors` (`filtered` / `stats` / `continueReading` / `isUnread`).
 
+#### 文中 Ask 对话 (inline ask threads) — shipped 2026-05-30
+
+阅读区选中文字 → 弹窗 `[高亮 | Ask]` → Ask 在该句下方开一个**就地对话卡片**(悬浮浮层,随 ScrollView 滚动,盖住后文);收起 → 句子行尾的小气泡(锈红圆点显示轮数);卡片「带入主对话」键把该句 + 整段问答复制进右侧 AIPane。
+
+- **数据模型:** 复用 `Conversation` —— 现有三种 `Mode`:`.companion`(AIPane 主对话)/ `.quiz`(苏格拉底)/ **`.inline`**(锚定某句的就地对话,带 `anchorStart/anchorEnd/anchorText`,与 `Highlight` 同字符坐标系)。`AIPane` 主对话只加载 `.companion`(`loadLatestConversation` 过滤),inline thread 不会污染主对话。
+- **上下文:** 整篇原文(`cacheArticleContent` 缓存)+ 锚定句固化进 `Prompts.inlineAskSystem`。
+- **核心逻辑下沉 core(可单测):** `WhetstoneCore.InlineThreadSelectors`(`threads(for:)` / `roundCount(_:)` / `resolveAnchorRange(...)` 锚点重定位,失配走 `anchorText` 子串兜底,找不到→孤立不画);`ConversationService.ask(.inline(question:))` 与 `importInlineThread(_:into:context:)`。
+- **渲染:** 卡片/气泡是 `ReaderPane` 叠在 `ArticleBodyView` 上的 SwiftUI overlay(`InlineThreadCard` / `InlineThreadBubble`);锚点屏幕坐标由 `BrutalistTextView.reportAnchorRects`(layoutManager 几何)上报;锚定句在正文加**锈红下划线**(`MarkdownToAttributed` 的 `inlineAnchors` 参数)。
+- **跨栏:** `InlineThreadBus`(`ObservableObject`,`WorkspaceView` 持有并注入)—— 带入后 `rightOpen=true` + bus 自增 token,`AIPane.onChange` 重载主对话。
+
 ### Key visual locks — V1.0 (deviating without explicit user approval = a bug to flag)
 
 - Aesthetic: **安静版 neobrutalism 编辑风** (quiet neobrutalism editorial) — independent magazine, not SaaS
@@ -51,6 +61,8 @@ Single window, **three collapsible regions** in `WorkspaceView` (replaces the v0
 - Socratic quiz ("考考我" chip)
 
 **Do not change these prompts without re-running the P1 protocol** (see design doc Assignment section). If you change them, log the new test results in this CLAUDE.md.
+
+> **Non-P1 prompts (free to iterate):** `inlineAskSystem(sentence:)` / `inlineAskUser(question:articleContent:)` (文中 Ask, added 2026-05-30) are NOT P1-validated — tune freely. They do not affect the 3 locked prompts above.
 
 ### Prompt change log
 
