@@ -8,12 +8,19 @@ public final class Conversation {
     public enum Mode: String, Codable, CaseIterable {
         case companion       // 默认陪伴模式: 自由问答
         case quiz            // 考考我: 触发苏格拉底评估
+        case inline          // 文中 Ask: 锚定某句的就地对话
     }
 
     public var modeRaw: String = Mode.companion.rawValue
     public var startedAt: Date = Date()
     public var endedAt: Date? = nil
     public var score: Int? = nil   // 仅 .quiz 模式结束时由 AI 评估生成
+
+    // 文中 Ask 锚点 (仅 .inline 用)。article-relative 字符范围 + 选中句快照,
+    // 与 Highlight 同坐标系;anchorText 作锚点失效时的兜底重定位依据。
+    public var anchorStart: Int? = nil
+    public var anchorEnd: Int? = nil
+    public var anchorText: String? = nil
 
     @Relationship(deleteRule: .cascade, inverse: \Message.conversation)
     public var messages: [Message]? = []
