@@ -158,6 +158,7 @@ struct AIPane: View {
 
     private func loadLatestConversation() {
         let latest = (article.conversations ?? [])
+            .filter { $0.mode == .companion }
             .sorted(by: { $0.startedAt > $1.startedAt })
             .first
         conversation = latest
