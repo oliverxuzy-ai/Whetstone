@@ -34,4 +34,15 @@ final class PromptsTests: XCTestCase {
         XCTAssertTrue(u.contains("1. A — a"))
         XCTAssertTrue(u.contains("用户: 答"))
     }
+    func testInlineAskSystemEmbedsSentence() {
+        let s = Prompts.inlineAskSystem(sentence: "Ideas compound over time.")
+        XCTAssertTrue(s.contains("Ideas compound over time."))
+        XCTAssertTrue(s.contains("这句"))
+    }
+
+    func testInlineAskUserCarriesQuestionAndArticle() {
+        let u = Prompts.inlineAskUser(question: "这里的 compound 是什么意思?", articleContent: "ARTICLE_BODY")
+        XCTAssertTrue(u.contains("这里的 compound 是什么意思?"))
+        XCTAssertTrue(u.contains("ARTICLE_BODY"))
+    }
 }

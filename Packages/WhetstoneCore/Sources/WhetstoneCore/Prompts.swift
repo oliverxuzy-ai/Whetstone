@@ -57,6 +57,30 @@ public enum Prompts {
         """
     }
 
+    // MARK: - Inline Ask (文中就这句对话)
+
+    /// 文中 Ask 的 system:锚定句固化在这里,持续整段对话。persona 由调用方拼前缀,
+    /// 文章正文由 cacheArticleContent 走缓存,不重复进 prompt 文本。
+    public static func inlineAskSystem(sentence: String) -> String {
+        return """
+        用户正在阅读这篇文章, 选中了其中这句话想就它向你发问:
+        「\(sentence)」
+
+        优先围绕这句话回答, 可以结合全文背景帮他理解。语气贴近、简洁, 像在他旁边陪读;
+        不要客套, 不要总结你的回答, 不要剧透与这句无关的大段内容。
+        """
+    }
+
+    /// 文中 Ask 的 user:用户这一轮的问题 + 文章正文(供缓存命中)。
+    public static func inlineAskUser(question: String, articleContent: String) -> String {
+        return """
+        \(question)
+
+        上下文 (文章正文,可参考):
+        \(articleContent)
+        """
+    }
+
     // MARK: - Socratic quiz v2 (concept-driven, one question per concept)
 
     /// 导师 system：每概念 1 问（不追问）+ 控制标记契约。persona 由调用方拼在前面。
