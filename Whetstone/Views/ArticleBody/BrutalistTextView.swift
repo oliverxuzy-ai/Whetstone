@@ -225,8 +225,8 @@ final class BrutalistTextView: NSTextView {
         )
         // "取消高亮" 4 个汉字比 "Highlight" 略宽,稍微多给点宽度避免 SwiftUI 在
         // 固定 panel 里 clip。两按钮 + 1 分隔线: 默认 76*2+1=153; 中文模式给 86*2+1=173。
-        let panelWidth: CGFloat = isRemoveMode ? 173 : 153
-        let size = NSSize(width: panelWidth, height: 36)
+        let panelWidth: CGFloat = (isRemoveMode ? 173 : 153) + 12
+        let size = NSSize(width: panelWidth, height: 46)
         let windowRect = convert(rect, to: nil)
         let screenRect = window.convertToScreen(windowRect)
         let panelOrigin = NSPoint(
