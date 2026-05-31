@@ -21,11 +21,20 @@ public final class ConversationService {
         case free(question: String)
         case quiz                        // 开始 quiz（首轮）
         case quizReply(answer: String)   // quiz 进行中的用户答题
+        case inline(question: String)    // 文中就这句对话
 
         var isQuiz: Bool {
             switch self {
             case .quiz, .quizReply: return true
-            case .explain, .free: return false
+            case .explain, .free, .inline: return false
+            }
+        }
+
+        var defaultMode: Conversation.Mode {
+            switch self {
+            case .quiz, .quizReply: return .quiz
+            case .inline: return .inline
+            case .explain, .free: return .companion
             }
         }
     }
@@ -89,7 +98,7 @@ public final class ConversationService {
         if let conversation {
             conv = conversation
         } else {
-            let created = Conversation(mode: kind.isQuiz ? .quiz : .companion, article: article)
+            let created = Conversation(mode: kind.defaultMode, article: article)
             context.insert(created)
             conv = created
         }
@@ -107,6 +116,9 @@ public final class ConversationService {
         case .free(let q):
             userContent = Prompts.freeQuestionUser(question: q, articleContent: article.content)
             systemPrompt = persona
+        case .inline(let q):
+            userContent = Prompts.inlineAskUser(question: q, articleContent: article.content)
+            systemPrompt = persona + "\n\n" + Prompts.inlineAskSystem(sentence: conv.anchorText ?? "")
         case .quiz:
             userContent = Prompts.socraticTutorUser()
             systemPrompt = persona + "\n\n" + Prompts.socraticTutorSystem(conceptList: conceptList, conceptCount: conceptCount)
@@ -244,6 +256,7 @@ public final class ConversationService {
         case .free(let q): return q
         case .quiz: return "考考我吧。"
         case .quizReply(let answer): return answer
+        case .inline(let q): return q
         }
     }
 }

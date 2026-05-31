@@ -246,6 +246,51 @@ final class ConversationServiceTests: XCTestCase {
         XCTAssertEqual(conv.conceptScores?.count ?? 0, 0)
     }
 
+    // MARK: - ask (inline)
+
+    func testAskInlineUsesAnchorSentenceInSystemPrompt() async throws {
+        let ctx = try makeInMemoryContext()
+        let article = Article(url: "u", content: "full body text")
+        let conv = Conversation(mode: .inline, article: article)
+        conv.anchorText = "ideas compound"
+        ctx.insert(article); ctx.insert(conv); try ctx.save()
+
+        let mock = MockAIClient()
+        mock.sendResult = .success("它指的是复利效应。")
+        let svc = ConversationService(ai: mock)
+
+        let result = try await svc.ask(
+            .inline(question: "compound 什么意思?"),
+            in: conv,
+            article: article,
+            personaPromptLine: "用户是工程师。",
+            context: ctx
+        )
+
+        XCTAssertEqual(result.conversation.mode, .inline)
+        XCTAssertTrue(mock.lastSystemPrompt.contains("ideas compound"))
+        XCTAssertEqual(result.aiMessage.content, "它指的是复利效应。")
+        XCTAssertEqual(result.userMessage.content, "compound 什么意思?")
+        XCTAssertFalse(result.quizDone)
+        XCTAssertNil(result.quizCurrentConcept)
+    }
+
+    func testAskInlineCreatesInlineConversationWhenNil() async throws {
+        let ctx = try makeInMemoryContext()
+        let article = Article(url: "u", content: "body")
+        ctx.insert(article); try ctx.save()
+
+        let mock = MockAIClient()
+        mock.sendResult = .success("答")
+        let svc = ConversationService(ai: mock)
+
+        let result = try await svc.ask(
+            .inline(question: "q"), in: nil, article: article,
+            personaPromptLine: "", context: ctx
+        )
+        XCTAssertEqual(result.conversation.mode, .inline)
+    }
+
     // MARK: - ask failure surfaces
 
     func testAskAIFailureSurfaces() async throws {
