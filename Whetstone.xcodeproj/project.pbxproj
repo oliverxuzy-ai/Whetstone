@@ -45,6 +45,7 @@
 		E0172CDFE56ECB354669C4EC /* AIPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2642B310BE7538FB49979AE /* AIPane.swift */; };
 		E0274EBD7CD13FE2761A8F43 /* InlineThreadBus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76524BC13DFB13C5EB3608FE /* InlineThreadBus.swift */; };
 		E170B4B4430A1933E7A06A88 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 157C6D506EB122AEC79AC5D0 /* Assets.xcassets */; };
+		F280294C9F7C8134D4A55FFF /* StatusControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18E1F11CB375CBAE8B62C26 /* StatusControls.swift */; };
 		F9FFF72575C4D91C873C650E /* ArticleDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4807F160E0E6AC1EF64CEEAB /* ArticleDisplay.swift */; };
 		FF28A0E5AC14C1480C49554E /* AppCursor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BBD7B5079B00709F3776DCD /* AppCursor.swift */; };
 /* End PBXBuildFile section */
@@ -86,6 +87,7 @@
 		C575F7BAFF7C220F3D44F12E /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		C6CCC7F8A3F2E459EA5048FD /* ReaderPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPane.swift; sourceTree = "<group>"; };
 		DEBED77120E4C0DFFCC0DDA4 /* Whetstone.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Whetstone.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E18E1F11CB375CBAE8B62C26 /* StatusControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusControls.swift; sourceTree = "<group>"; };
 		E746F2188E56AA34CE142BEE /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
 		F02CAA5836DBA916D520504A /* MarkdownToAttributed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownToAttributed.swift; sourceTree = "<group>"; };
 		F222D02E7F56695050A760FD /* ArticleRowCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleRowCard.swift; sourceTree = "<group>"; };
@@ -188,6 +190,7 @@
 			isa = PBXGroup;
 			children = (
 				A75BDB9C227E6F1AD69B1E58 /* AddArticleSheet.swift */,
+				E18E1F11CB375CBAE8B62C26 /* StatusControls.swift */,
 			);
 			path = Library;
 			sourceTree = "<group>";
@@ -374,6 +377,7 @@
 				72C74C733C718473625455B7 /* Services.swift in Sources */,
 				B69D2F7E3DEA973463D45553 /* SettingsView.swift in Sources */,
 				0D372F83BAD57D06DC7E7609 /* SidebarNav.swift in Sources */,
+				F280294C9F7C8134D4A55FFF /* StatusControls.swift in Sources */,
 				261DD2DC560625D878937420 /* Surfaces.swift in Sources */,
 				8206008CECFC04AE1AA68270 /* Typography.swift in Sources */,
 				CC719A3D10136A6D4C1BB96D /* WhetstoneApp.swift in Sources */,

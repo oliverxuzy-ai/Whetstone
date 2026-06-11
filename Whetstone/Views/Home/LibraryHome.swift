@@ -7,9 +7,13 @@ struct LibraryHome: View {
     let onSelect: (Article) -> Void
     let onAddArticle: () -> Void
     let onDelete: (Article) -> Void
+    var onSetStatus: ((ArticleStatus, Article) -> Void)? = nil
+
+    @State private var filter: LibraryFilter = .all
 
     private var stats: LibraryStats { LibrarySelectors.stats(articles) }
     private var resume: Article? { LibrarySelectors.continueReading(articles) }
+    private var shown: [Article] { LibrarySelectors.filtered(articles, query: "", filter: filter) }
 
     var body: some View {
         ScrollView {
@@ -26,17 +30,31 @@ struct LibraryHome: View {
                 if articles.isEmpty {
                     emptyState
                 } else {
-                    sectionLabel("最近").padding(.top, 30)
-                    LazyVGrid(
-                        columns: [GridItem(.adaptive(minimum: 260), spacing: 18)],
-                        alignment: .leading,
-                        spacing: 18
-                    ) {
-                        ForEach(articles) { a in
-                            LibraryCard(article: a, onTap: { onSelect(a) }, onDelete: { onDelete(a) })
+                    StatusLaneBar(filter: $filter, counts: LibrarySelectors.statusCounts(articles))
+                        .padding(.top, 30)
+                    if shown.isEmpty {
+                        Text("这个泳道还没有文章")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Theme.inkSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, 24)
+                    } else {
+                        LazyVGrid(
+                            columns: [GridItem(.adaptive(minimum: 260), spacing: 18)],
+                            alignment: .leading,
+                            spacing: 18
+                        ) {
+                            ForEach(shown) { a in
+                                LibraryCard(
+                                    article: a,
+                                    onTap: { onSelect(a) },
+                                    onDelete: { onDelete(a) },
+                                    onSetStatus: onSetStatus.map { f in { f($0, a) } }
+                                )
+                            }
                         }
+                        .padding(.top, 14)
                     }
-                    .padding(.top, 14)
                 }
             }
             .padding(.horizontal, 48)

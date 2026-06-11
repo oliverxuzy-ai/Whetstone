@@ -1,7 +1,7 @@
 import SwiftUI
 import WhetstoneCore
 
-/// 左栏阅读态的细长列表:搜索 + 过滤胶囊(最近/未读)+ 行卡。仅 selectedArticle != nil 时挂载。
+/// 左栏阅读态的细长列表:搜索 + 队列泳道(全部/在读/收件箱/已读/归档)+ 行卡。仅 selectedArticle != nil 时挂载。
 struct ArticleListSidebar: View {
     let articles: [Article]
     @Binding var searchQuery: String
@@ -9,6 +9,7 @@ struct ArticleListSidebar: View {
     let selectedArticle: Article?
     let onSelect: (Article) -> Void
     let onDelete: (Article) -> Void
+    var onSetStatus: ((ArticleStatus, Article) -> Void)? = nil
 
     @FocusState private var searchFocused: Bool
 
@@ -40,13 +41,9 @@ struct ArticleListSidebar: View {
             .padding(.horizontal, 12)
             .padding(.top, 12)
 
-            HStack(spacing: 8) {
-                FilterPill(label: "最近", isOn: filter == .recent) { filter = .recent }
-                FilterPill(label: "未读", isOn: filter == .unread) { filter = .unread }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            StatusLaneBar(filter: $filter, counts: LibrarySelectors.statusCounts(articles))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
 
             ScrollView {
                 LazyVStack(spacing: 2) {
@@ -55,7 +52,8 @@ struct ArticleListSidebar: View {
                             article: a,
                             isSelected: a.url == selectedArticle?.url,
                             onTap: { onSelect(a) },
-                            onDelete: { onDelete(a) }
+                            onDelete: { onDelete(a) },
+                            onSetStatus: onSetStatus.map { f in { f($0, a) } }
                         )
                     }
                 }
@@ -64,25 +62,5 @@ struct ArticleListSidebar: View {
                 .padding(.bottom, 12)
             }
         }
-    }
-}
-
-private struct FilterPill: View {
-    let label: String
-    let isOn: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(label)
-                .font(.system(size: 11.5, weight: .medium))
-                .foregroundStyle(isOn ? AnyShapeStyle(Theme.rust) : AnyShapeStyle(.secondary))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 4)
-                .background(isOn ? Theme.rustSoft : .clear, in: Capsule())
-                .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .animation(Motion.state, value: isOn)
     }
 }

@@ -16,6 +16,9 @@ public final class Article {
     /// 阅读位置(0...1,滚动比例)。打开文章时恢复;列表/继续阅读显示真实进度。
     public var progressFraction: Double = 0
 
+    /// 队列状态原始值(A2)。读写经 `status`;String 存储利于 SwiftData 轻量迁移。
+    public var statusRaw: String = ArticleStatus.inbox.rawValue
+
     /// JSON-encoded [String] — 中文段落数组, 按 MarkdownToAttributed.paragraphs(from:) 拆出来的英文段落
     /// 1:1 对齐 (index 严格对应)。nil ⇒ 还没翻译过。
     public var translatedParagraphsData: Data? = nil
@@ -45,6 +48,12 @@ public final class Article {
         self.isLayoutEnhanced = isLayoutEnhanced
         self.conversations = []
         self.concepts = []
+    }
+
+    /// 队列状态(A2)。未知原始值兜底为 inbox。
+    public var status: ArticleStatus {
+        get { ArticleStatus(rawValue: statusRaw) ?? .inbox }
+        set { statusRaw = newValue.rawValue }
     }
 
     public var conceptCount: Int { concepts?.count ?? 0 }

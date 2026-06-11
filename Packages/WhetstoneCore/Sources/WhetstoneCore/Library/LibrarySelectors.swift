@@ -1,6 +1,23 @@
 import Foundation
 
-public enum LibraryFilter: Sendable { case recent, unread }
+/// 库过滤泳道(A2)。`.all` = 全部未归档(默认);`.unread` = 未engaged;其余 = 单一状态桶。
+public enum LibraryFilter: Sendable, CaseIterable, Equatable {
+    case all, inbox, reading, done, archived, unread
+
+    public var displayName: String {
+        switch self {
+        case .all: return "全部"
+        case .inbox: return ArticleStatus.inbox.displayName
+        case .reading: return ArticleStatus.reading.displayName
+        case .done: return ArticleStatus.done.displayName
+        case .archived: return ArticleStatus.archived.displayName
+        case .unread: return "未读"
+        }
+    }
+
+    /// 旧别名:`.recent` 现等价于 `.all`(全部未归档)。保留以兼容既有调用点。
+    public static let recent = LibraryFilter.all
+}
 
 public struct LibraryStats: Equatable, Sendable {
     public let count: Int
@@ -24,14 +41,20 @@ public enum LibrarySelectors {
         a.conversationTurnCount == 0
     }
 
-    /// - filter == .unread → keep only unread; .recent → keep all
-    /// - then if query (trimmed of whitespace, lowercased) is non-empty:
-    ///   keep articles whose title OR author (lowercased) contains the query
-    /// Order is preserved from the input array.
+    /// 泳道过滤(A2):
+    /// - `.all` → 全部**未归档**(归档默认隐藏);`.archived` → 仅归档
+    /// - `.inbox/.reading/.done` → 对应单一状态;`.unread` → 未engaged(跨状态)
+    /// - 再按 query(trim+lowercase,非空时)匹配标题/作者
+    /// 输入顺序保持不变。
     public static func filtered(_ articles: [Article], query: String, filter: LibraryFilter) -> [Article] {
         var result = articles
-        if filter == .unread {
-            result = result.filter(isUnread)
+        switch filter {
+        case .all:      result = result.filter { $0.status != .archived }
+        case .archived: result = result.filter { $0.status == .archived }
+        case .inbox:    result = result.filter { $0.status == .inbox }
+        case .reading:  result = result.filter { $0.status == .reading }
+        case .done:     result = result.filter { $0.status == .done }
+        case .unread:   result = result.filter(isUnread)
         }
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if !q.isEmpty {
@@ -40,6 +63,13 @@ public enum LibrarySelectors {
             }
         }
         return result
+    }
+
+    /// 各状态桶的文章数(用于泳道徽章 / 「今日待读」入口)。
+    public static func statusCounts(_ articles: [Article]) -> [ArticleStatus: Int] {
+        var counts: [ArticleStatus: Int] = [:]
+        for a in articles { counts[a.status, default: 0] += 1 }
+        return counts
     }
 
     /// count = articles.count; scoredCount = latestScore != nil;
@@ -67,7 +97,7 @@ public enum LibrarySelectors {
     /// in-progress == (conversationTurnCount > 0 && latestScore == nil). nil if none qualify.
     public static func continueReading(_ articles: [Article]) -> Article? {
         articles
-            .filter { $0.conversationTurnCount > 0 && $0.latestScore == nil }
+            .filter { $0.conversationTurnCount > 0 && $0.latestScore == nil && $0.status != .archived }
             .max { $0.fetchedAt < $1.fetchedAt }
     }
 }

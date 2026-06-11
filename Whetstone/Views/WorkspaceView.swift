@@ -78,7 +78,8 @@ struct WorkspaceView: View {
                     filter: $filter,
                     selectedArticle: selectedArticle,
                     onSelect: { select($0) },
-                    onDelete: deleteArticle
+                    onDelete: deleteArticle,
+                    onSetStatus: setStatus
                 )
             } else {
                 Spacer(minLength: 0)
@@ -97,7 +98,8 @@ struct WorkspaceView: View {
                     articles: articles,
                     onSelect: { select($0) },
                     onAddArticle: { showAddArticle = true },
-                    onDelete: deleteArticle
+                    onDelete: deleteArticle,
+                    onSetStatus: setStatus
                 )
             }
         }
@@ -198,6 +200,17 @@ struct WorkspaceView: View {
 
     private func select(_ article: Article?) {
         selectedArticle = article
+    }
+
+    /// A2:手动设置队列状态(右键菜单)。
+    @MainActor
+    private func setStatus(_ status: ArticleStatus, on article: Article) {
+        article.status = status
+        do {
+            try modelContext.save()
+        } catch {
+            Log.persistence.error("setStatus save failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     // MARK: - Data

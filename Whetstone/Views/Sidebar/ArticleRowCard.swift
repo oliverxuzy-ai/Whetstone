@@ -8,6 +8,7 @@ struct ArticleRowCard: View {
     let isSelected: Bool
     let onTap: () -> Void
     var onDelete: (() -> Void)? = nil
+    var onSetStatus: ((ArticleStatus) -> Void)? = nil
 
     @State private var confirmingDelete = false
     @State private var hovering = false
@@ -48,6 +49,13 @@ struct ArticleRowCard: View {
         .onHover { hovering = $0 }
         .animation(Motion.state, value: hovering)
         .contextMenu {
+            if let onSetStatus {
+                ArticleStatusMenu(current: article.status, onSet: onSetStatus)
+                if article.status != .archived {
+                    Button { onSetStatus(.archived) } label: { Label("归档", systemImage: "archivebox") }
+                }
+                Divider()
+            }
             if onDelete != nil {
                 Button(role: .destructive, action: { confirmingDelete = true }) {
                     Label("删除", systemImage: "trash")

@@ -158,11 +158,14 @@ struct ReaderPane: View {
             }
         }
         let frac = min(1, max(0, m.offset / scrollable))
+        // 队列状态自动流转(A2):inbox→reading→done,只向前不回退。
+        let nextStatus = ArticleStatusMachine.onProgress(current: article.status, fraction: frac)
         progressSaveTask?.cancel()
         progressSaveTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(800))
             guard !Task.isCancelled else { return }
             article.progressFraction = frac
+            if nextStatus != article.status { article.status = nextStatus }
             try? modelContext.save()
         }
     }

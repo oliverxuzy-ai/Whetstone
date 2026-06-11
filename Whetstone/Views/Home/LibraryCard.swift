@@ -6,6 +6,7 @@ struct LibraryCard: View {
     let article: Article
     let onTap: () -> Void
     var onDelete: (() -> Void)? = nil
+    var onSetStatus: ((ArticleStatus) -> Void)? = nil
 
     @State private var hovering = false
     @State private var confirmingDelete = false
@@ -33,6 +34,9 @@ struct LibraryCard: View {
                 Spacer(minLength: 8)   // 把页脚钉到卡片底部 → 所有卡来源/时间同高
 
                 HStack(spacing: 6) {
+                    if article.status == .done || article.status == .archived {
+                        StatusDot(status: article.status)
+                    }
                     Text(article.progressFraction > 0.005 ? "\(article.sourceHost) · 已读 \(Int((article.progressFraction * 100).rounded()))%" : "\(article.sourceHost) · \(article.relativeAdded)")
                         .font(.system(size: 11.5))
                         .foregroundStyle(Theme.inkSecondary)
@@ -62,6 +66,13 @@ struct LibraryCard: View {
         .onHover { hovering = $0 }
         .animation(Motion.state, value: hovering)
         .contextMenu {
+            if let onSetStatus {
+                ArticleStatusMenu(current: article.status, onSet: onSetStatus)
+                if article.status != .archived {
+                    Button { onSetStatus(.archived) } label: { Label("归档", systemImage: "archivebox") }
+                }
+                Divider()
+            }
             if onDelete != nil {
                 Button(role: .destructive, action: { confirmingDelete = true }) {
                     Label("删除", systemImage: "trash")
