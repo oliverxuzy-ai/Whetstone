@@ -1,11 +1,15 @@
 import SwiftUI
 
-/// Brutalist-editorial motion primitives. Three only — more would be dishonest.
+/// V2.0 动效三 token(spring 体系,WWDC23 范式)。
 ///
-/// - `flip`  : 瞬时状态反转(色彩反转 / 开关 / 聚焦标记)。linear 50ms。
-/// - `drive` : 刚体位移(侧栏滑入滑出 / 面板硬推 / sheet 落入)。cubic-bezier(0.2,0,0,1),无 overshoot。
-/// - flap    : split-flap 翻牌(标题/数字揭示),离散帧;按需在具体视图里用 KeyframeAnimator 实现,不放全局。
+/// - `state`: 状态切换(hover 浮现 / 选中 / 淡入淡出)。smooth = 零弹。
+/// - `move` : 位移与尺寸(栏折叠 / 卡片展开)。snappy = 微弹的现代 Apple 手感。
+/// - `ai`   : 仅 AI 时刻(涌入 / 出分 / 气泡 morph)。bouncy = 新奇预算的支出处。
+///
+/// 规则:正文区滚动之外零自发动效;自动行为(进度)用 linear 不用 spring;
+/// 自定义动画必须接 `accessibilityReduceMotion` 降级(Phase E 统一接入)。
 enum Motion {
-    static let flip = Animation.linear(duration: 0.05)
-    static let drive = Animation.timingCurve(0.2, 0, 0, 1, duration: 0.18)
+    static let state = Animation.smooth(duration: 0.18)
+    static let move = Animation.snappy(duration: 0.32)
+    static let ai = Animation.bouncy(duration: 0.45, extraBounce: 0.05)
 }

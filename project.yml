@@ -3,14 +3,14 @@ options:
   bundleIdPrefix: com.zhengyangxu
   createIntermediateGroups: true
   deploymentTarget:
-    macOS: "14.0"
+    macOS: "26.0"
   groupSortPosition: top
   generateEmptyDirectories: true
 
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
     CODE_SIGN_IDENTITY: "-"
@@ -26,12 +26,13 @@ targets:
   Whetstone:
     type: application
     platform: macOS
-    deploymentTarget: "14.0"
+    deploymentTarget: "26.0"
     sources:
       - path: Whetstone
         excludes:
           - "**/*.entitlements"
           - "**/Info.plist"     # xcodegen 生成的 Info.plist 不当 source 编进 bundle
+          - "design-demo/**"    # 截图对比工具(node),不入 app target
     dependencies:
       - package: Sparkle
       - package: WhetstoneCore

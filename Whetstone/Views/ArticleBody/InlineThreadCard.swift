@@ -20,10 +20,10 @@ struct InlineThreadCard: View {
             HStack {
                 Spacer()
                 Button(action: onCollapse) { Image(systemName: "chevron.up") }
-                    .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary, iconOnly: true))
+                    .buttonStyle(EditorialButtonStyle(size: .small, variant: .ghost, iconOnly: true))
                     .help("收起")
                 Button(action: onDelete) { Image(systemName: "trash") }
-                    .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary, iconOnly: true))
+                    .buttonStyle(EditorialButtonStyle(size: .small, variant: .ghost, iconOnly: true))
                     .help("删除这个对话")
             }
 
@@ -32,7 +32,7 @@ struct InlineThreadCard: View {
                 Text(sentence)
                     .font(.system(size: 13))
                     .italic()
-                    .foregroundStyle(Theme.textSecondary)
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -41,13 +41,14 @@ struct InlineThreadCard: View {
                     HStack {
                         Spacer()
                         Text(msg.content)
-                            .font(.bodyChat).foregroundStyle(Theme.textPrimary)
-                            .padding(10).hardShadow(fill: Theme.bgCream)
+                            .font(.bodyChat).foregroundStyle(Theme.ink)
+                            .padding(10)
+                            .contentCard()
                             .frame(maxWidth: 260, alignment: .trailing)
                     }
                 } else {
                     Text(msg.content)
-                        .font(.bodyChat).foregroundStyle(Theme.textPrimary)
+                        .font(.bodyChat).foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -56,7 +57,7 @@ struct InlineThreadCard: View {
             if isThinking {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
-                    Text("Thinking...").font(.bodyChat).foregroundStyle(Theme.textSecondary)
+                    Text("Thinking...").font(.bodyChat).foregroundStyle(.secondary)
                 }
             }
             if let error {
@@ -70,9 +71,10 @@ struct InlineThreadCard: View {
                     .onSubmit(onSubmit)
                     .disabled(isThinking)
                     .focused($inputFocused)
-                    .padding(.horizontal, 10).padding(.vertical, 7)
-                    .hardShadow(fill: Theme.bgCream, borderColor: inputFocused ? Theme.rust : Theme.borderHeavy)
-                    .animation(Motion.flip, value: inputFocused)
+                    .padding(.horizontal, 12).padding(.vertical, 7)
+                    .background(Theme.paperElevated, in: Capsule())
+                    .overlay(Capsule().strokeBorder(inputFocused ? Theme.rust : Theme.separator, lineWidth: 1))
+                    .animation(Motion.state, value: inputFocused)
                 Button(action: onSubmit) { Image(systemName: "arrow.up") }
                     .buttonStyle(EditorialButtonStyle(size: .medium, variant: .primary, iconOnly: true))
                     .disabled(input.trimmingCharacters(in: .whitespaces).isEmpty || isThinking)
@@ -89,7 +91,8 @@ struct InlineThreadCard: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .hardShadow(fill: Theme.bgCream)
+        .glassPanel(cornerRadius: Theme.radiusGlass)
+        .appCursor(.arrow)
         .onAppear { inputFocused = true }
     }
 }

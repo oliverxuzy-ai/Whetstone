@@ -11,16 +11,40 @@ import WhetstoneCore
 /// (Prompts.layoutEnhanceSystem promises to only emit h2/h3/bold/italic).
 enum MarkdownToAttributed {
 
-    /// Visual specs — kept in sync with the previous SwiftUI MarkdownBody.
-    private static let bodyFont = NSFont.systemFont(ofSize: 18, weight: .regular)
-    private static let h2Font = NSFont.systemFont(ofSize: 24, weight: .medium)
-    private static let h3Font = NSFont.systemFont(ofSize: 19, weight: .medium)
-    private static let textColor = NSColor(srgbRed: 0x1A/255, green: 0x1A/255, blue: 0x1A/255, alpha: 1)
-    /// 中文译文用次要色 (跟 Theme.textSecondary 对齐), 视觉上跟英文原文分层。
-    private static let translationColor = NSColor(srgbRed: 0x5C/255, green: 0x5C/255, blue: 0x5C/255, alpha: 1)
-    /// Per design spec: rgba(216, 198, 106, 0.45) bg, #171717 text.
-    private static let highlightBG = NSColor(srgbRed: 216/255, green: 198/255, blue: 106/255, alpha: 0.45)
-    private static let highlightFG = NSColor(srgbRed: 0x17/255, green: 0x17/255, blue: 0x17/255, alpha: 1)
+    /// V2 视觉规格:正文衬线(New York,中文回退苹方),字号/字族由 Aa 面板驱动;
+    /// 颜色全部走 Palette 动态色——NSTextView 绘制时按 effectiveAppearance 解析,
+    /// 深浅切换无需重建 attributed string。
+    struct BodyTypography: Equatable {
+        var fontSize: CGFloat = 18
+        var usesSerif: Bool = true
+        /// 进 AttributedBodyKey 的签名:排版变化必须触发整篇重建。
+        var signature: String { "\(fontSize):\(usesSerif)" }
+    }
+
+    private struct Fonts {
+        let body: NSFont
+        let h2: NSFont
+        let h3: NSFont
+        init(_ t: BodyTypography) {
+            body = MarkdownToAttributed.font(size: t.fontSize, weight: .regular, serif: t.usesSerif)
+            h2 = MarkdownToAttributed.font(size: (t.fontSize * 4 / 3).rounded(), weight: .medium, serif: t.usesSerif)
+            h3 = MarkdownToAttributed.font(size: t.fontSize + 1, weight: .medium, serif: t.usesSerif)
+        }
+    }
+
+    private static func font(size: CGFloat, weight: NSFont.Weight, serif: Bool) -> NSFont {
+        let base = NSFont.systemFont(ofSize: size, weight: weight)
+        guard serif,
+              let desc = base.fontDescriptor.withDesign(.serif),
+              let font = NSFont(descriptor: desc, size: size) else { return base }
+        return font
+    }
+
+    private static let textColor = Palette.ink
+    /// 中文译文用次要色, 视觉上跟英文原文分层。
+    private static let translationColor = Palette.inkSecondary
+    private static let highlightBG = Palette.highlightBG
+    private static let highlightFG = Palette.highlightFG
 
     /// 段落切分: 跟翻译流水线共享的唯一切分入口。
     /// Bilingual 模式翻译数组按这个切分结果 1:1 对齐。
@@ -34,21 +58,23 @@ enum MarkdownToAttributed {
                                highlights: [Highlight],
                                translation: [String]? = nil,
                                showBilingual: Bool = false,
-                               inlineAnchors: [NSRange] = []) -> NSAttributedString {
+                               inlineAnchors: [NSRange] = [],
+                               typography: BodyTypography = BodyTypography()) -> NSAttributedString {
+        let fonts = Fonts(typography)
         // 双语模式: 只在有对齐翻译时启用; 否则降级到原文渲染。
         // Enhanced (markdown) 模式下也走 plain 双语渲染 —— v0 不在双语里维持标题层级,
         // 主要为了对齐简单 + 高亮 char 映射可控。
         let base: NSMutableAttributedString
         if showBilingual, let translation, !translation.isEmpty {
-            base = NSMutableAttributedString(attributedString: bilingual(text: text, translation: translation, highlights: highlights))
+            base = NSMutableAttributedString(attributedString: bilingual(text: text, translation: translation, highlights: highlights, fonts: fonts))
         } else {
-            let body = isEnhanced ? enhanced(text) : plain(text)
+            let body = isEnhanced ? enhanced(text, fonts: fonts) : plain(text, fonts: fonts)
             apply(highlights: highlights, to: body, originalText: text)
             base = body
         }
 
         // 文中 Ask 锚定句:锈红单下划线(不改背景,与高亮区分)。
-        let rustNS = NSColor(srgbRed: 0xC0/255.0, green: 0x4A/255.0, blue: 0x2B/255.0, alpha: 1)
+        let rustNS = Palette.rust
         for r in inlineAnchors {
             guard r.location >= 0, NSMaxRange(r) <= base.length else { continue }
             base.addAttributes([
@@ -72,7 +98,7 @@ enum MarkdownToAttributed {
     ///   - enRangesInEnOnly[i]: 第 i 段在 EN-only 渲染串里的 range (highlights 的坐标系)
     ///   - enRangesRendered[i]: 第 i 段在双语渲染串里的 range
     /// 然后对每个 highlight,定位到所属段落 → 算段内 offset → 平移到 rendered。
-    private static func bilingual(text: String, translation: [String], highlights: [Highlight]) -> NSAttributedString {
+    private static func bilingual(text: String, translation: [String], highlights: [Highlight], fonts: Fonts) -> NSAttributedString {
         let enParas = paragraphs(from: text)
         let n = min(enParas.count, translation.count)
 
@@ -104,7 +130,7 @@ enum MarkdownToAttributed {
 
             // EN: 用 pairStyle (跟下面 ZH 之间拉近)
             let enAttr: [NSAttributedString.Key: Any] = [
-                .font: bodyFont,
+                .font: fonts.body,
                 .foregroundColor: textColor,
                 .paragraphStyle: pairStyle
             ]
@@ -113,7 +139,7 @@ enum MarkdownToAttributed {
             // ZH: 最后一段用 pairStyle (页面尾不需要大间距);其他用 groupStyle (跟下组拉开)
             let zhStyle = isLast ? pairStyle : groupStyle
             let zhAttr: [NSAttributedString.Key: Any] = [
-                .font: bodyFont,
+                .font: fonts.body,
                 .foregroundColor: translationColor,
                 .paragraphStyle: zhStyle
             ]
@@ -125,7 +151,7 @@ enum MarkdownToAttributed {
             let en = enParas[i]
             let style = (i == enParas.count - 1) ? pairStyle : groupStyle
             let attrs: [NSAttributedString.Key: Any] = [
-                .font: bodyFont,
+                .font: fonts.body,
                 .foregroundColor: textColor,
                 .paragraphStyle: style
             ]
@@ -188,7 +214,7 @@ enum MarkdownToAttributed {
 
     // MARK: - Plain path (no markdown)
 
-    private static func plain(_ text: String) -> NSMutableAttributedString {
+    private static func plain(_ text: String, fonts: Fonts) -> NSMutableAttributedString {
         // Split into paragraphs on blank lines. Inside each paragraph, replace
         // single \n (e.g. from <br>) with a space so the paragraph reads as one
         // wrapped run. Then join all paragraphs with single \n — that single
@@ -204,7 +230,7 @@ enum MarkdownToAttributed {
         para.paragraphSpacing = 14
 
         let attrs: [NSAttributedString.Key: Any] = [
-            .font: bodyFont,
+            .font: fonts.body,
             .foregroundColor: textColor,
             .paragraphStyle: para
         ]
@@ -213,7 +239,7 @@ enum MarkdownToAttributed {
 
     // MARK: - Enhanced path (markdown subset)
 
-    private static func enhanced(_ text: String) -> NSMutableAttributedString {
+    private static func enhanced(_ text: String, fonts: Fonts) -> NSMutableAttributedString {
         let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
         let blocks = splitOnBlankLines(normalized)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -225,19 +251,19 @@ enum MarkdownToAttributed {
         // a doubled gap.
         let out = NSMutableAttributedString()
         for raw in blocks {
-            out.append(renderBlock(raw))
+            out.append(renderBlock(raw, fonts: fonts))
         }
         return out
     }
 
-    private static func renderBlock(_ raw: String) -> NSAttributedString {
+    private static func renderBlock(_ raw: String, fonts: Fonts) -> NSAttributedString {
         if raw.hasPrefix("## ") {
-            return heading(String(raw.dropFirst(3)), font: h2Font)
+            return heading(String(raw.dropFirst(3)), font: fonts.h2)
         }
         if raw.hasPrefix("### ") {
-            return heading(String(raw.dropFirst(4)), font: h3Font)
+            return heading(String(raw.dropFirst(4)), font: fonts.h3)
         }
-        return paragraph(raw)
+        return paragraph(raw, fonts: fonts)
     }
 
     private static func heading(_ s: String, font: NSFont) -> NSAttributedString {
@@ -251,7 +277,7 @@ enum MarkdownToAttributed {
         ])
     }
 
-    private static func paragraph(_ raw: String) -> NSAttributedString {
+    private static func paragraph(_ raw: String, fonts: Fonts) -> NSAttributedString {
         // Collapse internal line breaks (e.g. <br> inside <p>) to spaces so
         // the paragraph reads as one wrapped run; the trailing \n is the
         // paragraph terminator.
@@ -261,26 +287,26 @@ enum MarkdownToAttributed {
         para.paragraphSpacing = 14
 
         let attrs: [NSAttributedString.Key: Any] = [
-            .font: bodyFont,
+            .font: fonts.body,
             .foregroundColor: textColor,
             .paragraphStyle: para
         ]
         let body = NSMutableAttributedString(string: cleaned + "\n", attributes: attrs)
-        applyInlineMarkdown(body)
+        applyInlineMarkdown(body, bodyFont: fonts.body)
         return body
     }
 
     /// Walks **bold** and *italic* spans, replacing the markers and toggling traits.
     /// Bold first (** before *), then italic — order matters for ** not to be
     /// misparsed as nested * *.
-    private static func applyInlineMarkdown(_ s: NSMutableAttributedString) {
-        applyTrait(in: s, pattern: #"\*\*(.+?)\*\*"#, trait: .bold)
-        applyTrait(in: s, pattern: #"(?<!\*)\*([^*\n]+?)\*(?!\*)"#, trait: .italic)
+    private static func applyInlineMarkdown(_ s: NSMutableAttributedString, bodyFont: NSFont) {
+        applyTrait(in: s, pattern: #"\*\*(.+?)\*\*"#, trait: .bold, bodyFont: bodyFont)
+        applyTrait(in: s, pattern: #"(?<!\*)\*([^*\n]+?)\*(?!\*)"#, trait: .italic, bodyFont: bodyFont)
     }
 
     private enum InlineTrait { case bold, italic }
 
-    private static func applyTrait(in s: NSMutableAttributedString, pattern: String, trait: InlineTrait) {
+    private static func applyTrait(in s: NSMutableAttributedString, pattern: String, trait: InlineTrait, bodyFont: NSFont) {
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return }
         // Apply iteratively until no matches — each replacement shifts ranges.
         while true {

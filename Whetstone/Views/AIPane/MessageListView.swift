@@ -2,8 +2,8 @@ import SwiftUI
 import WhetstoneCore
 
 /// Scrolling message list: concept hero card, AI plain-text messages, user
-/// bubbles with the bottom-right tail, the "Thinking…" indicator, and the
-/// error banner. Pure view — emits ask intents (from the concept card) via `onAsk`.
+/// messages as content cards, the "Thinking…" indicator, and the error banner.
+/// Pure view — emits ask intents (from the concept card) via `onAsk`.
 struct MessageListView: View {
     let article: Article
     let conceptsLoaded: Bool
@@ -28,24 +28,25 @@ struct MessageListView: View {
                         ProgressView().controlSize(.small)
                         Text("Thinking...")
                             .font(.bodyChat)
-                            .foregroundStyle(Theme.textSecondary)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 if let err = error {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Heads up")
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.eyebrow)
                             .foregroundStyle(Theme.rust)
                             .textCase(.uppercase)
-                            .tracking(0.5)
+                            .tracking(0.9)
                         Text(err)
                             .font(.bodyChat)
-                            .foregroundStyle(Theme.textPrimary)
+                            .foregroundStyle(.primary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(14)
-                    .hardShadow(fill: Theme.bgCream)
+                    .background(Theme.rustSoft,
+                                in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                 }
             }
             .padding(32)
@@ -59,16 +60,16 @@ struct MessageListView: View {
                 Spacer()
                 Text(msg.content)
                     .font(.bodyChat)
-                    .foregroundStyle(Theme.textPrimary)
+                    .foregroundStyle(Theme.ink)
                     .padding(14)
-                    .hardShadow(fill: Theme.bgCream)
+                    .contentCard()
                     .frame(maxWidth: 320, alignment: .trailing)
             }
         } else {
             VStack(alignment: .leading, spacing: 6) {
                 Text(msg.content)
                     .font(.bodyChat)
-                    .foregroundStyle(Theme.textPrimary)
+                    .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)

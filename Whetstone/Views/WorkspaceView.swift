@@ -2,8 +2,10 @@ import SwiftUI
 import SwiftData
 import WhetstoneCore
 
-/// V1.0 单窗口三区工作台:左(导航 + 上下文文章列表)| 中(文章库主场 / 阅读器)| 右(AI 伴)。
-/// 左右栏一键滑动折叠(drive 曲线 + clip)。持有上提状态;选择驱动中栏/左栏双模态。
+/// V2.0 单窗口三区工作台 —— 系统语义版:
+/// 左 = NavigationSplitView sidebar(浮动玻璃),中 = detail(纸面内容层),
+/// 右 = inspector(edge-to-edge 玻璃,AI 伴)。
+/// V1 的手卷 HStack 折叠 / 拖宽 / 自绘 modal 全部退役,交给系统容器。
 struct WorkspaceView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var services: AppServices
@@ -12,10 +14,10 @@ struct WorkspaceView: View {
     @AppStorage("aiEnhanceLayout") private var aiEnhanceLayout: Bool = false
     @AppStorage("leftSidebarOpen") private var leftOpen: Bool = true
     @AppStorage("rightSidebarOpen") private var rightOpen: Bool = true
-    @AppStorage("aiPaneWidth") private var aiPaneWidth: Double = 420
 
     @StateObject private var inlineBus = InlineThreadBus()
 
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var selectedArticle: Article? = nil
     @State private var searchQuery: String = ""
     @State private var filter: LibraryFilter = .recent
@@ -25,57 +27,49 @@ struct WorkspaceView: View {
     @State private var isLoading: Bool = false
     @State private var loadError: String? = nil
 
-    @AppStorage("leftSidebarWidth") private var leftWidth: Double = 300
-    @State private var leftDragStartWidth: Double? = nil
-    private static let leftMin: Double = 240
-    private static let leftMax: Double = 420
+    /// 专注模式(⌘.):收双栏 + 隐 toolbar,只剩纸;AI 退化为右下玻璃胶囊。
+    @State private var focusMode = false
+    @State private var preFocusLeft = true
+    @State private var preFocusRight = true
 
     var body: some View {
-        HStack(spacing: 0) {
-            leftContent
-                .frame(width: CGFloat(leftWidth))
-                .frame(maxHeight: .infinity)
-                .background(Theme.bgSage)
-                .overlay(alignment: .trailing) {
-                    Rectangle().fill(Theme.borderHeavy).frame(width: 1)
-                }
-                .frame(width: leftOpen ? CGFloat(leftWidth) : 0, alignment: .leading)
-                .clipped()
-                .overlay(alignment: .trailing) { if leftOpen { leftResizeHandle } }
-
-            centerRegion
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            if let article = selectedArticle {
-                // AIPane 自带 sage 底 + 左缘 1px 分隔 + 宽度;外层 clip 到 0 即折叠。
-                AIPane(article: article)
-                    .id(article.url)
-                    .frame(width: rightOpen ? CGFloat(aiPaneWidth) : 0, alignment: .leading)
-                    .clipped()
-            }
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            sidebarContent
+                .navigationSplitViewColumnWidth(min: 240, ideal: 300, max: 420)
+        } detail: {
+            detailContent
         }
+        .navigationTitle("Whetstone")
         .environmentObject(inlineBus)
-        .background(Theme.bgCream)
-        .ignoresSafeArea(.container, edges: .top)
-        .animation(Motion.drive, value: leftOpen)
-        .animation(Motion.drive, value: rightOpen)
-        .animation(Motion.drive, value: selectedArticle?.url)
-        .overlay(alignment: .topLeading) { reopenLeftButton }
-        .overlay(alignment: .topTrailing) { reopenRightButton }
-        .overlay { modals }
+        .onExitCommand { if focusMode { toggleFocus() } }
+        .onAppear { columnVisibility = leftOpen ? .all : .detailOnly }
+        .onChange(of: columnVisibility) { _, v in leftOpen = (v != .detailOnly) }
+        .sheet(isPresented: $showSettings) {
+            SettingsView(onClose: { showSettings = false })
+                .frame(width: 600, height: 600)
+        }
+        .sheet(isPresented: $showAddArticle) {
+            AddArticleSheet(
+                urlInput: $urlInput,
+                isLoading: $isLoading,
+                loadError: $loadError,
+                onSubmit: { url in Task { await loadArticle(url: url) } },
+                onCancel: { showAddArticle = false }
+            )
+            .frame(width: 540)
+        }
         .background(sidebarCommands)
     }
 
     // MARK: - Regions
 
-    private var leftContent: some View {
+    private var sidebarContent: some View {
         VStack(spacing: 0) {
             SidebarNav(
                 isHome: selectedArticle == nil,
                 onHome: { select(nil) },
                 onAddArticle: { showAddArticle = true },
-                onOpenSettings: { showSettings = true },
-                onCollapse: { leftOpen = false }
+                onOpenSettings: { showSettings = true }
             )
             if selectedArticle != nil {
                 ArticleListSidebar(
@@ -93,84 +87,111 @@ struct WorkspaceView: View {
     }
 
     @ViewBuilder
-    private var centerRegion: some View {
-        if let article = selectedArticle {
-            // AI 栏折叠时右上会出现展开键 → 给 header 右侧让出空间,避免按钮重叠。
-            ReaderPane(article: article, headerTrailingInset: rightOpen ? 0 : 44)
-                .id(article.url)
-        } else {
-            LibraryHome(
-                articles: articles,
-                onSelect: { select($0) },
-                onAddArticle: { showAddArticle = true },
-                onDelete: deleteArticle
-            )
-        }
-    }
-
-    // MARK: - Reopen affordances (when a side is collapsed to 0)
-
-    @ViewBuilder
-    private var reopenLeftButton: some View {
-        if !leftOpen {
-            Button { leftOpen = true } label: {
-                Image(systemName: "chevron.right")
+    private var detailContent: some View {
+        Group {
+            if let article = selectedArticle {
+                ReaderPane(article: article)
+                    .id(article.url)
+            } else {
+                LibraryHome(
+                    articles: articles,
+                    onSelect: { select($0) },
+                    onAddArticle: { showAddArticle = true },
+                    onDelete: deleteArticle
+                )
             }
-            .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary, iconOnly: true))
-            .padding(.leading, 16)
-            .padding(.top, 14)   // overlay 原点已在安全区下方 → 小值即对齐 header 行(原文/概念 同高)
-            .help("展开侧栏 (⌃⌘[)")
         }
-    }
-
-    @ViewBuilder
-    private var reopenRightButton: some View {
-        if !rightOpen && selectedArticle != nil {
-            Button { rightOpen = true } label: {
-                Image(systemName: "chevron.left")
-            }
-            .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary, iconOnly: true))
-            .padding(.trailing, 8)
-            .padding(.top, 14)   // 与左侧重开键同行(顶部 header 行)
-            .help("展开 AI 伙伴 (⌃⌘])")
-        }
-    }
-
-    /// 左栏右缘的拖拽调宽手柄(对称于 AIPane 的 resize handle)。
-    private var leftResizeHandle: some View {
-        Color.clear
-            .frame(width: 8)
-            .frame(maxHeight: .infinity)
-            .contentShape(Rectangle())
-            .offset(x: 4)
-            .onHover { hovering in
-                if hovering { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
-            }
-            .gesture(
-                DragGesture(minimumDistance: 1, coordinateSpace: .global)
-                    .onChanged { value in
-                        let start = leftDragStartWidth ?? leftWidth
-                        if leftDragStartWidth == nil { leftDragStartWidth = start }
-                        // 左栏在左侧:向右拖(translation.width 为正)= 变宽。
-                        let proposed = start + Double(value.translation.width)
-                        leftWidth = min(Self.leftMax, max(Self.leftMin, proposed))
+        .background(Theme.paper)
+        .toolbar {
+            if selectedArticle != nil {
+                ToolbarItem(placement: .automatic) {
+                    Button { toggleFocus() } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
                     }
-                    .onEnded { _ in leftDragStartWidth = nil }
-            )
+                    .help("专注阅读 (⌘.)")
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button { rightOpen.toggle() } label: {
+                        Image(systemName: "sidebar.trailing")
+                    }
+                    .help("AI 伙伴 (⌃⌘])")
+                }
+            }
+        }
+        .toolbarVisibility(focusMode ? .hidden : .automatic, for: .windowToolbar)
+        .overlay(alignment: .bottomTrailing) {
+            if focusMode { focusCapsule }
+        }
+        .inspector(isPresented: inspectorBinding) {
+            if let article = selectedArticle {
+                AIPane(article: article)
+                    .id(article.url)
+                    .inspectorColumnWidth(min: 320, ideal: 420, max: 600)
+            }
+        }
+    }
+
+    /// inspector 只在阅读态有意义;浏览态强制收起但不覆写用户偏好。
+    private var inspectorBinding: Binding<Bool> {
+        Binding(
+            get: { rightOpen && selectedArticle != nil },
+            set: { rightOpen = $0 }
+        )
     }
 
     // MARK: - Keyboard toggles (⌃⌘[ / ⌃⌘])
 
     private var sidebarCommands: some View {
         Group {
-            Button("") { leftOpen.toggle() }
-                .keyboardShortcut("[", modifiers: [.command, .control])
+            Button("") {
+                columnVisibility = (columnVisibility == .detailOnly) ? .all : .detailOnly
+            }
+            .keyboardShortcut("[", modifiers: [.command, .control])
             Button("") { if selectedArticle != nil { rightOpen.toggle() } }
                 .keyboardShortcut("]", modifiers: [.command, .control])
+            Button("") { toggleFocus() }
+                .keyboardShortcut(".", modifiers: .command)
         }
         .opacity(0)
         .allowsHitTesting(false)
         .frame(width: 0, height: 0)
+    }
+
+    // MARK: - 专注模式
+
+    private func toggleFocus() {
+        if focusMode {
+            focusMode = false
+            columnVisibility = preFocusLeft ? .all : .detailOnly
+            rightOpen = preFocusRight
+        } else {
+            guard selectedArticle != nil else { return }
+            preFocusLeft = leftOpen
+            preFocusRight = rightOpen
+            focusMode = true
+            columnVisibility = .detailOnly
+            rightOpen = false
+        }
+    }
+
+    /// 专注模式下唯一的 chrome:右下浮动玻璃胶囊(AI 入口 + 退出)。
+    private var focusCapsule: some View {
+        HStack(spacing: 16) {
+            Button { rightOpen.toggle() } label: {
+                Image(systemName: "bubble.left.and.text.bubble.right")
+            }
+            .buttonStyle(.borderless)
+            .help("AI 伙伴 (⌃⌘])")
+            Button { toggleFocus() } label: {
+                Image(systemName: "arrow.down.right.and.arrow.up.left")
+            }
+            .buttonStyle(.borderless)
+            .help("退出专注 (⌘. / Esc)")
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
+        .glassEffect(.regular, in: .capsule)
+        .padding(20)
     }
 
     // MARK: - Selection
@@ -179,53 +200,7 @@ struct WorkspaceView: View {
         selectedArticle = article
     }
 
-    // MARK: - Modals
-
-    @ViewBuilder
-    private var modals: some View {
-        if showSettings {
-            modalOverlay(onDismiss: { showSettings = false }) {
-                SettingsView(onClose: { showSettings = false })
-                    .frame(width: 600, height: 600)
-                    .background(Theme.bgCream)
-                    .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.borderHeavy, lineWidth: 1))
-            }
-        }
-        if showAddArticle {
-            modalOverlay(onDismiss: { showAddArticle = false }) {
-                AddArticleSheet(
-                    urlInput: $urlInput,
-                    isLoading: $isLoading,
-                    loadError: $loadError,
-                    onSubmit: { url in Task { await loadArticle(url: url) } },
-                    onCancel: { showAddArticle = false }
-                )
-                .frame(width: 540)
-                .background(Theme.bgCream)
-                .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.borderHeavy, lineWidth: 1))
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func modalOverlay<Content: View>(
-        onDismiss: @escaping () -> Void,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        ZStack {
-            Rectangle()
-                .fill(Color.black.opacity(0.28))
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture(perform: onDismiss)
-            content()
-        }
-        .transition(.opacity)
-        .animation(Motion.flip, value: showSettings)
-        .animation(Motion.flip, value: showAddArticle)
-    }
-
-    // MARK: - Data (migrated from ContentView)
+    // MARK: - Data
 
     @MainActor
     private func loadArticle(url: String) async {

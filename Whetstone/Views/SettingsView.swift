@@ -24,7 +24,7 @@ struct SettingsView: View {
         ScrollView {
         VStack(alignment: .leading, spacing: 24) {
             HStack {
-                Text("Settings").font(.h1).foregroundStyle(Theme.textPrimary)
+                Text("Settings").font(.title2.weight(.semibold))
                 Spacer()
                 Button(action: { onClose() }) {
                     Image(systemName: "xmark")
@@ -34,27 +34,20 @@ struct SettingsView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 10) {
-                    Text("OpenAI API Key").font(.h3).foregroundStyle(Theme.textPrimary)
+                    Text("OpenAI API Key").font(.system(size: 13, weight: .semibold))
                     if hasStoredAPIKey {
-                        Text("✓ 已保存到 Keychain")
-                            .font(.system(size: 11, weight: .semibold))
-                            .tracking(0.4)
-                            .foregroundStyle(Theme.rust)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.borderHeavy, lineWidth: 1))
+                        keychainBadge
                     }
                     Spacer()
                 }
                 Text(hasStoredAPIKey ? "粘贴新 key 会替换;留空保存不会改动已存的 key。" : "存到 macOS Keychain。不会出现在 SwiftData / UserDefaults。")
                     .font(.metaText)
-                    .foregroundStyle(Theme.textSecondary)
+                    .foregroundStyle(.secondary)
                 HStack(spacing: 8) {
                     // 已保存时 placeholder 用圆点 → 视觉上"有内容",不会让人误以为没保存。
                     SecureField(hasStoredAPIKey ? "••••••••••••••••••••••••" : "sk-...", text: $apiKey)
-                        .textFieldStyle(.plain)
-                        .padding(12)
-                        .hardShadow(fill: Theme.bgCream)
+                        .textFieldStyle(.roundedBorder)
+                        .controlSize(.large)
                     if hasStoredAPIKey {
                         Button(action: clearAPIKey) {
                             Text("Clear")
@@ -67,53 +60,39 @@ struct SettingsView: View {
             translationEngineSection
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Profession (persona)").font(.h3).foregroundStyle(Theme.textPrimary)
+                Text("Profession (persona)").font(.system(size: 13, weight: .semibold))
                 TextField("Engineer / Designer / ...", text: $profession)
-                    .textFieldStyle(.plain)
-                    .padding(12)
-                    .hardShadow(fill: Theme.bgCream)
+                    .textFieldStyle(.roundedBorder)
+                    .controlSize(.large)
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Additional context (optional)").font(.h3).foregroundStyle(Theme.textPrimary)
+                Text("Additional context (optional)").font(.system(size: 13, weight: .semibold))
                 TextField("e.g. distributed systems", text: $customContext, axis: .vertical)
                     .lineLimit(2...4)
-                    .textFieldStyle(.plain)
-                    .padding(12)
-                    .hardShadow(fill: Theme.bgCream)
+                    .textFieldStyle(.roundedBorder)
+                    .controlSize(.large)
             }
 
             // AI 增强排版 toggle —— 一次性, 结果保存到 article.content
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("AI 增强排版").font(.h3).foregroundStyle(Theme.textPrimary)
+                    Text("AI 增强排版").font(.system(size: 13, weight: .semibold))
                     Text("抓取后让 AI 重排段落 + 加粗关键词。每篇只跑一次, 结果会保存。")
                         .font(.metaText)
-                        .foregroundStyle(Theme.textSecondary)
+                        .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
-                Group {
-                    if aiEnhanceLayout {
-                        Button(action: { aiEnhanceLayout.toggle() }) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(Theme.bgCream)
-                                .frame(width: 32, height: 32)
-                        }
-                        .buttonStyle(BrutalistFilledStyle())
-                    } else {
-                        Button(action: { aiEnhanceLayout.toggle() }) {
-                            Color.clear.frame(width: 32, height: 32)
-                        }
-                        .buttonStyle(BrutalistRaisedStyle())
-                    }
-                }
+                Toggle("AI 增强排版", isOn: $aiEnhanceLayout)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .tint(Theme.rust)
             }
 
             HStack {
                 if savedFlash {
-                    Text("Saved.").font(.metaText).foregroundStyle(Theme.textSecondary)
+                    Text("Saved.").font(.metaText).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button(action: save) {
@@ -125,30 +104,37 @@ struct SettingsView: View {
         .padding(32)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .background(Theme.bgCream)
         .onAppear(perform: loadValues)
+    }
+
+    /// Keychain 已存标记:锈红状态胶囊。
+    private var keychainBadge: some View {
+        Text("✓ 已保存到 Keychain")
+            .font(.system(size: 11, weight: .semibold))
+            .tracking(0.4)
+            .foregroundStyle(Theme.rust)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Theme.rustSoft, in: Capsule())
     }
 
     // MARK: - 翻译引擎 (可插拔 provider)
 
     private var translationEngineSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("翻译引擎").font(.h3).foregroundStyle(Theme.textPrimary)
+            Text("翻译引擎").font(.system(size: 13, weight: .semibold))
             Text("整篇中英对照翻译用的后端。对话与概念提取始终用 OpenAI。")
                 .font(.metaText)
-                .foregroundStyle(Theme.textSecondary)
+                .foregroundStyle(.secondary)
 
-            HStack(spacing: 8) {
-                HStack(spacing: 0) {
-                    ForEach(TranslationProvider.all, id: \.id) { provider in
-                        providerButton(provider)
-                    }
+            Picker("翻译引擎", selection: translationProviderSelection) {
+                ForEach(TranslationProvider.all, id: \.id) { provider in
+                    Text(provider.displayName).tag(provider.id)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: Theme.radius))
-                .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.borderHeavy, lineWidth: 1))
-                .background(RoundedRectangle(cornerRadius: Theme.radius).fill(Theme.borderHeavy).offset(x: 2, y: 2))
-                Spacer()
             }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
 
             // DeepSeek 选中时才显示其 key 输入 (OpenAI 复用上面的 OpenAI API Key)。
             if translationProviderID == TranslationProvider.deepSeek.id {
@@ -158,46 +144,30 @@ struct SettingsView: View {
         }
     }
 
-    @ViewBuilder
-    private func providerButton(_ provider: TranslationProvider) -> some View {
-        let selected = translationProviderID == provider.id
-        let action = {
-            translationProviderID = provider.id
-            services.reloadTranslationProvider()
-        }
-        // 分段控件单元:选中 = 墨色填充 + cream 字, 未选 = 透明 + 墨色字。
-        Button(action: action) {
-            Text(provider.displayName)
-                .font(.pillBtn)
-                .foregroundStyle(selected ? Theme.bgCream : Theme.textPrimary)
-                .padding(.horizontal, 18)
-                .frame(height: 42)
-                .background(selected ? Theme.textPrimary : Color.clear)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+    /// 选择即生效:写入 @AppStorage 后立刻重建 provider client。
+    private var translationProviderSelection: Binding<String> {
+        Binding(
+            get: { translationProviderID },
+            set: { id in
+                translationProviderID = id
+                services.reloadTranslationProvider()
+            }
+        )
     }
 
     private var deepSeekKeyField: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                Text("DeepSeek API Key").font(.metaText).foregroundStyle(Theme.textPrimary)
+                Text("DeepSeek API Key").font(.system(size: 12, weight: .semibold))
                 if hasStoredDeepSeekKey {
-                    Text("✓ 已保存到 Keychain")
-                        .font(.system(size: 11, weight: .semibold))
-                        .tracking(0.4)
-                        .foregroundStyle(Theme.rust)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.borderHeavy, lineWidth: 1))
+                    keychainBadge
                 }
                 Spacer()
             }
             HStack(spacing: 8) {
                 SecureField(hasStoredDeepSeekKey ? "••••••••••••••••••••••••" : "sk-...", text: $deepSeekKey)
-                    .textFieldStyle(.plain)
-                    .padding(12)
-                    .hardShadow(fill: Theme.bgCream)
+                    .textFieldStyle(.roundedBorder)
+                    .controlSize(.large)
                 if hasStoredDeepSeekKey {
                     Button(action: clearDeepSeekKey) {
                         Text("Clear")

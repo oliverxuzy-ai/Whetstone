@@ -18,19 +18,25 @@ struct ArticleListSidebar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
+            // 搜索框:玻璃上的圆角淡底输入,聚焦时锈红发丝描边
+            HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 12))
-                    .foregroundStyle(Theme.textSecondary)
+                    .foregroundStyle(.secondary)
                 TextField("搜索文章…", text: $searchQuery)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12.5))
                     .focused($searchFocused)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .hardShadow(fill: Theme.bgCream, borderColor: searchFocused ? Theme.rust : Theme.borderHeavy)
-            .animation(Motion.flip, value: searchFocused)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(.quaternary.opacity(0.5),
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(searchFocused ? Theme.rust.opacity(0.5) : .clear, lineWidth: 1)
+            )
+            .animation(Motion.state, value: searchFocused)
             .padding(.horizontal, 12)
             .padding(.top, 12)
 
@@ -43,7 +49,7 @@ struct ArticleListSidebar: View {
             .padding(.vertical, 10)
 
             ScrollView {
-                LazyVStack(spacing: 8) {
+                LazyVStack(spacing: 2) {
                     ForEach(shown) { a in
                         ArticleRowCard(
                             article: a,
@@ -54,7 +60,7 @@ struct ArticleListSidebar: View {
                     }
                 }
                 .padding(.horizontal, 12)
-                .padding(.top, 6)     // 否则 ScrollView 顶边会裁掉第一张卡的 1px 上边框/阴影
+                .padding(.top, 4)
                 .padding(.bottom, 12)
             }
         }
@@ -70,14 +76,13 @@ private struct FilterPill: View {
         Button(action: action) {
             Text(label)
                 .font(.system(size: 11.5, weight: .medium))
-                .foregroundStyle(isOn ? Theme.bgCream : Theme.textPrimary)
+                .foregroundStyle(isOn ? AnyShapeStyle(Theme.rust) : AnyShapeStyle(.secondary))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
-                .background(isOn ? Theme.textPrimary : Theme.bgCream, in: Capsule())
-                .overlay(Capsule().stroke(Theme.borderHeavy, lineWidth: 1))
+                .background(isOn ? Theme.rustSoft : .clear, in: Capsule())
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .animation(Motion.flip, value: isOn)
+        .animation(Motion.state, value: isOn)
     }
 }

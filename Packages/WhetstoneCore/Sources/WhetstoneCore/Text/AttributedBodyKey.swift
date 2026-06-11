@@ -27,13 +27,16 @@ public struct AttributedBodyKey: Equatable, Hashable {
     public let translationHash: Int
     public let showBilingual: Bool
     public let inlineAnchorSignatures: [String]
+    /// 排版参数签名(字号/衬线等,Aa 面板)。变化必须触发整篇重建。
+    public let typographySignature: String
 
     public init(content: String,
                 isEnhanced: Bool,
                 highlightSignatures: [String],
                 translation: [String]?,
                 showBilingual: Bool,
-                inlineAnchorSignatures: [String] = []) {
+                inlineAnchorSignatures: [String] = [],
+                typographySignature: String = "") {
         var ch = Hasher()
         ch.combine(content)
         self.contentHash = ch.finalize()
@@ -55,5 +58,6 @@ public struct AttributedBodyKey: Equatable, Hashable {
 
         self.showBilingual = showBilingual
         self.inlineAnchorSignatures = inlineAnchorSignatures
+        self.typographySignature = typographySignature
     }
 }

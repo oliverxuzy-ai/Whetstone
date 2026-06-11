@@ -9,8 +9,6 @@ struct AIPane: View {
     @EnvironmentObject private var services: AppServices
     @EnvironmentObject private var inlineBus: InlineThreadBus
     @Query private var profiles: [UserProfile]
-    @AppStorage("aiPaneWidth") private var aiPaneWidth: Double = 420
-    @AppStorage("rightSidebarOpen") private var rightOpen: Bool = true
 
     @State private var conversation: Conversation?
     @State private var messages: [Message] = []
@@ -21,12 +19,9 @@ struct AIPane: View {
     @State private var quizActive: Bool = false
     @State private var quizCurrentConcept: Int = 0       // 0 = 未开始 / 已结束
     @State private var quizResultConversation: Conversation? = nil
-    /// Width at the moment the drag started — used to compute deltas without
-    /// jitter from re-reading @AppStorage mid-drag.
-    @State private var dragStartWidth: Double? = nil
-
-    private static let minWidth: Double = 320
-    private static let maxWidth: Double = 600
+    /// AI 在场涌入:打开面板时锈红微光晕从右上角涌入,随后安定为静态低噪光。
+    @State private var aiPresence = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var profile: UserProfile {
         profiles.first ?? UserProfile(profession: "知识工作者")
@@ -35,7 +30,7 @@ struct AIPane: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider().background(Theme.borderHeavy)
+            Rectangle().fill(Theme.separator).frame(height: 1)
             MessageListView(
                 article: article,
                 conceptsLoaded: conceptsLoaded,
@@ -53,58 +48,20 @@ struct AIPane: View {
                 onSubmit: submitFreeText
             )
         }
-        .frame(width: CGFloat(aiPaneWidth))
-        .background(Theme.bgSage)
-        .overlay(alignment: .leading) {
-            // 1px black separator between Reader (cream) and AI (sage) panes
-            Rectangle().fill(Color.black).frame(width: 1)
-        }
-        .overlay(alignment: .leading) { resizeHandle }
         .task { await initializeIfNeeded() }
         .onChange(of: inlineBus.mainChatReloadToken) { _, _ in
             loadLatestConversation()
         }
     }
 
-    /// 8pt invisible drag zone centered on the 1px separator. Hover swaps in
-    /// the system resize cursor; drag updates @AppStorage clamped 320...600.
-    private var resizeHandle: some View {
-        Color.clear
-            .frame(width: 8)
-            .contentShape(Rectangle())
-            .offset(x: -4)
-            .onHover { hovering in
-                if hovering { NSCursor.resizeLeftRight.push() }
-                else { NSCursor.pop() }
-            }
-            .gesture(
-                DragGesture(minimumDistance: 1, coordinateSpace: .global)
-                    .onChanged { value in
-                        let start = dragStartWidth ?? aiPaneWidth
-                        if dragStartWidth == nil { dragStartWidth = start }
-                        // Dragging right (positive translation.width) shrinks the AI pane
-                        // because the pane is on the right side of the window.
-                        let proposed = start - Double(value.translation.width)
-                        aiPaneWidth = min(Self.maxWidth, max(Self.minWidth, proposed))
-                    }
-                    .onEnded { _ in dragStartWidth = nil }
-            )
-    }
-
     private var header: some View {
         HStack(spacing: 12) {
-            Button { rightOpen = false } label: {
-                Image(systemName: "chevron.right")
-            }
-            .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary, iconOnly: true))
-            .help("收起 AI 伙伴 (⌃⌘])")
-
             VStack(alignment: .leading, spacing: 2) {
                 Text("AI 伙伴")
-                    .font(.system(size: 11, weight: .semibold))
-                    .tracking(0.5)
+                    .font(.eyebrow)
+                    .tracking(0.9)
                     .textCase(.uppercase)
-                    .foregroundStyle(Theme.textSecondary)
+                    .foregroundStyle(.secondary)
                 if quizActive {
                     Text("概念 \(quizCurrentConcept)/\(article.concepts?.count ?? 0)")
                         .font(.system(size: 11))
@@ -118,8 +75,24 @@ struct AIPane: View {
             )
         }
         .padding(.horizontal, 20)
-        .padding(.top, 16 + Theme.titlebarInset)
+        .padding(.top, 16)
         .padding(.bottom, 16)
+        .background(alignment: .topTrailing) {
+            RadialGradient(
+                colors: [Theme.rust.opacity(0.14), .clear],
+                center: .topTrailing, startRadius: 0, endRadius: 240
+            )
+            .opacity(aiPresence ? 1 : 0)
+            .scaleEffect(aiPresence ? 1 : 0.3, anchor: .topTrailing)
+            .allowsHitTesting(false)
+        }
+        .onAppear {
+            if reduceMotion {
+                aiPresence = true
+            } else {
+                withAnimation(Motion.ai) { aiPresence = true }
+            }
+        }
     }
 
     // MARK: - Logic
@@ -276,7 +249,7 @@ extension AIPane.AskKind: Equatable {
 }
 
 /// AI pane header 右上角的苏格拉底考核入口。常驻，兼做"再测一次"。
-/// V1.0：cream raised 方钮(5px 圆角 + 2px 硬阴影,hover 反色)+ 锈红问号角标。
+/// 玻璃图标键 + 锈红问号角标(AI 在场色)。
 private struct QuizEntryButton: View {
     let enabled: Bool
     let action: () -> Void
@@ -293,10 +266,9 @@ private struct QuizEntryButton: View {
         .overlay(alignment: .topTrailing) {
             Image(systemName: "questionmark")
                 .font(.system(size: 8, weight: .bold))
-                .foregroundStyle(Theme.bgCream)
+                .foregroundStyle(.white)
                 .frame(width: 14, height: 14)
                 .background(Theme.rust, in: Circle())
-                .overlay(Circle().stroke(Theme.borderHeavy, lineWidth: 1))
                 .offset(x: 4, y: -4)
         }
         .opacity(enabled ? 1 : 0.4)

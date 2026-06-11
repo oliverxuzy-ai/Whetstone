@@ -15,8 +15,7 @@ struct AddArticleSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text("Add Article")
-                    .font(.h1)
-                    .foregroundStyle(Theme.textPrimary)
+                    .font(.title2.weight(.semibold))
                 Spacer()
                 Button(action: onCancel) {
                     Image(systemName: "xmark")
@@ -26,26 +25,26 @@ struct AddArticleSheet: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Paste an article URL")
-                    .font(.h3)
-                    .foregroundStyle(Theme.textPrimary)
+                    .font(.system(size: 13, weight: .semibold))
                 Text("WKWebView + Readability 抽取正文。30 秒超时。")
                     .font(.metaText)
-                    .foregroundStyle(Theme.textSecondary)
+                    .foregroundStyle(.secondary)
 
                 HStack(spacing: 8) {
-                    HStack(spacing: 0) {
+                    // URL 输入:系统淡底圆角(含 link 图标,故不用 roundedBorder)
+                    HStack(spacing: 8) {
                         Image(systemName: "link")
                             .font(.system(size: 14))
-                            .foregroundStyle(Theme.textSecondary)
-                            .padding(.leading, 16)
+                            .foregroundStyle(.secondary)
                         TextField("https://...", text: $urlInput)
                             .textFieldStyle(.plain)
-                            .padding(16)
                             .onSubmit(submit)
                             .disabled(isLoading)
                     }
-                    .frame(height: 52)
-                    .hardShadow(fill: Theme.bgCream)
+                    .padding(.horizontal, 14)
+                    .frame(height: 44)
+                    .background(.quaternary,
+                                in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
 
                     Button(action: submit) {
                         if isLoading {
@@ -61,7 +60,7 @@ struct AddArticleSheet: View {
                 if let err = loadError {
                     Text(err)
                         .font(.metaText)
-                        .foregroundStyle(Theme.textPrimary)
+                        .foregroundStyle(.red)
                 }
             }
         }

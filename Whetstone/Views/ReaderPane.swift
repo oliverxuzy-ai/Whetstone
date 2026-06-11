@@ -4,9 +4,6 @@ import WhetstoneCore
 
 struct ReaderPane: View {
     let article: Article
-    /// 右侧 AI 栏折叠时,workspace 会在右上叠一个「展开」键。给 header 右侧留出
-    /// 这个键的空间,避免翻译/搜索键跟它重叠(见 WorkspaceView.reopenRightButton)。
-    var headerTrailingInset: CGFloat = 0
 
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var services: AppServices
@@ -14,6 +11,15 @@ struct ReaderPane: View {
     @Query(sort: \Highlight.createdAt, order: .reverse) private var allHighlights: [Highlight]
     @Query private var profiles: [UserProfile]
     @AppStorage("rightSidebarOpen") private var rightOpen: Bool = true
+    @AppStorage("articleFontSize") private var articleFontSize: Double = 18
+    @AppStorage("articleUsesSerif") private var articleUsesSerif: Bool = true
+    @AppStorage("appearanceMode") private var appearanceMode: String = "system"
+
+    @State private var showAaPanel = false
+    /// 阅读位置(A1):打开恢复一次;滚动 debounce 800ms 写回。
+    @State private var didRestoreScroll = false
+    @State private var scrollPosition = ScrollPosition()
+    @State private var progressSaveTask: Task<Void, Never>? = nil
 
     @State private var hoveredConceptIdx: Int? = nil
     @State private var tab: ReaderTab = .article
@@ -24,6 +30,9 @@ struct ReaderPane: View {
 
     @State private var anchorRects: [String: BrutalistTextView.AnchorRects] = [:]
     @State private var expandedThreadID: String? = nil
+    /// inline 气泡 ↔ 卡片的玻璃 morph 身份域(Phase E,AI 时刻动效)。
+    @Namespace private var inlineGlassNS
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var threadInput: String = ""
     @State private var threadMessages: [Message] = []
     @State private var threadThinking: Bool = false
@@ -54,27 +63,52 @@ struct ReaderPane: View {
     private func threadID(_ c: Conversation) -> String { "\(c.persistentModelID)" }
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            Divider().background(Theme.borderHeavy)
-            GeometryReader { geo in
-                ScrollView {
-                    Group {
-                        switch tab {
-                        case .article:
-                            articleBody(bodyWidth: bodyWidth(for: geo.size.width))
-                        case .concepts:
-                            conceptsBody(bodyWidth: bodyWidth(for: geo.size.width))
-                        }
+        GeometryReader { geo in
+            ScrollView {
+                Group {
+                    switch tab {
+                    case .article:
+                        articleBody(bodyWidth: bodyWidth(for: geo.size.width))
+                    case .concepts:
+                        conceptsBody(bodyWidth: bodyWidth(for: geo.size.width))
                     }
-                    .padding(.horizontal, 48)
-                    .padding(.top, 32)
-                    .padding(.bottom, 120)
-                    .frame(maxWidth: .infinity)
                 }
+                .padding(.horizontal, 48)
+                .padding(.top, 32)
+                .padding(.bottom, 120)
+                .frame(maxWidth: .infinity)
+            }
+            .scrollEdgeEffectStyle(.soft, for: .top)
+            .scrollPosition($scrollPosition)
+            .onScrollGeometryChange(for: ScrollMetrics.self, of: { g in
+                ScrollMetrics(offset: g.contentOffset.y,
+                              content: g.contentSize.height,
+                              container: g.containerSize.height)
+            }) { _, m in
+                handleScrollChange(m)
             }
         }
-        .background(Theme.bgCream)
+        .background(Theme.paper)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Picker("视图", selection: $tab) {
+                    Text("原文").tag(ReaderTab.article)
+                    Text("概念").tag(ReaderTab.concepts)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 168)
+            }
+            ToolbarItem(placement: .automatic) {
+                translateButton
+            }
+            ToolbarItem(placement: .automatic) {
+                Button { showAaPanel.toggle() } label: {
+                    Image(systemName: "textformat.size")
+                }
+                .help("阅读排版")
+                .popover(isPresented: $showAaPanel, arrowEdge: .bottom) { aaPanel }
+            }
+        }
         .alert("翻译失败", isPresented: Binding(
             get: { translationError != nil },
             set: { if !$0 { translationError = nil } }
@@ -93,67 +127,89 @@ struct ReaderPane: View {
         }
     }
 
-    /// Body column scales with the Reader pane's width. Capped at 1100pt so
-    /// a wide window doesn't get a 100+ char-per-line wall.
+    /// Body column scales with the Reader pane's width. Capped at 680pt
+    /// (≈66 英文字符 / 36 全角字) per V2 长阅读行宽锁。
     private func bodyWidth(for paneWidth: CGFloat) -> CGFloat {
-        min(1100, max(320, paneWidth * 0.86))
+        min(680, max(320, paneWidth * 0.86))
     }
 
-    private var header: some View {
-        HStack {
-            Spacer()
-
-            tabSwitch
-
-            Spacer()
-
-            // 翻译按钮: 切换 EN ↔ 中英对照。第一次点会调 OpenAI 翻译,之后用缓存。
-            translateButton
-
-            // Search button (placeholder — wires up later)
-            Button(action: {}) {
-                Image(systemName: "magnifyingglass")
-            }
-            .buttonStyle(EditorialButtonStyle(size: .medium, variant: .secondary, iconOnly: true))
-            .disabled(true)
-            .opacity(0.45)
-        }
-        .padding(.leading, 32)
-        .padding(.trailing, 32 + headerTrailingInset)
-        .padding(.top, 16 + Theme.titlebarInset)
-        .padding(.bottom, 16)
+    private var typography: MarkdownToAttributed.BodyTypography {
+        .init(fontSize: CGFloat(articleFontSize), usesSerif: articleUsesSerif)
     }
 
-    /// 原文 / 概念 切换 — 滑动开关(neobrutalism switch 触感):cream 轨道 + 1px 边 +
-    /// 硬阴影,墨色滑块在两段之间滑动(drive 曲线),激活段文字转 cream。
-    private var tabSwitch: some View {
-        let segW: CGFloat = 84
-        let segH: CGFloat = 34
-        return ZStack(alignment: .leading) {
-            RoundedRectangle(cornerRadius: Theme.radius)
-                .fill(Theme.textPrimary)
-                .frame(width: segW, height: segH)
-                .offset(x: tab == .article ? 0 : segW)
-            HStack(spacing: 0) {
-                switchSegment("原文", isActive: tab == .article, width: segW, height: segH) { tab = .article }
-                switchSegment("概念", isActive: tab == .concepts, width: segW, height: segH) { tab = .concepts }
+    // MARK: - 阅读位置(A1)
+
+    private struct ScrollMetrics: Equatable {
+        var offset: Double
+        var content: Double
+        var container: Double
+    }
+
+    private func handleScrollChange(_ m: ScrollMetrics) {
+        let scrollable = m.content - m.container
+        guard scrollable > 1 else { return }
+        // 首次拿到可滚动几何 → 恢复上次位置(只做一次)。
+        if !didRestoreScroll {
+            didRestoreScroll = true
+            let saved = article.progressFraction
+            if saved > 0.01, saved < 0.99 {
+                scrollPosition.scrollTo(y: saved * scrollable)
+                return
             }
         }
-        .padding(3)
-        .background(Theme.bgCream, in: RoundedRectangle(cornerRadius: Theme.radius + 2))
-        .overlay(RoundedRectangle(cornerRadius: Theme.radius + 2).stroke(Theme.borderHeavy, lineWidth: 1))
-        .background(RoundedRectangle(cornerRadius: Theme.radius + 2).fill(Theme.borderHeavy).offset(x: 2, y: 2))
-        .animation(Motion.drive, value: tab)
+        let frac = min(1, max(0, m.offset / scrollable))
+        progressSaveTask?.cancel()
+        progressSaveTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(800))
+            guard !Task.isCancelled else { return }
+            article.progressFraction = frac
+            try? modelContext.save()
+        }
     }
 
-    @ViewBuilder
-    private func switchSegment(_ label: String, isActive: Bool, width: CGFloat, height: CGFloat, action: @escaping () -> Void) -> some View {
-        Text(label)
-            .font(.pillBtn)
-            .foregroundStyle(isActive ? Theme.bgCream : Theme.textPrimary)
-            .frame(width: width, height: height)
-            .contentShape(Rectangle())
-            .onTapGesture(perform: action)
+    /// Aa 排版面板:字号五档 / 衬线切换 / 外观主题。全部 @AppStorage 持久化。
+    private var aaPanel: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("字号")
+                    .font(.eyebrow).tracking(0.9).textCase(.uppercase)
+                    .foregroundStyle(.secondary)
+                Picker("字号", selection: $articleFontSize) {
+                    Text("16").tag(16.0)
+                    Text("17").tag(17.0)
+                    Text("18").tag(18.0)
+                    Text("20").tag(20.0)
+                    Text("22").tag(22.0)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("字体")
+                    .font(.eyebrow).tracking(0.9).textCase(.uppercase)
+                    .foregroundStyle(.secondary)
+                Picker("字体", selection: $articleUsesSerif) {
+                    Text("衬线").tag(true)
+                    Text("无衬线").tag(false)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("外观")
+                    .font(.eyebrow).tracking(0.9).textCase(.uppercase)
+                    .foregroundStyle(.secondary)
+                Picker("外观", selection: $appearanceMode) {
+                    Text("跟随系统").tag("system")
+                    Text("浅色").tag("light")
+                    Text("深色").tag("dark")
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+        }
+        .padding(16)
+        .frame(width: 300)
     }
 
     @ViewBuilder
@@ -167,7 +223,7 @@ struct ReaderPane: View {
                 if isTranslating { ProgressView().controlSize(.small) }
             }
         }
-        .buttonStyle(EditorialButtonStyle(size: .medium, variant: showBilingual ? .solid : .secondary, iconOnly: true))
+        .foregroundStyle(showBilingual ? Theme.rust : Color.primary)
         .disabled(isTranslating || article.content.isEmpty)
         .help(hint)
     }
@@ -197,24 +253,24 @@ struct ReaderPane: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
                 if !article.author.isEmpty {
-                    Circle().fill(Theme.textPrimary).frame(width: 32, height: 32)
+                    Circle().fill(Theme.ink).frame(width: 32, height: 32)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     if !article.author.isEmpty {
                         Text(article.author)
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Theme.textPrimary)
+                            .foregroundStyle(Theme.ink)
                     }
                     Text("\(article.readingTimeMinutes) min read")
                         .font(.metaText)
-                        .foregroundStyle(Theme.textSecondary)
+                        .foregroundStyle(Theme.inkSecondary)
                 }
             }
             .padding(.bottom, 32)
 
             Text(article.title)
                 .font(.articleTitle)
-                .foregroundStyle(Theme.textPrimary)
+                .foregroundStyle(Theme.ink)
                 .padding(.bottom, 32)
                 .textSelection(.enabled)
 
@@ -227,6 +283,7 @@ struct ReaderPane: View {
                 inlineAnchorRanges: inlineThreads.compactMap { t in
                     anchorRange(for: t).map { (id: threadID(t), range: $0) }
                 },
+                typography: typography,
                 onAddHighlight: { range, text in addHighlight(range: range, text: text) },
                 onRemoveHighlights: { range, text in removeHighlights(in: range, selectedText: text) },
                 onAsk: { range, text in createThread(range: range, text: text) },
@@ -239,39 +296,46 @@ struct ReaderPane: View {
 
     @ViewBuilder
     private func inlineOverlayLayer(bodyWidth: CGFloat) -> some View {
-        ZStack(alignment: .topLeading) {
-            if expandedThreadID != nil {
-                Color.clear
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .contentShape(Rectangle())
-                    .onTapGesture { collapseThread() }
-            }
-            ForEach(inlineThreads, id: \.persistentModelID) { thread in
-                let id = threadID(thread)
-                if let rects = anchorRects[id] {
-                    if expandedThreadID == id {
-                        let cardWidth = min(460, max(320, bodyWidth - 24))
-                        let cardX = min(max(rects.minX, 0), max(0, bodyWidth - cardWidth))
-                        InlineThreadCard(
-                            sentence: thread.anchorText ?? "",
-                            messages: threadMessages,
-                            isThinking: threadThinking,
-                            error: threadError,
-                            input: $threadInput,
-                            onSubmit: { submitThreadFollowup(thread) },
-                            onCollapse: { collapseThread() },
-                            onDelete: { deleteThread(thread) },
-                            onImport: { importThread(thread) }
-                        )
-                        .frame(width: cardWidth, alignment: .leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .offset(x: cardX, y: rects.bottom + 6)
-                    } else {
-                        let bubbleX = min(max(rects.lineEnd.x + 6, 0), max(0, bodyWidth - 72))
-                        InlineThreadBubble(rounds: InlineThreadSelectors.roundCount(thread)) {
-                            expandThread(thread)
+        // 同屏全部 inline 玻璃浮层共享一个容器(合并渲染);
+        // 气泡 ↔ 卡片同 glassEffectID,展开/收起做玻璃液态 morph。
+        GlassEffectContainer(spacing: 24) {
+            ZStack(alignment: .topLeading) {
+                if expandedThreadID != nil {
+                    Color.clear
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .contentShape(Rectangle())
+                        .appCursor(.arrow)
+                        .onTapGesture { collapseThread() }
+                }
+                ForEach(inlineThreads, id: \.persistentModelID) { thread in
+                    let id = threadID(thread)
+                    if let rects = anchorRects[id] {
+                        if expandedThreadID == id {
+                            let cardWidth = min(460, max(320, bodyWidth - 24))
+                            let cardX = min(max(rects.minX, 0), max(0, bodyWidth - cardWidth))
+                            InlineThreadCard(
+                                sentence: thread.anchorText ?? "",
+                                messages: threadMessages,
+                                isThinking: threadThinking,
+                                error: threadError,
+                                input: $threadInput,
+                                onSubmit: { submitThreadFollowup(thread) },
+                                onCollapse: { collapseThread() },
+                                onDelete: { deleteThread(thread) },
+                                onImport: { importThread(thread) }
+                            )
+                            .frame(width: cardWidth, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .glassEffectID(id, in: inlineGlassNS)
+                            .offset(x: cardX, y: rects.bottom + 6)
+                        } else {
+                            let bubbleX = min(max(rects.lineEnd.x + 6, 0), max(0, bodyWidth - 72))
+                            InlineThreadBubble(rounds: InlineThreadSelectors.roundCount(thread)) {
+                                expandThread(thread)
+                            }
+                            .glassEffectID(id, in: inlineGlassNS)
+                            .offset(x: bubbleX, y: rects.lineEnd.y)
                         }
-                        .offset(x: bubbleX, y: rects.lineEnd.y)
                     }
                 }
             }
@@ -288,7 +352,7 @@ struct ReaderPane: View {
                     ProgressView().controlSize(.small)
                     Text("正在提取概念…")
                         .font(.metaText)
-                        .foregroundStyle(Theme.textSecondary)
+                        .foregroundStyle(Theme.inkSecondary)
                 }
                 .padding(.top, 40)
             }
@@ -355,19 +419,27 @@ struct ReaderPane: View {
     }
 
     private func expandThread(_ thread: Conversation) {
-        expandedThreadID = threadID(thread)
         threadInput = ""
         threadError = nil
         threadMessages = (thread.messages ?? [])
             .filter { $0.role != .system }
             .sorted { $0.timestamp < $1.timestamp }
+        if reduceMotion {
+            expandedThreadID = threadID(thread)
+        } else {
+            withAnimation(Motion.ai) { expandedThreadID = threadID(thread) }
+        }
     }
 
     private func collapseThread() {
-        expandedThreadID = nil
         threadMessages = []
         threadInput = ""
         threadThinking = false   // 收起时清掉在途态,避免重开时卡在 thinking / 被 guard 挡住提交
+        if reduceMotion {
+            expandedThreadID = nil
+        } else {
+            withAnimation(Motion.ai) { expandedThreadID = nil }
+        }
     }
 
     private func submitThreadFollowup(_ thread: Conversation) {
@@ -418,10 +490,10 @@ struct ReaderPane: View {
 
     private func relatedSection(concepts: [Concept]) -> some View {
         VStack(alignment: .leading, spacing: 20) {
-            Divider().background(Theme.borderHeavy).padding(.top, 32)
+            Divider().overlay(Theme.separator).padding(.top, 32)
             Text("本文概念")
                 .font(.h2)
-                .foregroundStyle(Theme.textPrimary)
+                .foregroundStyle(Theme.ink)
                 .padding(.top, 12)
             VStack(spacing: 14) {
                 ForEach(concepts) { c in
@@ -430,21 +502,21 @@ struct ReaderPane: View {
                             .font(.system(size: 16))
                             .foregroundStyle(Theme.rust)
                             .frame(width: 40, height: 40)
-                            .background(Theme.bgCream, in: RoundedRectangle(cornerRadius: Theme.radius))
-                            .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.borderLight, lineWidth: 1))
+                            .background(Theme.paper, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.separator, lineWidth: 1))
                         VStack(alignment: .leading, spacing: 2) {
                             Text(c.name)
                                 .font(.h3)
-                                .foregroundStyle(Theme.textPrimary)
+                                .foregroundStyle(Theme.ink)
                             Text(c.explanation)
                                 .font(.metaText)
-                                .foregroundStyle(Theme.textSecondary)
+                                .foregroundStyle(Theme.inkSecondary)
                         }
                         Spacer()
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 16)
-                    .hardShadow(fill: Theme.bgCream)
+                    .contentCard()
                 }
             }
         }

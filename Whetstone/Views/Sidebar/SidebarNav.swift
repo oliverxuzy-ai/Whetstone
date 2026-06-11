@@ -1,34 +1,16 @@
 import SwiftUI
 import WhetstoneCore
 
-/// 左栏导航(两模态都在):字标 + 折叠键 + 导航项(文章库 / 已掌握 / 设置)+ 添加文章。
+/// 左栏导航(两模态都在):导航项(文章库 / 已掌握 / 设置)+ 添加文章。
+/// V2:字标与折叠键退役——窗口标题与 sidebar 开合交给系统 toolbar。
 struct SidebarNav: View {
     let isHome: Bool
     let onHome: () -> Void
     let onAddArticle: () -> Void
     let onOpenSettings: () -> Void
-    let onCollapse: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("Whetstone")
-                    .font(.system(size: 17, weight: .semibold))
-                    .tracking(-0.02)
-                    .foregroundStyle(Theme.textPrimary)
-                Spacer()
-                Button(action: onCollapse) {
-                    Image(systemName: "chevron.left")
-                }
-                .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary, iconOnly: true))
-                .help("收起侧栏 (⌃⌘[)")
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 18 + Theme.titlebarInset)
-            .padding(.bottom, 14)
-
-            Divider().background(Theme.borderLight)
-
             VStack(alignment: .leading, spacing: 3) {
                 NavItem(label: "文章库", systemImage: "rectangle.grid.1x2", isActive: isHome, action: onHome)
                 NavItem(label: "已掌握", systemImage: "checkmark.seal", disabled: true, action: {})
@@ -62,31 +44,20 @@ private struct NavItem: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .foregroundStyle(Theme.textPrimary)
-            .background(itemBG, in: RoundedRectangle(cornerRadius: Theme.radius))
-            .overlay {
-                if isActive {
-                    RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.borderHeavy, lineWidth: 1)
-                }
-            }
-            .overlay(alignment: .leading) {
-                if isActive {
-                    UnevenRoundedRectangle(topLeadingRadius: Theme.radius, bottomLeadingRadius: Theme.radius)
-                        .fill(Theme.rust)
-                        .frame(width: 3)
-                }
-            }
-            .contentShape(Rectangle())
+            .foregroundStyle(.primary)
+            .background(itemBG, in: Capsule())
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .disabled(disabled)
         .opacity(disabled ? 0.4 : 1)
         .onHover { hovering = $0 && !disabled }
-        .animation(Motion.flip, value: hovering)
+        .animation(Motion.state, value: hovering)
     }
 
+    /// 选中 = 锈红弱化底胶囊;hover = 淡底;其余透明(玻璃直接透出)。
     private var itemBG: Color {
-        if isActive { return Theme.bgCream }
+        if isActive { return Theme.rustSoft }
         if hovering { return Theme.hoverOverlay }
         return .clear
     }

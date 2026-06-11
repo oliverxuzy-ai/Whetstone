@@ -12,6 +12,17 @@ struct WhetstoneApp: App {
     /// into the view tree via `.environmentObject(_:)` below.
     @StateObject private var services = AppServices()
 
+    /// Aa 面板的外观选择(跟随系统 / 浅 / 深)。
+    @AppStorage("appearanceMode") private var appearanceMode: String = "system"
+
+    private var preferredScheme: ColorScheme? {
+        switch appearanceMode {
+        case "light": return .light
+        case "dark": return .dark
+        default: return nil
+        }
+    }
+
     init() {
         do {
             modelContainer = try ModelContainer(
@@ -38,10 +49,9 @@ struct WhetstoneApp: App {
                 .modelContainer(modelContainer)
                 .environmentObject(services)
                 .frame(minWidth: 1280, minHeight: 700)
-                .preferredColorScheme(.light)   // brutalist editorial is light-only by design
+                .preferredColorScheme(preferredScheme)
         }
         .windowResizability(.contentMinSize)     // user can drag to resize freely above 1280x700
-        .windowStyle(.hiddenTitleBar)            // traffic lights float on bgCream, no chrome strip
         .commands {
             CommandGroup(after: .appInfo) {
                 CheckForUpdatesView(updater: updaterController.updater)

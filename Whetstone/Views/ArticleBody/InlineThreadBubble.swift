@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 收起态:锚定句行尾的小气泡,锈红圆点显示轮数。点击展开卡片。
+/// 收起态:锚定句行尾的玻璃小胶囊,锈红圆点显示轮数(AI 在场指示)。点击展开卡片。
 struct InlineThreadBubble: View {
     let rounds: Int
     let action: () -> Void
@@ -11,19 +11,22 @@ struct InlineThreadBubble: View {
             HStack(spacing: 5) {
                 Text("\(rounds)")
                     .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(Theme.bgCream)
+                    .foregroundStyle(.white)
                     .frame(width: 14, height: 14)
                     .background(Theme.rust, in: Circle())
                 Image(systemName: "bubble.left.fill")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(hover ? Theme.bgCream : Theme.textPrimary)
+                    .foregroundStyle(.primary)
             }
-            .padding(.horizontal, 7)
-            .padding(.vertical, 3)
-            .hardShadow(fill: hover ? Theme.textPrimary : Theme.bgCream)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(hover ? Theme.hoverOverlay : Color.clear, in: Capsule())
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .animation(Motion.flip, value: hover)
+        .glassEffect(.regular, in: .capsule)
+        .animation(Motion.state, value: hover)
         .onHover { hover = $0 }
+        .appCursor(.arrow)
     }
 }

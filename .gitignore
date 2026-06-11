@@ -36,3 +36,6 @@ secrets.plist
 
 # Visual brainstorm companion scratch
 .superpowers/
+
+# 截图对比工具(node),不入版本库
+Whetstone/design-demo/

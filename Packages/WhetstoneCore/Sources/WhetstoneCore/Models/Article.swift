@@ -13,6 +13,9 @@ public final class Article {
     public var latestScore: Int? = nil        // 仅在用户点 "考考我" 后由 Conversation 写入
     public var isLayoutEnhanced: Bool = false // true ⇒ content is AI-formatted markdown, render as such
 
+    /// 阅读位置(0...1,滚动比例)。打开文章时恢复;列表/继续阅读显示真实进度。
+    public var progressFraction: Double = 0
+
     /// JSON-encoded [String] — 中文段落数组, 按 MarkdownToAttributed.paragraphs(from:) 拆出来的英文段落
     /// 1:1 对齐 (index 严格对应)。nil ⇒ 还没翻译过。
     public var translatedParagraphsData: Data? = nil

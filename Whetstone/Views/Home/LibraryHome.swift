@@ -28,15 +28,15 @@ struct LibraryHome: View {
                 } else {
                     sectionLabel("最近").padding(.top, 30)
                     LazyVGrid(
-                        columns: [GridItem(.adaptive(minimum: 260), spacing: 16)],
+                        columns: [GridItem(.adaptive(minimum: 260), spacing: 18)],
                         alignment: .leading,
-                        spacing: 16
+                        spacing: 18
                     ) {
                         ForEach(articles) { a in
                             LibraryCard(article: a, onTap: { onSelect(a) }, onDelete: { onDelete(a) })
                         }
                     }
-                    .padding(.top, 12)
+                    .padding(.top, 14)
                 }
             }
             .padding(.horizontal, 48)
@@ -48,9 +48,8 @@ struct LibraryHome: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             Text("文章库")
-                .font(.system(size: 40, weight: .regular))
-                .tracking(-0.02)
-                .foregroundStyle(Theme.textPrimary)
+                .font(.articleTitle)
+                .foregroundStyle(Theme.ink)
             Spacer()
             Button(action: onAddArticle) {
                 Text("+ 添加文章")
@@ -58,7 +57,7 @@ struct LibraryHome: View {
             .buttonStyle(EditorialButtonStyle(size: .large, variant: .primary))
             .fixedSize()
         }
-        .padding(.top, 28 + Theme.titlebarInset)
+        .padding(.top, 28)
     }
 
     private var statsLine: some View {
@@ -71,18 +70,25 @@ struct LibraryHome: View {
         }
     }
 
+    /// 统计项:数字 + eyebrow 微标签
     private func stat(_ n: String, _ label: String) -> some View {
         HStack(spacing: 5) {
-            Text(n).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.textPrimary)
-            Text(label).font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+            Text(n).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.ink)
+            Text(label)
+                .font(.eyebrow)
+                .textCase(.uppercase)
+                .tracking(0.9)
+                .foregroundStyle(.secondary)
         }
     }
 
+    /// 区块标题:eyebrow 微标签
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
-            .tracking(0.14 * 11)
-            .foregroundStyle(Theme.textSecondary)
+            .font(.eyebrow)
+            .textCase(.uppercase)
+            .tracking(0.9)
+            .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -90,10 +96,10 @@ struct LibraryHome: View {
         VStack(spacing: 10) {
             Text("还没有文章")
                 .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Theme.textPrimary)
+                .foregroundStyle(Theme.ink)
             Text("点右上角「+ 添加文章」,粘贴一个链接试试。")
                 .font(.system(size: 13))
-                .foregroundStyle(Theme.textSecondary)
+                .foregroundStyle(Theme.inkSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 80)

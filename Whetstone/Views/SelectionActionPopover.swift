@@ -20,23 +20,28 @@ enum SelectionAction: Hashable, Identifiable {
 
 }
 
-/// V1.0 选区弹窗:cream 底 + 5px 圆角 + 2px 硬阴影,hover cream↔ink 反色。
+/// 选区弹窗:浮在正文上的功能层玻璃胶囊,按钮 hover 用淡底浮现。
 struct SelectionActionPopover: View {
     let actions: [SelectionAction]
     let onSelect: (SelectionAction) -> Void
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 2) {
             ForEach(Array(actions.enumerated()), id: \.element) { idx, action in
                 if idx > 0 {
-                    Rectangle().fill(Theme.borderHeavy).frame(width: 1)
+                    Rectangle()
+                        .fill(Theme.separator)
+                        .frame(width: 1)
+                        .padding(.vertical, 8)
                 }
                 SelectionActionButton(action: action) { onSelect(action) }
             }
         }
+        .padding(3)
         .fixedSize()
-        .hardShadow(fill: Theme.bgCream)
-        .padding(4)   // 给硬阴影留出 panel 内边距,避免被 NSPanel 边缘 clip
+        .glassEffect(.regular, in: .capsule)
+        .padding(6)   // 给玻璃材质的系统阴影留出 panel 内边距,避免被 NSPanel 边缘 clip
+        .appCursor(.arrow)
     }
 }
 
@@ -49,13 +54,14 @@ private struct SelectionActionButton: View {
         Button(action: onSelect) {
             Text(action.label)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(isHovering ? Theme.bgCream : Theme.textPrimary)
-                .frame(minWidth: 76, minHeight: 34)
-                .background(isHovering ? Theme.textPrimary : Color.clear)
-                .contentShape(Rectangle())
+                .foregroundStyle(.primary)
+                .frame(minWidth: 72, minHeight: 30)
+                .background(isHovering ? Theme.hoverOverlay : Color.clear, in: Capsule())
+                .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
-        .animation(Motion.flip, value: isHovering)
+        .buttonStyle(.borderless)
+        .animation(Motion.state, value: isHovering)
         .onHover { isHovering = $0 }
+        .appCursor(.arrow)
     }
 }

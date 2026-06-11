@@ -14,11 +14,11 @@ struct ChatInputView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Divider().background(Theme.borderHeavy)
+            Rectangle().fill(Theme.separator).frame(height: 1)
             HStack(spacing: 10) {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
-                        .foregroundStyle(Theme.textSecondary)
+                        .foregroundStyle(.secondary)
                     TextField(placeholder, text: $input)
                         .textFieldStyle(.plain)
                         .onSubmit(onSubmit)
@@ -27,8 +27,13 @@ struct ChatInputView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 9)
-                .hardShadow(fill: Theme.bgCream, borderColor: inputFocused ? Theme.rust : Theme.borderHeavy)
-                .animation(Motion.flip, value: inputFocused)
+                .background(.quaternary,
+                            in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+                        .strokeBorder(inputFocused ? Theme.rust : Theme.separator, lineWidth: 1)
+                )
+                .animation(Motion.state, value: inputFocused)
                 .frame(maxWidth: .infinity)
 
                 Button(action: onSubmit) {

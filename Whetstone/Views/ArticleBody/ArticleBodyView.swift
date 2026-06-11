@@ -14,6 +14,8 @@ struct ArticleBodyView: NSViewRepresentable {
     /// 文中 Ask 锚点:id(线程 persistentModelID 字符串)→ 当前正文里的 range。
     /// 下划线只用 range;rect 上报需要 id。
     var inlineAnchorRanges: [(id: String, range: NSRange)] = []
+    /// Aa 面板排版参数(字号/衬线);变化进 memoize key,触发整篇重建。
+    var typography: MarkdownToAttributed.BodyTypography = .init()
     let onAddHighlight: (NSRange, String) -> Void
     var onRemoveHighlights: ((NSRange, String) -> Void)? = nil
     /// 选区弹窗 Ask:把选区交回上层(ReaderPane)新建 thread。
@@ -62,7 +64,8 @@ struct ArticleBodyView: NSViewRepresentable {
             highlightSignatures: highlightSignatures,
             translation: translation,
             showBilingual: showBilingual,
-            inlineAnchorSignatures: anchorSigs
+            inlineAnchorSignatures: anchorSigs,
+            typographySignature: typography.signature
         )
 
         // Cache hit: skip the O(n) rebuild + the full attributed-string compare.
@@ -85,7 +88,8 @@ struct ArticleBodyView: NSViewRepresentable {
             highlights: highlights,
             translation: translation,
             showBilingual: showBilingual,
-            inlineAnchors: anchorRanges
+            inlineAnchors: anchorRanges,
+            typography: typography
         )
         tv.textStorage?.setAttributedString(attr)
         tv.onAddHighlight = onAddHighlight
@@ -94,6 +98,7 @@ struct ArticleBodyView: NSViewRepresentable {
         tv.onAnchorRects = onAnchorRects
         tv.inlineAnchors = inlineAnchorRanges   // didSet 触发一次 rect 上报
         tv.reportAnchorRectsPublic()
+        tv.invalidateTextCursorRects()
         context.coordinator.lastKey = key
     }
 
@@ -107,6 +112,7 @@ struct ArticleBodyView: NSViewRepresentable {
         layout.ensureLayout(for: container)
         DispatchQueue.main.async {
             nsView.reportAnchorRectsPublic()
+            nsView.invalidateTextCursorRects()
         }
         let used = layout.usedRect(for: container).size
         return CGSize(width: width, height: ceil(used.height))

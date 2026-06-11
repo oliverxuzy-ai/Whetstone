@@ -26,6 +26,6 @@ struct RootView: View {
                 WorkspaceView()
             }
         }
-        .background(Theme.bgCream)
+        .background(Theme.paper)
     }
 }

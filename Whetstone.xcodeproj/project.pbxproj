@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0D372F83BAD57D06DC7E7609 /* SidebarNav.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1C2432C0D4D141177E924 /* SidebarNav.swift */; };
 		12390E8A58154F18DD7F2651 /* AddArticleSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A75BDB9C227E6F1AD69B1E58 /* AddArticleSheet.swift */; };
+		261DD2DC560625D878937420 /* Surfaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85DA939AA6CCFFB56D59EEB2 /* Surfaces.swift */; };
 		2D31503655A5CE949308E619 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FFC365912AAB6D21D57E62B /* Colors.swift */; };
 		2DA4FCB8D97445A6F3F0C548 /* InlineThreadCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F806AF2E283CF9A26D10D70B /* InlineThreadCard.swift */; };
 		30E830D81A664CEE3CFD6D19 /* WhetstoneCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0E37FC53A24048B0A0B14560 /* WhetstoneCore */; };
@@ -20,13 +21,13 @@
 		4F3A4743890093F1CE4420BC /* BrutalistTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55201CB2A7C87A616B775EBF /* BrutalistTextView.swift */; };
 		6A6B74A047056B98B491D5A0 /* Readability.js in Resources */ = {isa = PBXBuildFile; fileRef = 744CC4170B6ADA72588F05BD /* Readability.js */; };
 		72C74C733C718473625455B7 /* Services.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9F8AA06F54F4F9D1C4BEAEE /* Services.swift */; };
+		731B72C15A166424604F1710 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = E746F2188E56AA34CE142BEE /* Palette.swift */; };
 		7A660042089A82CFD1AC4B81 /* LibraryHome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31DB1AD1474980CC2D41B908 /* LibraryHome.swift */; };
 		7BB6F1F5C17227ECB764580F /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10FF3EEC047B25F697F250CE /* RootView.swift */; };
 		8070D05C723C157FD27A54A8 /* ArticleListSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEF7352CD0043511C9DA2CC /* ArticleListSidebar.swift */; };
 		8206008CECFC04AE1AA68270 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5036684D5E118FEEB1D8AA7C /* Typography.swift */; };
 		8430D79BD47570F717C6441F /* MessageListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F4E875534DA1AAF4C36931F /* MessageListView.swift */; };
 		84E84F6A20A3FC317A8F4D8A /* MarkdownToAttributed.swift in Sources */ = {isa = PBXBuildFile; fileRef = F02CAA5836DBA916D520504A /* MarkdownToAttributed.swift */; };
-		8C55B2D317EDA9270D1E970D /* HardShadow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA755D8A265908A7651F2A7 /* HardShadow.swift */; };
 		94B319CFAF07316F4F31C180 /* ReaderPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6CCC7F8A3F2E459EA5048FD /* ReaderPane.swift */; };
 		9912A523A3B6F5E0FD3349EA /* ConceptCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24EFBBCCC763A2105F25576 /* ConceptCardView.swift */; };
 		9D1A16DA6FCB841B579E45B7 /* InlineThreadBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B8AA153373E5A5C2147BB25 /* InlineThreadBubble.swift */; };
@@ -45,6 +46,7 @@
 		E0274EBD7CD13FE2761A8F43 /* InlineThreadBus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76524BC13DFB13C5EB3608FE /* InlineThreadBus.swift */; };
 		E170B4B4430A1933E7A06A88 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 157C6D506EB122AEC79AC5D0 /* Assets.xcassets */; };
 		F9FFF72575C4D91C873C650E /* ArticleDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4807F160E0E6AC1EF64CEEAB /* ArticleDisplay.swift */; };
+		FF28A0E5AC14C1480C49554E /* AppCursor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BBD7B5079B00709F3776DCD /* AppCursor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -54,6 +56,7 @@
 		157C6D506EB122AEC79AC5D0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1C95592D92FC1EEECC22D6B6 /* ArticleExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleExtractor.swift; sourceTree = "<group>"; };
 		29940681D772E563048E9994 /* ContinueReadingHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContinueReadingHero.swift; sourceTree = "<group>"; };
+		2BBD7B5079B00709F3776DCD /* AppCursor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCursor.swift; sourceTree = "<group>"; };
 		30D25F1DD372B951898EA9BC /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
 		31DB1AD1474980CC2D41B908 /* LibraryHome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryHome.swift; sourceTree = "<group>"; };
 		37F1C2432C0D4D141177E924 /* SidebarNav.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarNav.swift; sourceTree = "<group>"; };
@@ -70,6 +73,7 @@
 		75EAA13F1CEFC833316A3C43 /* WhetstoneApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhetstoneApp.swift; sourceTree = "<group>"; };
 		76524BC13DFB13C5EB3608FE /* InlineThreadBus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineThreadBus.swift; sourceTree = "<group>"; };
 		81F54D8F83E5FE56B7758BE4 /* ArticleBodyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleBodyView.swift; sourceTree = "<group>"; };
+		85DA939AA6CCFFB56D59EEB2 /* Surfaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Surfaces.swift; sourceTree = "<group>"; };
 		9554E034EC7FD0F443B42C0D /* Motion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Motion.swift; sourceTree = "<group>"; };
 		95D9E3C26BE04786148D427E /* WhetstoneCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = WhetstoneCore; path = Packages/WhetstoneCore; sourceTree = SOURCE_ROOT; };
 		9B8AA153373E5A5C2147BB25 /* InlineThreadBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineThreadBubble.swift; sourceTree = "<group>"; };
@@ -82,10 +86,10 @@
 		C575F7BAFF7C220F3D44F12E /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		C6CCC7F8A3F2E459EA5048FD /* ReaderPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderPane.swift; sourceTree = "<group>"; };
 		DEBED77120E4C0DFFCC0DDA4 /* Whetstone.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Whetstone.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E746F2188E56AA34CE142BEE /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
 		F02CAA5836DBA916D520504A /* MarkdownToAttributed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownToAttributed.swift; sourceTree = "<group>"; };
 		F222D02E7F56695050A760FD /* ArticleRowCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleRowCard.swift; sourceTree = "<group>"; };
 		F806AF2E283CF9A26D10D70B /* InlineThreadCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineThreadCard.swift; sourceTree = "<group>"; };
-		FBA755D8A265908A7651F2A7 /* HardShadow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardShadow.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -221,10 +225,12 @@
 		EB3D30CD9919A07C0293C4C7 /* Theme */ = {
 			isa = PBXGroup;
 			children = (
+				2BBD7B5079B00709F3776DCD /* AppCursor.swift */,
 				10F4CCB783DA27E190848B5B /* Buttons.swift */,
 				0FFC365912AAB6D21D57E62B /* Colors.swift */,
-				FBA755D8A265908A7651F2A7 /* HardShadow.swift */,
 				9554E034EC7FD0F443B42C0D /* Motion.swift */,
+				E746F2188E56AA34CE142BEE /* Palette.swift */,
+				85DA939AA6CCFFB56D59EEB2 /* Surfaces.swift */,
 				5036684D5E118FEEB1D8AA7C /* Typography.swift */,
 			);
 			path = Theme;
@@ -338,6 +344,7 @@
 			files = (
 				E0172CDFE56ECB354669C4EC /* AIPane.swift in Sources */,
 				12390E8A58154F18DD7F2651 /* AddArticleSheet.swift in Sources */,
+				FF28A0E5AC14C1480C49554E /* AppCursor.swift in Sources */,
 				D82C61805132EB222BB78BE2 /* ArticleBodyView.swift in Sources */,
 				F9FFF72575C4D91C873C650E /* ArticleDisplay.swift in Sources */,
 				B6093F5EEFD6CC01687AF318 /* ArticleExtractor.swift in Sources */,
@@ -349,7 +356,6 @@
 				2D31503655A5CE949308E619 /* Colors.swift in Sources */,
 				9912A523A3B6F5E0FD3349EA /* ConceptCardView.swift in Sources */,
 				4877C0192306744EFA031EA8 /* ContinueReadingHero.swift in Sources */,
-				8C55B2D317EDA9270D1E970D /* HardShadow.swift in Sources */,
 				9D1A16DA6FCB841B579E45B7 /* InlineThreadBubble.swift in Sources */,
 				E0274EBD7CD13FE2761A8F43 /* InlineThreadBus.swift in Sources */,
 				2DA4FCB8D97445A6F3F0C548 /* InlineThreadCard.swift in Sources */,
@@ -360,6 +366,7 @@
 				8430D79BD47570F717C6441F /* MessageListView.swift in Sources */,
 				31F18074795C279A8C86EE9E /* Motion.swift in Sources */,
 				B1EA9AAFE79A70E1970D8C8A /* OnboardingView.swift in Sources */,
+				731B72C15A166424604F1710 /* Palette.swift in Sources */,
 				A13F3CB5752F6C5CA02D5059 /* QuizResultCard.swift in Sources */,
 				94B319CFAF07316F4F31C180 /* ReaderPane.swift in Sources */,
 				7BB6F1F5C17227ECB764580F /* RootView.swift in Sources */,
@@ -367,6 +374,7 @@
 				72C74C733C718473625455B7 /* Services.swift in Sources */,
 				B69D2F7E3DEA973463D45553 /* SettingsView.swift in Sources */,
 				0D372F83BAD57D06DC7E7609 /* SidebarNav.swift in Sources */,
+				261DD2DC560625D878937420 /* Surfaces.swift in Sources */,
 				8206008CECFC04AE1AA68270 /* Typography.swift in Sources */,
 				CC719A3D10136A6D4C1BB96D /* WhetstoneApp.swift in Sources */,
 				32136513B431F549F11A1ABF /* WorkspaceView.swift in Sources */,
@@ -391,7 +399,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zhengyangxu.whetstone;
 				PRODUCT_NAME = Whetstone;
@@ -448,7 +456,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -513,7 +521,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -540,7 +548,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zhengyangxu.whetstone;
 				PRODUCT_NAME = Whetstone;

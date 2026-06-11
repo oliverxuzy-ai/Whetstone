@@ -14,8 +14,8 @@ struct ConceptCardView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Text("Concepts Extracted")
-                        .font(.system(size: 11, weight: .semibold))
-                        .tracking(0.5)
+                        .font(.eyebrow)
+                        .tracking(0.9)
                         .textCase(.uppercase)
                         .foregroundStyle(Theme.rust)
                     Spacer()
@@ -28,10 +28,10 @@ struct ConceptCardView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(c.name)
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(Theme.textPrimary)
+                                .foregroundStyle(Theme.ink)
                             Text(c.explanation)
                                 .font(.system(size: 13))
-                                .foregroundStyle(Theme.textPrimary.opacity(0.9))
+                                .foregroundStyle(Theme.ink.opacity(0.9))
                         }
                     }
                 }
@@ -42,34 +42,53 @@ struct ConceptCardView: View {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 8)],
                           alignment: .leading, spacing: 8) {
                     ForEach(concepts.prefix(3)) { c in
-                        chip("类比「\(truncated(c.name, max: 12))」") {
+                        SuggestionChip(label: "类比「\(truncated(c.name, max: 12))」") {
                             onAsk(.explain(concept: c.name))
                         }
                     }
                 }
             }
             .padding(20)
-            .hardShadow(fill: Theme.bgCream)
+            .contentCard()
         } else if !conceptsLoaded {
             HStack {
                 ProgressView().controlSize(.small)
                 Text("提取核心概念中...")
                     .font(.bodyChat)
-                    .foregroundStyle(Theme.textSecondary)
+                    .foregroundStyle(.secondary)
             }
         }
-    }
-
-    private func chip(_ label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(label)
-                .lineLimit(1)
-        }
-        .buttonStyle(EditorialButtonStyle(size: .small, variant: .secondary))
     }
 
     private func truncated(_ s: String, max: Int) -> String {
         if s.count <= max { return s }
         return String(s.prefix(max)) + "…"
+    }
+}
+
+/// 「类比」建议胶囊:锈红弱化底(AI 在场色)+ hover 淡底。
+private struct SuggestionChip: View {
+    let label: String
+    let action: () -> Void
+
+    @State private var hovered = false
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(.system(size: 12, weight: .medium))
+                .lineLimit(1)
+                .foregroundStyle(Theme.rust)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(
+                    Capsule().fill(Theme.rustSoft)
+                        .overlay(Capsule().fill(hovered ? Theme.hoverOverlay : .clear))
+                )
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(Motion.state) { hovered = hovering }
+        }
     }
 }

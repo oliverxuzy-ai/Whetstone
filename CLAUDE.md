@@ -1,6 +1,6 @@
 # Whetstone
 
-macOS native SwiftUI app · AI-assisted article comprehension · Feynman + Socratic methods · companion mode locked in v0 · **UI V1.0** (single-window three-region + 安静版 neobrutalism 编辑风) shipped 2026-05-29.
+macOS native SwiftUI app · AI-assisted article comprehension · Feynman + Socratic methods · companion mode locked in v0 · **UI V2.0** (Liquid Glass「玻璃做工具,纸面做内容」+ 浅/深双模式) in progress 2026-06-11(代码已落地,视觉终审待屏幕录制权限)。**Deployment target = macOS 26.0**(Liquid Glass 原生 API)。
 
 GitHub: `git@github.com:oliverxuzy-ai/Whetstone.git` · branch `main`
 Local dir: `/Users/zhengyangxu/Desktop/side_project/learning-mate/` (outer folder name predates rename — harmless)
@@ -9,22 +9,33 @@ Local dir: `/Users/zhengyangxu/Desktop/side_project/learning-mate/` (outer folde
 
 **Always read these before touching `Whetstone/Views/` or `Whetstone/Theme/`:**
 
-1. **V1.0 design spec** (current visual + structure source of truth):
-   `docs/superpowers/specs/2026-05-29-ui-v1-redesign-design.md`
-2. **v0 mockup HTML** (original brutalist-editorial — **superseded on radius/shadow/accent** by V1.0; still useful for layout/typography feel):
-   `/Users/zhengyangxu/Downloads/design-2d6e08f6-2fdf-4f78-9fd4-f05cf7c198d2.html`
-3. **Design doc** (product premises + GO/NO-GO gates):
+1. **V2.0 design spec** (current visual + structure source of truth):
+   `docs/superpowers/specs/2026-06-11-ui-v2-liquid-glass-design.md`
+2. **V2.0 implementation plan**: `docs/superpowers/plans/2026-06-11-ui-v2-liquid-glass.md`
+3. **V2.0 调研报告**(Liquid Glass API 盘点 / Dia / 竞品 / HIG / 功能探索):
+   `docs/superpowers/research/2026-06-11-v2/`
+4. **Design doc** (product premises + GO/NO-GO gates):
    `~/.gstack/projects/learning-mate/zhengyangxu-design-20260524-212909.md`
 
-### Architecture (V1.0 — shipped 2026-05-29)
+> V1.0 spec(2026-05-29)与 v0 mockup HTML 已整体退役,仅作历史参考。
 
-Single window, **three collapsible regions** in `WorkspaceView` (replaces the v0 two-screen Library↔Reader swap):
-- **LEFT** (sage) — `SidebarNav` + (reading mode only) `ArticleListSidebar` / `ArticleRowCard`. Drag-resizable 240–420 (`leftSidebarWidth`), collapsible.
-- **CENTER** (cream) — **dual-mode**: `LibraryHome` (browse: stats + `ContinueReadingHero` + `LibraryCard` grid) when no article selected; `ReaderPane` when reading.
-- **RIGHT** (sage) — `AIPane` (concept card + messages + Socrates quiz button + chat input). Collapsible; own drag-resize.
-- Collapse mechanism: hand-rolled `HStack` + animated `.frame(width:)` + `.clipped()`, `Motion.drive` (NOT NavigationSplitView). Toggles: ⌃⌘[ / ⌃⌘] + header reopen buttons; open/closed persisted (`@AppStorage`).
-- **Retired:** `ContentView`, `LibraryView`, `LibraryGrid`, `LibrarySidebar`.
+### Architecture (V2.0 — 2026-06-11)
+
+Single window, 系统语义三栏(替代 V1 手卷 HStack 折叠):
+- **`NavigationSplitView`**:sidebar = `SidebarNav` + (reading mode) `ArticleListSidebar` / `ArticleRowCard`(系统浮动玻璃列,240–420);detail = **dual-mode** `LibraryHome` / `ReaderPane`(`Theme.paper` 内容层)。
+- **`.inspector`** = `AIPane`(edge-to-edge 玻璃,320–600);只在阅读态可见(`inspectorBinding`)。
+- Toggles: ⌃⌘[ / ⌃⌘](隐藏按钮 hack 保留)+ toolbar 按钮;开合持久化 `@AppStorage("leftSidebarOpen"/"rightSidebarOpen")`。
+- **专注模式 ⌘.**(`WorkspaceView.focusMode`):收双栏 + `toolbarVisibility(.hidden)`,右下玻璃胶囊(AI 入口 + 退出);Esc 退出;进出时保存/恢复栏开合。
+- Settings / AddArticle 走原生 `.sheet`(V1 自绘遮罩 modal 退役)。
+- **Retired:** hand-rolled collapse/drag-resize、`HardShadow`、`Brutalist*` button shims、sage 色块、hiddenTitleBar。
 - Testable selectors live in core: `WhetstoneCore.LibrarySelectors` (`filtered` / `stats` / `continueReading` / `isUnread`).
+
+#### 功能包 1「读得下去」(部分已落地 2026-06-11)
+
+- **A1 阅读位置记忆**:`Article.progressFraction`(0...1,SwiftData 轻量迁移);`ReaderPane` 用 `onScrollGeometryChange` + `ScrollPosition` 恢复/保存(debounce 800ms);列表卡片与 Hero 显示「已读 X%」+ Hero 底部 2pt rust 进度条。
+- **D1 Focus mode**:见上。
+- **D2 Aa 面板**:Reader toolbar `textformat.size` popover —— 字号 16/17/18/20/22、衬线/无衬线、外观(跟随系统/浅/深),全部 `@AppStorage`(`articleFontSize`/`articleUsesSerif`/`appearanceMode`);排版参数经 `MarkdownToAttributed.BodyTypography` 进 `AttributedBodyKey`(`typographySignature`)。
+- **A2 队列状态机(未做)**:`status: inbox/reading/done/archived` —— 下一批。功能包 2(FSRS 复习闭环)/ 3(捕获+⌘K)见设计文档 §6。
 
 #### 文中 Ask 对话 (inline ask threads) — shipped 2026-05-30
 
@@ -36,22 +47,18 @@ Single window, **three collapsible regions** in `WorkspaceView` (replaces the v0
 - **渲染:** 卡片/气泡是 `ReaderPane` 叠在 `ArticleBodyView` 上的 SwiftUI overlay(`InlineThreadCard` / `InlineThreadBubble`);锚点屏幕坐标由 `BrutalistTextView.reportAnchorRects`(layoutManager 几何)上报;锚定句在正文加**锈红下划线**(`MarkdownToAttributed` 的 `inlineAnchors` 参数)。
 - **跨栏:** `InlineThreadBus`(`ObservableObject`,`WorkspaceView` 持有并注入)—— 带入后 `rightOpen=true` + bus 自增 token,`AIPane.onChange` 重载主对话。
 
-### Key visual locks — V1.0 (deviating without explicit user approval = a bug to flag)
+### Key visual locks — V2.0 (deviating without explicit user approval = a bug to flag)
 
-- Aesthetic: **安静版 neobrutalism 编辑风** (quiet neobrutalism editorial) — independent magazine, not SaaS
-- Bg cream `#EFECE5` (center) · Bg sage `#C5D2D3` (left + right rails)
-- Text/border `#1A1A1A`; borders **1px** (`#1A1A1A` heavy / `rgba(0,0,0,0.2)` light) — **not** neobrutalism's 2px
-- **Corner radius `5px` (`Theme.radius`)** on objects (buttons / cards / inputs / pills / modals / message bubbles); **square** on full-bleed panes + 1px dividers
-- **Hard offset shadow `2px 2px 0 #1A1A1A`** (no blur) on raised objects — use `.hardShadow()` modifier (`Theme/HardShadow.swift`)
-- **One accent: 陶土锈红 `#C04A2B` (`Theme.rust`)** — ONLY for active / selected / progress / score / unread. No other accent colors.
-- Font: Helvetica Neue / system sans · Article title 42px / regular / tracking -0.02em
-- Interaction: hover → cream↔ink color invert (`Motion.flip`); press → translate +2px to cover shadow; selected/focus → black stroke or **rust left bar**
-- Buttons: unified `EditorialButtonStyle(size: .small/.medium/.large, variant: .primary/.solid/.secondary/.ghost)` — **label must NOT hardcode `.foregroundStyle`** (the style controls color + hover inversion)
-- AI msg = plain text, no bubble ("AI speaks beside you, not over you"); user msg = `.hardShadow()` cream bubble
-- Motion (`Theme/Motion.swift`): `Motion.flip` (linear 50ms, state reversal) · `Motion.drive` (timingCurve(0.2,0,0,1) ~180ms, rigid displacement); flap (split-flap) reserved for hero reveals (e.g. score)
-- Socrates quiz button: `Assets.xcassets/Socrates` (template, tints with fg) + rust `?` badge, top-right of AI pane
+1. **两层世界**:Liquid Glass 仅限功能层(toolbar/sidebar/inspector/浮层);内容层(正文/列表/卡片)永远不透明(`.contentCard()` 或 `Theme.paper/paperElevated`);无 glass-on-glass。
+2. **底色**:`Theme.paper` 浅 `#FAF8F2` / 深 `#1B1D1F`(暖深灰,绝不纯黑);深浅切换无亮度跳闪。颜色单一来源 = `Theme/Palette.swift` 动态 NSColor(attributed string 管线共用,绘制时按外观解析)。
+3. **唯一强调色锈红**(浅 `#C04A2B` / 深 `#D9603E`,`Theme.rust`/`rustSoft`):仅 active/selected/progress/score/unread/**AI 在场**;玻璃前景不放品牌色。
+4. **正文衬线**:New York(`.serif`)18pt 默认(Aa 面板 16–22 五档 + 无衬线切换)、列宽 ≤680pt 居中、左对齐;UI 用 SF Pro;eyebrow 大写微标签(`Font.eyebrow` + tracking 0.9)是唯一保留的编辑风装饰。
+5. **阴影**:浅色系统柔影(`.contentCard()` 内置);深色「亮度即海拔」+ `Theme.separator` 发丝线;2px 硬阴影与 1px 黑边全面禁用。
+6. **动效三 token**(`Theme/Motion.swift`):`Motion.state`(smooth .18s 状态)/ `Motion.move`(snappy .32s 位移)/ `Motion.ai`(bouncy .45s,仅 AI 时刻:涌入/出分/气泡 morph);正文区零自发动效;自定义动画必须接 `accessibilityReduceMotion`。
+7. AI msg = plain text, no bubble ("AI speaks beside you, not over you");user msg = `.contentCard()`;通知/错误永不压正文。
+8. hover 才浮现次要控件;按钮统一 `EditorialButtonStyle`(转发 `.glass`/`.glassProminent`,**label 不要硬编码 `.foregroundStyle`**);Socrates quiz button 保留(rust `?` 角标)。
 
-> **v0 locks (`border-radius:0`, no shadows, no accent colors) are SUPERSEDED** by the above as of 2026-05-29 (user-approved evolution). Do not treat the new radius/shadow/rust as drift.
+> **V1.0 locks(cream/sage、1px 黑边、2px 硬阴影、反色 hover)已整体退役** as of 2026-06-11(user-directed Liquid Glass redesign)。Do not treat glass/serif/双模式 as drift.
 
 ## Validated Prompts
 
@@ -139,18 +146,20 @@ echo "screenshot: $SHOT"
 ```
 (macOS requires Screen Recording permission for the terminal running this. If the screenshot is black/empty, grant it in System Settings → Privacy & Security → Screen Recording → enable for Terminal/iTerm.)
 
-### Step 4 — Read & compare to the V1.0 locks
+### Step 4 — Read & compare to the V2.0 locks(浅/深两遍)
 
-Use the `Read` tool on `$SHOT` (it's a PNG — Claude reads images). Compare against the **V1.0** locks (see Design Source of Truth):
-- Bg: cream center, sage left + right rails
-- Objects (buttons / cards / inputs / bubbles) have **5px** corners + **2px hard offset shadow**; full-bleed panes + 1px dividers stay square
-- 1px black borders/separators present
-- Accent 陶土锈红 `#C04A2B` ONLY on active / selected / progress / score / unread — nowhere else
-- Typography: Helvetica Neue; article title 42px
-- AI msg = plain text (no bubble); user msg = bordered cream bubble with shadow
-- Concept card (rust eyebrow + bolt) + Socrates quiz button (top-right of AI pane) + chat input with rust send button
-- Buttons show hover **color inversion** (cream↔ink); pressed = translate-to-cover-shadow
-- Three regions collapse smoothly (drive curve, no overshoot, no edge bleed); reopen buttons on the top header row
+先截浅色,再切系统外观截深色(两遍都要):
+```bash
+osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to (not dark mode)'
+sleep 1   # 等外观切换落帧后再截
+```
+Use the `Read` tool on `$SHOT` (it's a PNG — Claude reads images). Compare against the **V2.0** locks(上文 8 条),重点:
+- 玻璃只在 chrome(sidebar/inspector/toolbar/浮层);正文列是实底纸面,居中限宽 ≤680pt,衬线
+- 浅 = 暖纸白 + 近黑;深 = 暖深灰(非纯黑)+ 暖灰白;高亮/选区/锚点下划线在两种模式下对比度都达标
+- 锈红仅出现在 active/selected/progress/score/unread/AI 在场
+- 无 1px 黑边、无硬阴影残留;内容卡片 = paperElevated + 发丝线(+浅色柔影)
+- AI msg 无气泡;user msg 纸面卡;Aa 面板 / 专注模式胶囊 / 选区弹窗为玻璃浮层
+- 深浅切换全程无亮度跳闪(Dia 防闪标准)
 
 ### Step 5 — Report
 

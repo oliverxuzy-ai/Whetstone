@@ -67,6 +67,10 @@ final class BrutalistTextView: NSTextView {
     /// 供 ArticleBodyView 在布局/尺寸变化后手动触发重算。
     func reportAnchorRectsPublic() { reportAnchorRects() }
 
+    func invalidateTextCursorRects() {
+        window?.invalidateCursorRects(for: self)
+    }
+
     private var popoverWindow: NSPanel?
     private var pendingPopoverWorkItem: DispatchWorkItem?
     /// One-shot: 下一次 showPopoverIfSelection 应该显示"取消高亮"动作集而不是
@@ -104,9 +108,10 @@ final class BrutalistTextView: NSTextView {
         smartInsertDeleteEnabled = false
         textContainerInset = .zero
         textContainer?.lineFragmentPadding = 0
+        // V2: 选区用系统语义色(双模式自适应),不再手写静态色。
         selectedTextAttributes = [
-            .backgroundColor: NSColor(srgbRed: 0xB8/255.0, green: 0xC5/255.0, blue: 0xC5/255.0, alpha: 1),
-            .foregroundColor: NSColor(srgbRed: 0x11/255.0, green: 0x11/255.0, blue: 0x11/255.0, alpha: 1)
+            .backgroundColor: NSColor.selectedTextBackgroundColor,
+            .foregroundColor: NSColor.selectedTextColor
         ]
         NotificationCenter.default.addObserver(
             self,
@@ -129,6 +134,39 @@ final class BrutalistTextView: NSTextView {
     override func viewWillMove(toWindow newWindow: NSWindow?) {
         super.viewWillMove(toWindow: newWindow)
         if newWindow == nil { dismissPopover() }
+    }
+
+    override func setFrameSize(_ newSize: NSSize) {
+        super.setFrameSize(newSize)
+        invalidateTextCursorRects()
+    }
+
+    /// NSTextView's default cursor rect covers the whole view, which makes the
+    /// reader show an I-beam over blank margins and under inline Ask overlays.
+    /// Keep the I-beam only on actual laid-out text; everywhere else is arrow.
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .arrow)
+        guard let layout = layoutManager, let container = textContainer else { return }
+        layout.ensureLayout(for: container)
+
+        let glyphRange = layout.glyphRange(for: container)
+        guard glyphRange.length > 0 else { return }
+
+        var glyph = glyphRange.location
+        let end = NSMaxRange(glyphRange)
+        while glyph < end {
+            var lineRange = NSRange(location: 0, length: 0)
+            let rect = layout.lineFragmentUsedRect(forGlyphAt: glyph, effectiveRange: &lineRange)
+                .offsetBy(dx: textContainerOrigin.x, dy: textContainerOrigin.y)
+                .insetBy(dx: -2, dy: -2)
+                .intersection(bounds)
+            if !rect.isNull, rect.width > 0, rect.height > 0 {
+                addCursorRect(rect, cursor: .iBeam)
+            }
+
+            let next = NSMaxRange(lineRange)
+            glyph = next > glyph ? next : glyph + 1
+        }
     }
 
     // MARK: - Selection → popover
